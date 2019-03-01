@@ -66,8 +66,8 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         LightAPI.deleteLight(block.getLocation(), false);
 
-        if (currentLight - 1 > 0) {
-            LightAPI.createLight(block.getLocation(), -- currentLight, false);
+        if ((-- currentLight) > 0) {
+            LightAPI.createLight(block.getLocation(), currentLight, false);
         }
 
         LightAPI.updateChunks(block.getLocation(), block.getWorld().getPlayers());
