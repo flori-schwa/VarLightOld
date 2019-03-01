@@ -1,235 +1,139 @@
 package me.florian.varlight;
 
-import com.google.common.io.ByteStreams;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
-import net.minecraft.server.v1_13_R2.NBTReadLimiter;
-import net.minecraft.server.v1_13_R2.NBTTagCompound;
-import net.minecraft.server.v1_13_R2.NBTTagList;
+import net.minecraft.server.v1_13_R2.BlockPosition;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.block.Block;
+import org.bukkit.block.data.Lightable;
+import org.bukkit.craftbukkit.v1_13_R2.CraftWorld;
+import org.bukkit.craftbukkit.v1_13_R2.block.CraftBlock;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.world.ChunkLoadEvent;
-import org.bukkit.event.world.ChunkUnloadEvent;
-import org.bukkit.event.world.WorldUnloadEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.util.*;
-import java.util.logging.Level;
+import ru.beykerykt.lightapi.LightAPI;
 
 public class VarLightPlugin extends JavaPlugin implements Listener {
 
-    public static final int NBT_COMPOUND = 0x0A;
-
-    private Map<UUID, List<CustomLitBlock>> customLitBlocks = new HashMap<>();
-    private final List<CustomLitBlock> emptyList = Collections.unmodifiableList(new ArrayList<>());
+    private static enum LightUpdateResult {
+        INVALID_BLOCK,
+        ZERO_REACHED,
+        FIFTEEN_REACHED,
+        UPDATED
+    }
 
     @Override
     public void onEnable() {
         Bukkit.getPluginManager().registerEvents(this, this);
-
-        for (World world : Bukkit.getWorlds()) {
-            try {
-                customLitBlocks.put(world.getUID(), loadWorld(world));
-            } catch (Exception e) {
-                Bukkit.getLogger().log(Level.SEVERE, "Exception while loading custom Light blocks for world " + world.getName(), e);
-            }
-        }
     }
 
-    @Override
-    public void onDisable() {
-        for (World world : Bukkit.getWorlds()) {
-            saveWorld(world);
+    private boolean emitsLight(Block block) {
+        return ((CraftWorld) block.getWorld()).getHandle().getChunkAt(block.getChunk().getX(), block.getChunk().getZ()).getBlockData(block.getX(), block.getY(), block.getZ()).e() > 0;
+    }
+
+    private LightUpdateResult incrementLight(Block block) {
+        if (! block.getType().isBlock() || emitsLight(block)) {
+            return LightUpdateResult.INVALID_BLOCK;
         }
 
-        customLitBlocks.clear();
-    }
+        int currentLight = block.getLightFromBlocks();
 
-    private List<CustomLitBlock> loadWorld(World world) throws Exception {
-        File customBlocks = new File(world.getWorldFolder(), "varlight.nbt");
-
-        if (! customBlocks.exists()) {
-            return new ArrayList<>();
+        if (currentLight == 15) {
+            return LightUpdateResult.FIFTEEN_REACHED;
         }
 
-        List<CustomLitBlock> customLitBlocks = new ArrayList<>();
+        LightAPI.deleteLight(block.getLocation(), false);
+        LightAPI.createLight(block.getLocation(), ++ currentLight, false);
+        LightAPI.updateChunks(block.getLocation(), block.getWorld().getPlayers());
 
-        byte[] buffer = new byte[(int) customBlocks.length()];
+        return LightUpdateResult.UPDATED;
+    }
 
-        FileInputStream fileInputStream = new FileInputStream(customBlocks);
-        fileInputStream.read(buffer);
-        fileInputStream.close();
-
-
-        NBTTagCompound nbtTagCompound = new NBTTagCompound();
-        nbtTagCompound.load(ByteStreams.newDataInput(buffer), 0, NBTReadLimiter.a);
-
-        NBTTagList nbtTagList = nbtTagCompound.getList("Blocks", NBT_COMPOUND);
-
-        for (int i = 0; i < nbtTagList.size(); i++) {
-            customLitBlocks.add(CustomLitBlock.load(this, nbtTagList.getCompound(i), world));
+    private LightUpdateResult decrementLight(Block block) {
+        if (! block.getType().isBlock() || emitsLight(block)) {
+            return LightUpdateResult.INVALID_BLOCK;
         }
 
-        return customLitBlocks;
-    }
+        int currentLight = block.getLightFromBlocks();
 
-    private void saveWorld(World world) {
-        try {
-            File customBlocks = new File(world.getWorldFolder(), "varlight.nbt");
-
-            if (! customBlocks.exists()) {
-                customBlocks.createNewFile();
-            }
-
-            NBTTagCompound nbtTagCompound = new NBTTagCompound();
-            NBTTagList blocks = new NBTTagList();
-
-            int i = 0;
-
-            for (CustomLitBlock customLitBlock : getCustomLitBlocks(world.getUID())) {
-                if (customLitBlock.isValid()) {
-                    blocks.set(i++, customLitBlock.ToNbt());
-                }
-
-                Bukkit.getScheduler().cancelTask(customLitBlock.taskId);
-            }
-
-            nbtTagCompound.set("Blocks", blocks);
-
-            FileOutputStream fileOutputStream = new FileOutputStream(customBlocks);
-
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            nbtTagCompound.write(ByteStreams.newDataOutput(byteArrayOutputStream));
-            byteArrayOutputStream.flush();
-            byte[] buffer = byteArrayOutputStream.toByteArray();
-            byteArrayOutputStream.close();
-
-            fileOutputStream.write(buffer);
-            fileOutputStream.flush();
-            fileOutputStream.close();
-
-            if (hasCustomLitBlocks(world)) {
-                customLitBlocks.get(world.getUID()).clear();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (currentLight == 0) {
+            return LightUpdateResult.ZERO_REACHED;
         }
-    }
 
-    protected List<CustomLitBlock> getCustomLitBlocks(UUID worldUID) {
-        return customLitBlocks.getOrDefault(worldUID, emptyList);
-    }
+        LightAPI.deleteLight(block.getLocation(), false);
 
-    private boolean hasCustomLitBlocks(World world) {
-        return customLitBlocks.containsKey(world.getUID()) && customLitBlocks.get(world.getUID()) != null && ! customLitBlocks.get(world.getUID()).isEmpty();
-    }
-
-    private void addCustomLitBlock(CustomLitBlock customLitBlock) {
-        if (! hasCustomLitBlocks(customLitBlock.getWorld())) {
-            List<CustomLitBlock> blockList = new ArrayList<>();
-
-            blockList.add(customLitBlock);
-            customLitBlocks.put(customLitBlock.getWorld().getUID(), blockList);
-        } else {
-            customLitBlocks.get(customLitBlock.getWorld().getUID()).add(customLitBlock);
+        if (currentLight - 1 > 0) {
+            LightAPI.createLight(block.getLocation(), -- currentLight, false);
         }
+
+        LightAPI.updateChunks(block.getLocation(), block.getWorld().getPlayers());
+
+        return LightUpdateResult.UPDATED;
     }
 
-    @EventHandler
-    public void onBlockBreak(BlockBreakEvent blockBreakEvent) {
-
-    }
-
-    @EventHandler
-    public void onWorldUnload(WorldUnloadEvent worldUnloadEvent) {
-        saveWorld(worldUnloadEvent.getWorld());
-    }
 
     @EventHandler (priority = EventPriority.HIGHEST)
     public void onInteract(PlayerInteractEvent e) {
-        if (! e.isCancelled() && (e.getAction() == Action.RIGHT_CLICK_BLOCK || e.getAction() == Action.LEFT_CLICK_BLOCK) && CustomLitBlock.isValidBlockType(e.getClickedBlock().getType())) {
-            if (e.getItem() != null && e.getItem().getType() == Material.GLOWSTONE_DUST) {
-
-                int update = - 1;
-
-                if (hasCustomLitBlocks(e.getPlayer().getWorld())) {
-                    List<CustomLitBlock> customLitBlocks = getCustomLitBlocks(e.getPlayer().getWorld().getUID());
-
-                    for (CustomLitBlock customLitBlock : customLitBlocks) {
-                        if (customLitBlock.isBlock(e.getClickedBlock())) {
-                            if (e.getAction() == Action.RIGHT_CLICK_BLOCK) {
-                                if ((update = customLitBlock.incrementLightLevel()) > 0 && e.getPlayer().getGameMode() != GameMode.CREATIVE) {
-                                    e.getItem().setAmount(e.getItem().getAmount() - 1);
-                                }
-                            }
-                            if (e.getAction() == Action.LEFT_CLICK_BLOCK) {
-                                e.setCancelled(e.getPlayer().getGameMode() == GameMode.CREATIVE);
-                                update = customLitBlock.decrementLightLevel();
-                            }
-
-                            if (update == - 1) {
-                                e.getPlayer().spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("Could not update block light"));
-                            } else {
-                                e.getPlayer().spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("Updated Block light to " + update));
-                            }
-
-                            return;
-                        }
-                    }
-                }
-
-                if (e.getAction() == Action.RIGHT_CLICK_BLOCK) {
-                    CustomLitBlock customLitBlock = new CustomLitBlock(this, e.getClickedBlock());
-                    addCustomLitBlock(customLitBlock);
-
-                    if ((update = customLitBlock.incrementLightLevel()) > 0 && e.getPlayer().getGameMode() != GameMode.CREATIVE) {
-                        e.getItem().setAmount(e.getItem().getAmount() - 1);
-                    }
-                }
-
-                if (update == - 1) {
-                    e.getPlayer().spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("Could not update block light"));
-                } else {
-                    e.getPlayer().spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("Updated Block light to " + update));
-                }
-            }
-        }
-    }
-
-    @EventHandler
-    public void onChunkLoad(ChunkLoadEvent e) {
-        if (! customLitBlocks.containsKey(e.getWorld().getUID())) {
+        if (e.isCancelled() || (e.getAction() != Action.RIGHT_CLICK_BLOCK && e.getAction() != Action.LEFT_CLICK_BLOCK)) {
             return;
         }
 
-        for (CustomLitBlock customLitBlock : customLitBlocks.get(e.getWorld().getUID())) {
-            if (customLitBlock.isAssociated(e)) {
-                customLitBlock.onChunkLoad();
-            }
-        }
-    }
+        Block clickedBlock = e.getClickedBlock();
+        Player player = e.getPlayer();
+        ItemStack heldItem = e.getItem();
 
-    @EventHandler
-    public void onChunkUnload(ChunkUnloadEvent e) {
-        if (! customLitBlocks.containsKey(e.getWorld().getUID())) {
+        if (heldItem == null) {
             return;
         }
 
-        for (CustomLitBlock customLitBlock : customLitBlocks.get(e.getWorld().getUID())) {
-            if (customLitBlock.isAssociated(e)) {
-                customLitBlock.onChunkUnload();
+        if (heldItem.getType() != Material.GLOWSTONE_DUST) {
+            return;
+        }
+
+        LightUpdateResult lightUpdateResult = null;
+
+        if (e.getAction() == Action.RIGHT_CLICK_BLOCK) {
+            lightUpdateResult = incrementLight(clickedBlock);
+
+            if (player.getGameMode() != GameMode.CREATIVE) {
+                heldItem.setAmount(heldItem.getAmount() - 1);
+            }
+        } else if (e.getAction() == Action.LEFT_CLICK_BLOCK) {
+            lightUpdateResult = decrementLight(clickedBlock);
+
+            if (player.getGameMode() == GameMode.CREATIVE) {
+                e.setCancelled(true);
+            }
+        }
+
+        if (lightUpdateResult == null) {
+            return;
+        }
+
+        switch (lightUpdateResult) {
+            case INVALID_BLOCK: {
+                return;
+            }
+
+            case FIFTEEN_REACHED: {
+                player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("Cannot increase light level beyond 15."));
+                return;
+            }
+            case ZERO_REACHED: {
+                player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("Cannot decrease light level below 0."));
+                return;
+            }
+
+            case UPDATED: {
+                player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("Updated Light level of block to " + clickedBlock.getLightFromBlocks()));
+                return;
             }
         }
     }
