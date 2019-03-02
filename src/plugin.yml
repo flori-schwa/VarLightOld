@@ -1,7 +1,9 @@
 name: VarLight
-version: 1.0.1
+version: 1.0.2
 author: Florian
 main: me.florian.varlight.VarLightPlugin
+description: Turn Normal Blocks into Light Sources!
+api-version: 1.13
 
-depend:
+softdepend:
   - LightAPI
