@@ -41,7 +41,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
             Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "----------------------------------------------------------------------------");
             Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "LightAPI could not be found!");
-            Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "Please be sure you downloaded and isntalled LightAPI in your plugins");
+            Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "Please be sure you downloaded and installed LightAPI in your plugins");
             Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "Download LightAPI at https://www.spigotmc.org/resources/lightapi-fork.48247/");
             Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "VarLight will not load.");
             Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "----------------------------------------------------------------------------");
