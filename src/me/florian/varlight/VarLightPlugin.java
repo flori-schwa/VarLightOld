@@ -2,12 +2,10 @@ package me.florian.varlight;
 
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
-import net.minecraft.server.v1_13_R2.*;
+import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Material;
-import org.bukkit.World;
-import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.AnaloguePowerable;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Openable;
@@ -22,12 +20,6 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
-import ru.beykerykt.lightapi.LightAPI;
-
-import javax.xml.stream.FactoryConfigurationError;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
 
 public class VarLightPlugin extends JavaPlugin implements Listener {
 
@@ -38,48 +30,22 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         UPDATED
     }
 
-    private static final BlockFace[] CHECK_FACES = new BlockFace[] {
-            BlockFace.NORTH,
-            BlockFace.EAST,
-            BlockFace.SOUTH,
-            BlockFace.WEST,
-            BlockFace.UP,
-            BlockFace.DOWN
-    };
-
-    private boolean lightApi = false;
-    private Field nField;
+    private LightUpdater lightUpdater;
 
     @Override
     public void onLoad() {
-        if (! (lightApi = Bukkit.getPluginManager().getPlugin("LightAPI") != null)) {
-            try {
-                nField = net.minecraft.server.v1_13_R2.Block.class.getDeclaredField("n");
-                nField.setAccessible(true);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        if (lightApi) {
+        if (Bukkit.getPluginManager().getPlugin("LightAPI") != null) {
             getLogger().info("Using LightAPI");
+            lightUpdater = new LightUpdaterLightAPI();
         } else {
             getLogger().info("Using Built-in Methods");
+            lightUpdater = new LightUpdaterBuiltIn();
         }
     }
 
     @Override
     public void onEnable() {
         Bukkit.getPluginManager().registerEvents(this, this);
-    }
-
-    private boolean isBlockTransparent(Block block) {
-        try {
-            return ! nField.getBoolean(getNmsWorld(block.getWorld()).getType(toBlockPosition(block.getLocation())).getBlock());
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
     }
 
     private boolean emitsLight(Block block) {
@@ -112,84 +78,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         return block.getType().isSolid() && block.getType().isOccluding();
     }
 
-    private WorldServer getNmsWorld(World world) {
-        return ((CraftWorld) world).getHandle();
-    }
-
-    private BlockPosition toBlockPosition(Location location) {
-        return new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-    }
-
-    private void setLight(Location location, int lightLevel) {
-        if (lightApi) {
-            LightAPI.deleteLight(location, false);
-
-            if (lightLevel > 0) {
-                LightAPI.createLight(location, lightLevel, false);
-            }
-
-            LightAPI.updateChunks(location, location.getWorld().getPlayers());
-            return;
-        }
-
-
-        WorldServer world = getNmsWorld(location.getWorld());
-        BlockPosition updateAt = toBlockPosition(location);
-        Block block = location.getBlock();
-
-
-        world.c(EnumSkyBlock.BLOCK, updateAt);
-
-        if (lightLevel > 0) {
-            world.a(EnumSkyBlock.BLOCK, updateAt, lightLevel);
-
-            IntPosition intPosition = new IntPosition(block.getLocation());
-
-            for (BlockFace blockFace : CHECK_FACES) {
-                IntPosition relative = intPosition.getRelative(blockFace);
-
-                if (relative.outOfBounds()) {
-                    continue;
-                }
-
-
-                if (isBlockTransparent(relative.toBlock(location.getWorld()))) {
-                    world.c(EnumSkyBlock.BLOCK, relative.toBlockPosition());
-                    break;
-                }
-            }
-        }
-
-
-        int chunkX = location.getBlockX() / 16;
-        int chunkZ = location.getBlockZ() / 16;
-
-        List<ChunkCoordIntPair> chunksToUpdate = new ArrayList<>();
-
-        for (int dx = - 1; dx <= 1; dx++) {
-            for (int dz = - 1; dz <= 1; dz++) {
-                int x = chunkX + dx;
-                int z = chunkZ + dz;
-
-                if (! world.getChunkProvider().isLoaded(x, z)) {
-                    continue;
-                }
-
-                chunksToUpdate.add(new ChunkCoordIntPair(x, z));
-            }
-        }
-
-        PlayerChunkMap playerChunkMap = world.getPlayerChunkMap();
-
-        for (ChunkCoordIntPair chunkCoordIntPair : chunksToUpdate) {
-            PlayerChunk playerChunk = playerChunkMap.getChunk(chunkCoordIntPair.x, chunkCoordIntPair.z);
-
-            for (EntityPlayer entityPlayer : playerChunk.players) {
-                entityPlayer.playerConnection.sendPacket(new PacketPlayOutMapChunk(playerChunk.chunk, (1 << 17) - 1));
-            }
-        }
-    }
-
 
     private LightUpdateResult incrementLight(Block block) {
         if (! isValidBlock(block)) {
@@ -202,7 +90,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             return LightUpdateResult.FIFTEEN_REACHED;
         }
 
-        setLight(block.getLocation(), ++ currentLight);
+        lightUpdater.setLight(block.getLocation(), ++ currentLight);
         return LightUpdateResult.UPDATED;
     }
 
@@ -217,7 +105,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             return LightUpdateResult.ZERO_REACHED;
         }
 
-        setLight(block.getLocation(), -- currentLight);
+        lightUpdater.setLight(block.getLocation(), -- currentLight);
         return LightUpdateResult.UPDATED;
     }
 
