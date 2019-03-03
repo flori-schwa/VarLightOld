@@ -14,7 +14,6 @@ import org.bukkit.block.data.Openable;
 import org.bukkit.block.data.Powerable;
 import org.bukkit.block.data.type.Piston;
 import org.bukkit.craftbukkit.v1_13_R2.CraftWorld;
-import org.bukkit.craftbukkit.v1_13_R2.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -23,7 +22,9 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
+import ru.beykerykt.lightapi.LightAPI;
 
+import javax.xml.stream.FactoryConfigurationError;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,31 +47,35 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             BlockFace.DOWN
     };
 
-    private boolean dependencyFound = true;
+    private boolean lightApi = false;
     private Field nField;
 
     @Override
     public void onLoad() {
-        try {
-            nField = net.minecraft.server.v1_13_R2.Block.class.getDeclaredField("n");
-            nField.setAccessible(true);
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (! (lightApi = Bukkit.getPluginManager().getPlugin("LightAPI") != null)) {
+            try {
+                nField = net.minecraft.server.v1_13_R2.Block.class.getDeclaredField("n");
+                nField.setAccessible(true);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        if (lightApi) {
+            getLogger().info("Using LightAPI");
+        } else {
+            getLogger().info("Using Built-in Methods");
         }
     }
 
     @Override
     public void onEnable() {
-        if (dependencyFound) {
-            Bukkit.getPluginManager().registerEvents(this, this);
-        } else {
-            Bukkit.getPluginManager().disablePlugin(this);
-        }
+        Bukkit.getPluginManager().registerEvents(this, this);
     }
 
     private boolean isBlockTransparent(Block block) {
         try {
-            return !nField.getBoolean(getNmsWorld(block.getWorld()).getType(toBlockPosition(block.getLocation())).getBlock());
+            return ! nField.getBoolean(getNmsWorld(block.getWorld()).getType(toBlockPosition(block.getLocation())).getBlock());
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -116,6 +121,18 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     }
 
     private void setLight(Location location, int lightLevel) {
+        if (lightApi) {
+            LightAPI.deleteLight(location, false);
+
+            if (lightLevel > 0) {
+                LightAPI.createLight(location, lightLevel, false);
+            }
+
+            LightAPI.updateChunks(location, location.getWorld().getPlayers());
+            return;
+        }
+
+
         WorldServer world = getNmsWorld(location.getWorld());
         BlockPosition updateAt = toBlockPosition(location);
         Block block = location.getBlock();
@@ -134,7 +151,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
                 if (relative.outOfBounds()) {
                     continue;
                 }
-
 
 
                 if (isBlockTransparent(relative.toBlock(location.getWorld()))) {
