@@ -2,6 +2,11 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/1.12.2/1.12.2.iml" filepath="$PROJECT_DIR$/1.12.2/1.12.2.iml" />
+      <module fileurl="file://$PROJECT_DIR$/1.13.2/1.13.2.iml" filepath="$PROJECT_DIR$/1.13.2/1.13.2.iml" />
+      <module fileurl="file://$PROJECT_DIR$/1.13.2/1.13.2.iml" filepath="$PROJECT_DIR$/1.13.2/1.13.2.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Core/Core.iml" filepath="$PROJECT_DIR$/Core/Core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Nms/Nms.iml" filepath="$PROJECT_DIR$/Nms/Nms.iml" />
       <module fileurl="file://$PROJECT_DIR$/VarLight.iml" filepath="$PROJECT_DIR$/VarLight.iml" />
     </modules>
   </component>

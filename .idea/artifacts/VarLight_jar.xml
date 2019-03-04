@@ -2,7 +2,10 @@
   <artifact type="jar" name="VarLight:jar">
     <output-path>$PROJECT_DIR$/out/artifacts/VarLight_jar</output-path>
     <root id="archive" name="VarLight.jar">
-      <element id="module-output" name="VarLight" />
+      <element id="module-output" name="Core" />
+      <element id="module-output" name="1.13.2" />
+      <element id="module-output" name="1.12.2" />
+      <element id="module-output" name="Nms" />
     </root>
   </artifact>
 </component>

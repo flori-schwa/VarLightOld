@@ -1,6 +1,5 @@
 package me.florian.varlight;
 
-import net.minecraft.server.v1_13_R2.BlockPosition;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -48,12 +47,12 @@ public class IntPosition {
         return y < 0 || y > 255;
     }
 
-    public Block toBlock(World world) {
-        return world.getBlockAt(x, y, z);
+    public Location toLocation(World world) {
+        return new Location(world, x, y, z);
     }
 
-    public BlockPosition toBlockPosition() {
-        return new BlockPosition(x, y, z);
+    public Block toBlock(World world) {
+        return world.getBlockAt(x, y, z);
     }
 
     public IntPosition getRelative(BlockFace blockFace) {
