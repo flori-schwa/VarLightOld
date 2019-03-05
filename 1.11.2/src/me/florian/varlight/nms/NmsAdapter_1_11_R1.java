@@ -2,21 +2,20 @@ package me.florian.varlight.nms;
 
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
-import net.minecraft.server.v1_12_R1.*;
+import net.minecraft.server.v1_11_R1.*;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.v1_12_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_11_R1.CraftWorld;
 import org.bukkit.entity.Player;
 import org.bukkit.material.DirectionalContainer;
 import org.bukkit.material.MaterialData;
 import org.bukkit.material.PistonBaseMaterial;
 import org.bukkit.material.Redstone;
 
-public class NmsAdapter_1_12_R1 implements NmsAdapter {
-
+public class NmsAdapter_1_11_R1 implements NmsAdapter {
 
     private Class[] blacklistedDatas = new Class[] {
             Redstone.class,
@@ -24,8 +23,6 @@ public class NmsAdapter_1_12_R1 implements NmsAdapter {
             PistonBaseMaterial.class
     };
 
-    public NmsAdapter_1_12_R1() {
-    }
 
     private WorldServer getNmsWorld(World world) {
         return ((CraftWorld) world).getHandle();

@@ -6,6 +6,10 @@
       <element id="module-output" name="1.13.2" />
       <element id="module-output" name="1.12.2" />
       <element id="module-output" name="Nms" />
+      <element id="module-output" name="1.10.2" />
+      <element id="module-output" name="1.11.2" />
+      <element id="module-output" name="1.8.8" />
+      <element id="module-output" name="1.9.4" />
     </root>
   </artifact>
 </component>

@@ -1,8 +1,6 @@
 package me.florian.varlight;
 
-import me.florian.varlight.nms.NmsAdapter;
-import me.florian.varlight.nms.NmsAdapter_1_12_R1;
-import me.florian.varlight.nms.NmsAdapter_1_13_R2;
+import me.florian.varlight.nms.*;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
@@ -33,7 +31,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     private static Map<String, Class<? extends NmsAdapter>> ADAPTERS;
 
-    private String serverVersion;
     private LightUpdater lightUpdater;
     private NmsAdapter nmsAdapter;
     private boolean doLoad = true;
@@ -43,11 +40,19 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         ADAPTERS.put("v1_13_R2", NmsAdapter_1_13_R2.class);
         ADAPTERS.put("v1_12_R1", NmsAdapter_1_12_R1.class);
+        ADAPTERS.put("v1_11_R1", NmsAdapter_1_11_R1.class);
+        ADAPTERS.put("v1_10_R1", NmsAdapter_1_10_R1.class);
+        ADAPTERS.put("v1_9_R2", NmsAdapter_1_9_R2.class);
+        ADAPTERS.put("v1_8_R3", NmsAdapter_1_8_R3.class);
+    }
+
+    public boolean isDebug() {
+        return getDescription().getVersion().endsWith("-INDEV");
     }
 
     @Override
     public void onLoad() {
-        serverVersion = Bukkit.getServer().getClass().getPackage().getName();
+        String serverVersion = Bukkit.getServer().getClass().getPackage().getName();
         serverVersion = serverVersion.substring(serverVersion.lastIndexOf('.') + 1);
 
         if (! ADAPTERS.containsKey(serverVersion)) {
@@ -161,21 +166,24 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         switch (lightUpdateResult) {
             case INVALID_BLOCK: {
-//                player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("Invalid Block."));
+                if (isDebug()) {
+                    nmsAdapter.sendActionBarMessage(player, "Invalid Block.");
+                }
+
                 return;
             }
 
             case FIFTEEN_REACHED: {
-                player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("Cannot increase light level beyond 15."));
+                nmsAdapter.sendActionBarMessage(player, "Cannot increase light level beyond 15.");
                 return;
             }
             case ZERO_REACHED: {
-                player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("Cannot decrease light level below 0."));
+                nmsAdapter.sendActionBarMessage(player, "Cannot decrease light level below 0.");
                 return;
             }
 
             case UPDATED: {
-                player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("Updated Light level of block to " + clickedBlock.getLightFromBlocks()));
+                nmsAdapter.sendActionBarMessage(player, "Updated Light level of block to " + clickedBlock.getLightFromBlocks());
                 return;
             }
         }

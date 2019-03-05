@@ -1,6 +1,8 @@
 package me.florian.varlight.nms;
 
 
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.server.v1_13_R2.*;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
@@ -12,6 +14,7 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Powerable;
 import org.bukkit.block.data.type.Piston;
 import org.bukkit.craftbukkit.v1_13_R2.CraftWorld;
+import org.bukkit.entity.Player;
 import org.bukkit.material.Openable;
 
 import java.lang.reflect.Field;
@@ -65,12 +68,12 @@ public class NmsAdapter_1_13_R2 implements NmsAdapter {
     }
 
     @Override
-    public void sendChunkUpdates(Chunk chunk) {
+    public void sendChunkUpdates(Chunk chunk, int mask) {
         WorldServer nmsWorld = getNmsWorld(chunk.getWorld());
         PlayerChunkMap playerChunkMap = nmsWorld.getPlayerChunkMap();
         PlayerChunk playerChunk = playerChunkMap.getChunk(chunk.getX(), chunk.getZ());
 
-        playerChunk.a(new PacketPlayOutMapChunk(playerChunk.chunk, (1 << 17) - 1));
+        playerChunk.a(new PacketPlayOutMapChunk(playerChunk.chunk, mask));
     }
 
     @Override
@@ -98,5 +101,10 @@ public class NmsAdapter_1_13_R2 implements NmsAdapter {
         }
 
         return block.getType().isSolid() && block.getType().isOccluding();
+    }
+
+    @Override
+    public void sendActionBarMessage(Player player, String message) {
+        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(message));
     }
 }

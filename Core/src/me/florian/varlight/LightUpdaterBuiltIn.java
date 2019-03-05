@@ -59,14 +59,13 @@ public class LightUpdaterBuiltIn implements LightUpdater {
 
                 if (varLightPlugin.getNmsAdapter().isBlockTransparent(relative.toBlock(world))) {
                     varLightPlugin.getNmsAdapter().recalculateBlockLight(relative.toLocation(world));
-                    break;
                 }
             }
         }
 
 
-        int chunkX = location.getBlockX() / 16;
-        int chunkZ = location.getBlockZ() / 16;
+        int chunkX = location.getChunk().getX();
+        int chunkZ = location.getChunk().getZ();
 
         List<Chunk> chunksToUpdate = new ArrayList<>();
 
@@ -83,8 +82,10 @@ public class LightUpdaterBuiltIn implements LightUpdater {
             }
         }
 
+        int mask = getChunkBitMask(location);
+
         for (Chunk chunk : chunksToUpdate) {
-            varLightPlugin.getNmsAdapter().sendChunkUpdates(chunk);
+            varLightPlugin.getNmsAdapter().sendChunkUpdates(chunk, mask);
         }
     }
 }
