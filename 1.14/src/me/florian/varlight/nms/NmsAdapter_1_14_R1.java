@@ -3,7 +3,7 @@ package me.florian.varlight.nms;
 
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
-import net.minecraft.server.v1_13_R2.*;
+import net.minecraft.server.v1_14_R1.*;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -13,24 +13,36 @@ import org.bukkit.block.data.AnaloguePowerable;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Powerable;
 import org.bukkit.block.data.type.Piston;
-import org.bukkit.craftbukkit.v1_13_R2.CraftWorld;
+import org.bukkit.craftbukkit.v1_14_R1.CraftWorld;
 import org.bukkit.entity.Player;
 import org.bukkit.material.Openable;
 
 import java.lang.reflect.Field;
 
-public class NmsAdapter_1_13_R2 implements NmsAdapter {
+public class NmsAdapter_1_14_R1 implements NmsAdapter {
 
 
     private Field lightBlockingField;
+    private Field lightEngineLayerField;
 
-    public NmsAdapter_1_13_R2() {
+    public NmsAdapter_1_14_R1() {
         try {
-
-            lightBlockingField = net.minecraft.server.v1_13_R2.Block.class.getDeclaredField("n");
-            lightBlockingField.setAccessible(true);
+            lightBlockingField = ReflectionHelper.Safe.getField(net.minecraft.server.v1_14_R1.Block.class, "v");
+            lightEngineLayerField = ReflectionHelper.Safe.getField(LightEngine.class, "a");
         } catch (NoSuchFieldException e) {
-            e.printStackTrace();
+            throw new NmsInitializationException(e);
+        }
+    }
+
+    private LightEngineThreaded getLightEngine(World world) {
+        return getNmsWorld(world).getChunkProvider().getLightEngine();
+    }
+
+    private LightEngineLayer<?, ?> getLightEngineBlock(LightEngine lightEngine) {
+        try {
+            return ReflectionHelper.Safe.get(lightEngineLayerField, lightEngine);
+        } catch (IllegalAccessException e) {
+            throw new LightUpdateFailedException(e);
         }
     }
 
@@ -45,33 +57,43 @@ public class NmsAdapter_1_13_R2 implements NmsAdapter {
     @Override
     public boolean isBlockTransparent(Block block) {
         try {
-            return ! lightBlockingField.getBoolean(getNmsWorld(block.getWorld()).getType(toBlockPosition(block.getLocation())).getBlock());
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
+            return ! (boolean) ReflectionHelper.Safe.get(lightBlockingField, getNmsWorld(block.getWorld()).getType(toBlockPosition(block.getLocation())).getBlock());
+        } catch (IllegalAccessException e) {
+            throw new LightUpdateFailedException(e);
         }
     }
 
     @Override
     public void recalculateBlockLight(Location at) {
-        getNmsWorld(at.getWorld()).c(EnumSkyBlock.BLOCK, toBlockPosition(at));
+//
+//        LightEngineThreaded lightEngine = getLightEngine(at.getWorld());
+//
+//        LightEngineLayer<?, ?> lightEngineLayer = getLightEngineBlock(lightEngine);
+//        lightEngineLayer.a(toBlockPosition(at));
+
+//        lightEngine.queueUpdate();
     }
 
     @Override
     public void updateBlockLight(Location at, int lightLevel) {
-        getNmsWorld(at.getWorld()).a(EnumSkyBlock.BLOCK, toBlockPosition(at), lightLevel);
+        LightEngineThreaded lightEngine = getLightEngine(at.getWorld());
+
+        LightEngineLayer<?, ?> lightEngineBlock = getLightEngineBlock(lightEngine);
+        lightEngineBlock.a(toBlockPosition(at), lightLevel);
     }
 
     @Override
     public int getEmittingLightLevel(Block block) {
-        return ((CraftWorld) block.getWorld()).getHandle().getChunkAt(block.getChunk().getX(), block.getChunk().getZ()).getBlockData(block.getX(), block.getY(), block.getZ()).e();
+        IBlockData blockData = ((CraftWorld) block.getWorld()).getHandle().getChunkAt(block.getChunk().getX(), block.getChunk().getZ()).getType(toBlockPosition(block.getLocation()));
+
+        return blockData.getBlock().a(blockData);
     }
 
     @Override
     public void sendChunkUpdates(Chunk chunk, int mask) {
         WorldServer nmsWorld = getNmsWorld(chunk.getWorld());
-        PlayerChunkMap playerChunkMap = nmsWorld.getPlayerChunkMap();
-        PlayerChunk playerChunk = playerChunkMap.getChunk(chunk.getX(), chunk.getZ());
+        PlayerChunkMap playerChunkMap = nmsWorld.getChunkProvider().playerChunkMap;
+        PlayerChunk playerChunk = playerChunkMap.visibleChunks.get(ChunkCoordIntPair.pair(chunk.getX(), chunk.getZ()));
 
         for (int cy = 0; cy < 16; cy++) {
             if ((mask & (1 << cy)) == 0) {
@@ -87,7 +109,7 @@ public class NmsAdapter_1_13_R2 implements NmsAdapter {
             }
         }
 
-        playerChunk.d();
+        playerChunk.a(playerChunk.getChunk());
     }
 
     @Override

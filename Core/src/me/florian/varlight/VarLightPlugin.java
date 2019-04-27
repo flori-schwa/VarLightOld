@@ -1,12 +1,12 @@
 package me.florian.varlight;
 
 import me.florian.varlight.nms.*;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -26,7 +26,14 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         INVALID_BLOCK,
         ZERO_REACHED,
         FIFTEEN_REACHED,
-        UPDATED
+        UPDATED,
+        CANCELLED;
+    }
+
+    private static String SERVER_VERSION;
+
+    public static String getServerVersion() {
+        return SERVER_VERSION;
     }
 
     private static Map<String, Class<? extends NmsAdapter>> ADAPTERS;
@@ -38,6 +45,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     static {
         ADAPTERS = new HashMap<>();
 
+        ADAPTERS.put("v1_14_R1", NmsAdapter_1_14_R1.class);
         ADAPTERS.put("v1_13_R2", NmsAdapter_1_13_R2.class);
         ADAPTERS.put("v1_12_R1", NmsAdapter_1_12_R1.class);
         ADAPTERS.put("v1_11_R1", NmsAdapter_1_11_R1.class);
@@ -52,12 +60,12 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     @Override
     public void onLoad() {
-        String serverVersion = Bukkit.getServer().getClass().getPackage().getName();
-        serverVersion = serverVersion.substring(serverVersion.lastIndexOf('.') + 1);
+        SERVER_VERSION = Bukkit.getServer().getClass().getPackage().getName();
+        SERVER_VERSION = SERVER_VERSION.substring(SERVER_VERSION.lastIndexOf('.') + 1);
 
-        if (! ADAPTERS.containsKey(serverVersion)) {
+        if (! ADAPTERS.containsKey(SERVER_VERSION)) {
             getLogger().severe("------------------------------------------------------");
-            getLogger().severe("Unspported Minecraft version: " + serverVersion);
+            getLogger().severe("Unspported Minecraft version: " + SERVER_VERSION);
             getLogger().severe("------------------------------------------------------");
 
             doLoad = false;
@@ -65,7 +73,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         }
 
         try {
-            nmsAdapter = ADAPTERS.get(serverVersion).getConstructor().newInstance();
+            nmsAdapter = ADAPTERS.get(SERVER_VERSION).getConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             getLogger().throwing(getClass().getName(), "onLoad", e);
             doLoad = false;
@@ -96,32 +104,47 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     }
 
     private LightUpdateResult incrementLight(Block block) {
+
+        LightUpdateEvent lightUpdateEvent = new LightUpdateEvent(block, 1);
+        Bukkit.getPluginManager().callEvent(lightUpdateEvent);
+
+        if (lightUpdateEvent.isCancelled()) {
+            return LightUpdateResult.CANCELLED;
+        }
+
         if (! nmsAdapter.isValidBlock(block)) {
             return LightUpdateResult.INVALID_BLOCK;
         }
 
-        int currentLight = block.getLightFromBlocks();
+        int currentLight = lightUpdateEvent.getFromLight();
 
         if (currentLight == 15) {
             return LightUpdateResult.FIFTEEN_REACHED;
         }
 
-        lightUpdater.setLight(block.getLocation(), ++ currentLight);
+        lightUpdater.setLight(block.getLocation(), lightUpdateEvent.getToLight());
         return LightUpdateResult.UPDATED;
     }
 
     private LightUpdateResult decrementLight(Block block) {
+        LightUpdateEvent lightUpdateEvent = new LightUpdateEvent(block, - 1);
+        Bukkit.getPluginManager().callEvent(lightUpdateEvent);
+
+        if (lightUpdateEvent.isCancelled()) {
+            return LightUpdateResult.CANCELLED;
+        }
+
         if (! nmsAdapter.isValidBlock(block)) {
             return LightUpdateResult.INVALID_BLOCK;
         }
 
-        int currentLight = block.getLightFromBlocks();
+        int currentLight = lightUpdateEvent.getFromLight();
 
         if (currentLight == 0) {
             return LightUpdateResult.ZERO_REACHED;
         }
 
-        lightUpdater.setLight(block.getLocation(), -- currentLight);
+        lightUpdater.setLight(block.getLocation(), lightUpdateEvent.getToLight());
         return LightUpdateResult.UPDATED;
     }
 
@@ -140,6 +163,20 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             return;
         }
 
+        if (heldItem.getType() == Material.STICK && clickedBlock != null) {
+            // DEBUG code
+
+            BlockFace blockFace = e.getBlockFace();
+            Block relative = clickedBlock.getRelative(blockFace);
+
+            new Thread(() -> {
+                relative.setType(Material.GLOWSTONE);
+                Thread.dumpStack();
+            }).start();
+
+            return;
+        }
+
         if (heldItem.getType() != Material.GLOWSTONE_DUST) {
             return;
         }
@@ -147,13 +184,17 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         LightUpdateResult lightUpdateResult = null;
 
         if (e.getAction() == Action.RIGHT_CLICK_BLOCK) {
-            lightUpdateResult = incrementLight(clickedBlock);
+            if ((lightUpdateResult = incrementLight(clickedBlock)) == LightUpdateResult.CANCELLED) {
+                return;
+            }
 
             if (player.getGameMode() != GameMode.CREATIVE && lightUpdateResult == LightUpdateResult.UPDATED) {
                 heldItem.setAmount(heldItem.getAmount() - 1);
             }
         } else if (e.getAction() == Action.LEFT_CLICK_BLOCK) {
-            lightUpdateResult = decrementLight(clickedBlock);
+            if ((lightUpdateResult = decrementLight(clickedBlock)) == LightUpdateResult.CANCELLED) {
+                return;
+            }
 
             if (player.getGameMode() == GameMode.CREATIVE) {
                 e.setCancelled(true);
@@ -183,7 +224,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             }
 
             case UPDATED: {
-                nmsAdapter.sendActionBarMessage(player, "Updated Light level of block to " + clickedBlock.getLightFromBlocks());
+                nmsAdapter.sendActionBarMessage(player, "Updated Light level");
                 return;
             }
         }

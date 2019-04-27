@@ -61,7 +61,21 @@ public class NmsAdapter_1_12_R1 implements NmsAdapter {
         PlayerChunkMap playerChunkMap = nmsWorld.getPlayerChunkMap();
         PlayerChunk playerChunk = playerChunkMap.getChunk(chunk.getX(), chunk.getZ());
 
-        playerChunk.a(new PacketPlayOutMapChunk(playerChunk.chunk, mask));
+        for (int cy = 0; cy < 16; cy++) {
+            if ((mask & (1 << cy)) == 0) {
+                continue;
+            }
+
+            for (int y = 0; y < 16; y++) {
+                for (int z = 0; z < 16; z++) {
+                    for (int x = 0; x < 16; x++) {
+                        playerChunk.a(x, cy * 16 + y, z);
+                    }
+                }
+            }
+        }
+
+        playerChunk.d();
     }
 
     @Override

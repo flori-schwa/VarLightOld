@@ -1,5 +1,5 @@
 name: VarLight
-version: 1.2.0
+version: 1.2
 author: Florian
 main: me.florian.varlight.VarLightPlugin
 description: Turn Normal Blocks into Light Sources!
