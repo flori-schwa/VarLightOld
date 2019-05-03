@@ -3,14 +3,14 @@
     <output-path>$PROJECT_DIR$/out/artifacts/VarLight_jar</output-path>
     <root id="archive" name="VarLight.jar">
       <element id="module-output" name="Core" />
-      <element id="module-output" name="1.13.2" />
-      <element id="module-output" name="1.12.2" />
+      <element id="module-output" name="v1_13_R2" />
+      <element id="module-output" name="v1_12_R1" />
       <element id="module-output" name="Nms" />
-      <element id="module-output" name="1.10.2" />
-      <element id="module-output" name="1.11.2" />
-      <element id="module-output" name="1.8.8" />
-      <element id="module-output" name="1.9.4" />
-      <element id="module-output" name="1.14" />
+      <element id="module-output" name="v1_10_R1" />
+      <element id="module-output" name="v1_11_R1" />
+      <element id="module-output" name="v1_8_R3" />
+      <element id="module-output" name="v1_9_R2" />
+      <element id="module-output" name="v1_14_R1" />
     </root>
   </artifact>
 </component>

@@ -14,6 +14,7 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Powerable;
 import org.bukkit.block.data.type.Piston;
 import org.bukkit.craftbukkit.v1_14_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_14_R1.block.CraftBlock;
 import org.bukkit.entity.Player;
 import org.bukkit.material.Openable;
 
@@ -76,9 +77,24 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter {
 
     @Override
     public void updateBlockLight(Location at, int lightLevel) {
-        LightEngineThreaded lightEngine = getLightEngine(at.getWorld());
 
+        WorldServer worldServer = getNmsWorld(at.getWorld());
+        BlockPosition blockPosition = toBlockPosition(at);
+
+//        IBlockData base = worldServer.getType(blockPosition).getBlock().getBlockData();
+//
+//        ReflectionHelper.set(base, ReflectionHelper.getField(IBlockData.class, "d"), lightLevel);
+//        CraftBlock.at(worldServer, blockPosition).setTypeAndData(base, true);
+
+        LightEngineThreaded lightEngine = worldServer.getChunkProvider().getLightEngine();
         LightEngineLayer<?, ?> lightEngineBlock = getLightEngineBlock(lightEngine);
+
+        if (worldServer.getBrightness(EnumSkyBlock.BLOCK, blockPosition) > lightLevel) {
+            IBlockData type = worldServer.getType(blockPosition);
+            CraftBlock.at(worldServer, blockPosition).setTypeAndData(Blocks.AIR.getBlockData(), false);
+            CraftBlock.at(worldServer, blockPosition).setTypeAndData(type, false);
+        }
+
         lightEngineBlock.a(toBlockPosition(at), lightLevel);
     }
 

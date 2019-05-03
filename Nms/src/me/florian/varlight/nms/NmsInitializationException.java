@@ -1,11 +1,9 @@
 package me.florian.varlight.nms;
 
-import me.florian.varlight.VarLightPlugin;
-
 public class NmsInitializationException extends RuntimeException {
 
     public NmsInitializationException() {
-        super("Failed to initialize NmsHandler for " + VarLightPlugin.getServerVersion());
+        super("Failed to initialize NmsHandler for");
     }
 
     public NmsInitializationException(String message) {
@@ -17,7 +15,7 @@ public class NmsInitializationException extends RuntimeException {
     }
 
     public NmsInitializationException(Throwable cause) {
-        super("Failed to initialize NmsHandler for " + VarLightPlugin.getServerVersion(), cause);
+        super("Failed to initialize NmsHandler for", cause);
     }
 
     public NmsInitializationException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {

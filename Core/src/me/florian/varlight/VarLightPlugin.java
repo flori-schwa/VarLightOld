@@ -65,7 +65,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         if (! ADAPTERS.containsKey(SERVER_VERSION)) {
             getLogger().severe("------------------------------------------------------");
-            getLogger().severe("Unspported Minecraft version: " + SERVER_VERSION);
+            getLogger().severe("Unsupported Minecraft version: " + SERVER_VERSION);
             getLogger().severe("------------------------------------------------------");
 
             doLoad = false;
@@ -74,7 +74,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         try {
             nmsAdapter = ADAPTERS.get(SERVER_VERSION).getConstructor().newInstance();
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | NmsInitializationException e) {
             getLogger().throwing(getClass().getName(), "onLoad", e);
             doLoad = false;
             return;
