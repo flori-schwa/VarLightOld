@@ -17,7 +17,6 @@ import org.bukkit.material.Redstone;
 
 public class NmsAdapter_1_12_R1 implements NmsAdapter {
 
-
     private Class[] blacklistedDatas = new Class[] {
             Redstone.class,
             DirectionalContainer.class,

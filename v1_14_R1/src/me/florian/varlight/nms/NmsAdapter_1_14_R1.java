@@ -14,7 +14,6 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Powerable;
 import org.bukkit.block.data.type.Piston;
 import org.bukkit.craftbukkit.v1_14_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_14_R1.block.CraftBlock;
 import org.bukkit.entity.Player;
 import org.bukkit.material.Openable;
 
@@ -23,13 +22,16 @@ import java.lang.reflect.Field;
 public class NmsAdapter_1_14_R1 implements NmsAdapter {
 
 
-    private Field lightBlockingField;
-    private Field lightEngineLayerField;
+    private static final Field LIGHT_BLOCKING_FIELD, LIGHT_ENGINE_LAYER_FIELD, LIGHT_ENGINE_FIELD_CHUNK_MAP, LIGHT_ENGINE_FIELD_CHUNK_PROVIDER;
 
-    public NmsAdapter_1_14_R1() {
+    static {
         try {
-            lightBlockingField = ReflectionHelper.Safe.getField(net.minecraft.server.v1_14_R1.Block.class, "v");
-            lightEngineLayerField = ReflectionHelper.Safe.getField(LightEngine.class, "a");
+            LIGHT_BLOCKING_FIELD = ReflectionHelper.Safe.getField(net.minecraft.server.v1_14_R1.Block.class, "v");
+            LIGHT_ENGINE_LAYER_FIELD = ReflectionHelper.Safe.getField(LightEngine.class, "a");
+
+            LIGHT_ENGINE_FIELD_CHUNK_MAP = ReflectionHelper.Safe.getField(PlayerChunkMap.class, "lightEngine");
+            LIGHT_ENGINE_FIELD_CHUNK_PROVIDER = ReflectionHelper.Safe.getField(ChunkProviderServer.class, "lightEngine");
+
         } catch (NoSuchFieldException e) {
             throw new NmsInitializationException(e);
         }
@@ -41,10 +43,33 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter {
 
     private LightEngineLayer<?, ?> getLightEngineBlock(LightEngine lightEngine) {
         try {
-            return ReflectionHelper.Safe.get(lightEngineLayerField, lightEngine);
+            return ReflectionHelper.Safe.get(LIGHT_ENGINE_LAYER_FIELD, lightEngine);
         } catch (IllegalAccessException e) {
             throw new LightUpdateFailedException(e);
         }
+    }
+
+    private boolean isCustomLightEngineInjected(WorldServer worldServer) {
+        try {
+            return ReflectionHelper.Safe.get(LIGHT_ENGINE_FIELD_CHUNK_MAP, worldServer.getChunkProvider().playerChunkMap) instanceof CustomLightEngine
+                    && worldServer.getChunkProvider().getLightEngine() instanceof CustomLightEngine;
+        } catch (IllegalAccessException e) {
+            throw new LightUpdateFailedException(e);
+        }
+    }
+
+    private void injectCustomLightEngine(WorldServer worldServer) throws IllegalAccessException {
+        if (isCustomLightEngineInjected(worldServer)) {
+            return;
+        }
+
+        LightEngineThreaded base = worldServer.getChunkProvider().getLightEngine();
+        CustomLightEngine customLightEngine = new CustomLightEngine(base, worldServer);
+
+        ReflectionHelper.Safe.set(worldServer.getChunkProvider(), LIGHT_ENGINE_FIELD_CHUNK_PROVIDER, customLightEngine);
+        ReflectionHelper.Safe.set(worldServer.getChunkProvider().playerChunkMap, LIGHT_ENGINE_FIELD_CHUNK_MAP, customLightEngine);
+
+        System.out.println("Injected Custom Lighting engine in world " + worldServer.getWorldData().getName());
     }
 
     private WorldServer getNmsWorld(World world) {
@@ -58,7 +83,7 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter {
     @Override
     public boolean isBlockTransparent(Block block) {
         try {
-            return ! (boolean) ReflectionHelper.Safe.get(lightBlockingField, getNmsWorld(block.getWorld()).getType(toBlockPosition(block.getLocation())).getBlock());
+            return ! (boolean) ReflectionHelper.Safe.get(LIGHT_BLOCKING_FIELD, getNmsWorld(block.getWorld()).getType(toBlockPosition(block.getLocation())).getBlock());
         } catch (IllegalAccessException e) {
             throw new LightUpdateFailedException(e);
         }
@@ -66,13 +91,9 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter {
 
     @Override
     public void recalculateBlockLight(Location at) {
-//
 //        LightEngineThreaded lightEngine = getLightEngine(at.getWorld());
-//
-//        LightEngineLayer<?, ?> lightEngineLayer = getLightEngineBlock(lightEngine);
-//        lightEngineLayer.a(toBlockPosition(at));
-
-//        lightEngine.queueUpdate();
+//        lightEngine.a(new ChunkCoordIntPair(toBlockPosition(at)), true);
+//        lightEngine.a(new ChunkCoordIntPair(toBlockPosition(at)), true);
     }
 
     @Override
@@ -81,21 +102,16 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter {
         WorldServer worldServer = getNmsWorld(at.getWorld());
         BlockPosition blockPosition = toBlockPosition(at);
 
-//        IBlockData base = worldServer.getType(blockPosition).getBlock().getBlockData();
-//
-//        ReflectionHelper.set(base, ReflectionHelper.getField(IBlockData.class, "d"), lightLevel);
-//        CraftBlock.at(worldServer, blockPosition).setTypeAndData(base, true);
-
-        LightEngineThreaded lightEngine = worldServer.getChunkProvider().getLightEngine();
-        LightEngineLayer<?, ?> lightEngineBlock = getLightEngineBlock(lightEngine);
-
-        if (worldServer.getBrightness(EnumSkyBlock.BLOCK, blockPosition) > lightLevel) {
-            IBlockData type = worldServer.getType(blockPosition);
-            CraftBlock.at(worldServer, blockPosition).setTypeAndData(Blocks.AIR.getBlockData(), false);
-            CraftBlock.at(worldServer, blockPosition).setTypeAndData(type, false);
+        try {
+            injectCustomLightEngine(worldServer);
+        } catch (IllegalAccessException e) {
+            throw new LightUpdateFailedException(e);
         }
 
-        lightEngineBlock.a(toBlockPosition(at), lightLevel);
+        LightEngineThreaded lightEngine = getLightEngine(at.getWorld());
+
+        LightEngineLayer<?, ?> lightEngineLayer = getLightEngineBlock(lightEngine);
+        lightEngineLayer.a(blockPosition, lightLevel);
     }
 
     @Override

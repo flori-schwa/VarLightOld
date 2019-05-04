@@ -5,9 +5,11 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 
+import java.util.Objects;
+
 public class IntPosition {
 
-    private int x, y, z;
+    private final int x, y, z;
 
     public IntPosition(Location location) {
         this(location.getBlockX(), location.getBlockY(), location.getBlockZ());
@@ -23,24 +25,12 @@ public class IntPosition {
         return x;
     }
 
-    public void setX(int x) {
-        this.x = x;
-    }
-
     public int getY() {
         return y;
     }
 
-    public void setY(int y) {
-        this.y = y;
-    }
-
     public int getZ() {
         return z;
-    }
-
-    public void setZ(int z) {
-        this.z = z;
     }
 
     public boolean outOfBounds() {
@@ -57,5 +47,29 @@ public class IntPosition {
 
     public IntPosition getRelative(BlockFace blockFace) {
         return new IntPosition(x + blockFace.getModX(), y + blockFace.getModY(), z + blockFace.getModZ());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        IntPosition that = (IntPosition) o;
+        return x == that.x &&
+                y == that.y &&
+                z == that.z;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(x, y, z);
+    }
+
+    @Override
+    public String toString() {
+        return "IntPosition{" +
+                "x=" + x +
+                ", y=" + y +
+                ", z=" + z +
+                '}';
     }
 }

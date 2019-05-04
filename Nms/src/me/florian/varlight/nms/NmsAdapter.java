@@ -18,7 +18,7 @@ public interface NmsAdapter {
     void sendChunkUpdates(Chunk chunk, int mask);
 
     default void sendChunkUpdates(Chunk chunk) {
-        sendChunkUpdates(chunk, (1 << 17) - 1);
+        sendChunkUpdates(chunk, (1 << 16) - 1);
     }
 
     boolean isValidBlock(Block block);

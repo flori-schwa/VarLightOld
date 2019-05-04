@@ -4,12 +4,9 @@ import me.florian.varlight.nms.*;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
-import org.bukkit.Sound;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -22,12 +19,12 @@ import java.util.Map;
 
 public class VarLightPlugin extends JavaPlugin implements Listener {
 
-    private static enum LightUpdateResult {
+    private enum LightUpdateResult {
         INVALID_BLOCK,
         ZERO_REACHED,
         FIFTEEN_REACHED,
-        UPDATED,
-        CANCELLED;
+        CANCELLED,
+        UPDATED
     }
 
     private static String SERVER_VERSION;
@@ -103,53 +100,15 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         return nmsAdapter;
     }
 
-    private LightUpdateResult incrementLight(Block block) {
-
-        LightUpdateEvent lightUpdateEvent = new LightUpdateEvent(block, 1);
-        Bukkit.getPluginManager().callEvent(lightUpdateEvent);
-
-        if (lightUpdateEvent.isCancelled()) {
-            return LightUpdateResult.CANCELLED;
-        }
-
-        if (! nmsAdapter.isValidBlock(block)) {
-            return LightUpdateResult.INVALID_BLOCK;
-        }
-
-        int currentLight = lightUpdateEvent.getFromLight();
-
-        if (currentLight == 15) {
-            return LightUpdateResult.FIFTEEN_REACHED;
-        }
-
-        lightUpdater.setLight(block.getLocation(), lightUpdateEvent.getToLight());
-        return LightUpdateResult.UPDATED;
+    private boolean isLightLevelInRange(int lightLevel) {
+        return lightLevel >= 0 && lightLevel <= 15;
     }
 
-    private LightUpdateResult decrementLight(Block block) {
-        LightUpdateEvent lightUpdateEvent = new LightUpdateEvent(block, - 1);
-        Bukkit.getPluginManager().callEvent(lightUpdateEvent);
-
-        if (lightUpdateEvent.isCancelled()) {
-            return LightUpdateResult.CANCELLED;
-        }
-
-        if (! nmsAdapter.isValidBlock(block)) {
-            return LightUpdateResult.INVALID_BLOCK;
-        }
-
-        int currentLight = lightUpdateEvent.getFromLight();
-
-        if (currentLight == 0) {
-            return LightUpdateResult.ZERO_REACHED;
-        }
-
-        lightUpdater.setLight(block.getLocation(), lightUpdateEvent.getToLight());
-        return LightUpdateResult.UPDATED;
+    private boolean canModifyBlockLight(Block block, int mod) {
+        return isLightLevelInRange(block.getLightFromBlocks() + mod);
     }
 
-
-    @EventHandler (priority = EventPriority.HIGHEST)
+    @EventHandler
     public void onInteract(PlayerInteractEvent e) {
         if (e.isCancelled() || (e.getAction() != Action.RIGHT_CLICK_BLOCK && e.getAction() != Action.LEFT_CLICK_BLOCK)) {
             return;
@@ -159,53 +118,65 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         Player player = e.getPlayer();
         ItemStack heldItem = e.getItem();
 
-        if (heldItem == null) {
+        if (heldItem == null || heldItem.getType() != Material.GLOWSTONE_DUST) {
             return;
         }
 
-        if (heldItem.getType() == Material.STICK && clickedBlock != null) {
-            // DEBUG code
+        int mod = 0;
 
-            BlockFace blockFace = e.getBlockFace();
-            Block relative = clickedBlock.getRelative(blockFace);
+        switch (e.getAction()) {
+            case RIGHT_CLICK_BLOCK:
+                mod = 1;
+                break;
+            case LEFT_CLICK_BLOCK:
+                mod = - 1;
+                break;
+        }
 
-            new Thread(() -> {
-                relative.setType(Material.GLOWSTONE);
-                Thread.dumpStack();
-            }).start();
+        boolean creative = player.getGameMode() == GameMode.CREATIVE;
 
+        if (! nmsAdapter.isValidBlock(clickedBlock)) {
+            displayMessage(player, LightUpdateResult.INVALID_BLOCK);
             return;
         }
 
-        if (heldItem.getType() != Material.GLOWSTONE_DUST) {
+        if (! canModifyBlockLight(clickedBlock, mod)) {
+            displayMessage(player, mod < 0 ? LightUpdateResult.ZERO_REACHED : LightUpdateResult.FIFTEEN_REACHED);
             return;
         }
 
-        LightUpdateResult lightUpdateResult = null;
+        LightUpdateEvent lightUpdateEvent = new LightUpdateEvent(clickedBlock, mod);
+        Bukkit.getPluginManager().callEvent(lightUpdateEvent);
 
-        if (e.getAction() == Action.RIGHT_CLICK_BLOCK) {
-            if ((lightUpdateResult = incrementLight(clickedBlock)) == LightUpdateResult.CANCELLED) {
-                return;
-            }
-
-            if (player.getGameMode() != GameMode.CREATIVE && lightUpdateResult == LightUpdateResult.UPDATED) {
-                heldItem.setAmount(heldItem.getAmount() - 1);
-            }
-        } else if (e.getAction() == Action.LEFT_CLICK_BLOCK) {
-            if ((lightUpdateResult = decrementLight(clickedBlock)) == LightUpdateResult.CANCELLED) {
-                return;
-            }
-
-            if (player.getGameMode() == GameMode.CREATIVE) {
-                e.setCancelled(true);
-            }
-        }
-
-        if (lightUpdateResult == null) {
+        if (lightUpdateEvent.isCancelled()) {
+            displayMessage(player, LightUpdateResult.CANCELLED);
             return;
         }
 
+        int lightTo = lightUpdateEvent.getToLight();
+
+        if (! isLightLevelInRange(lightTo)) {
+            throw new IllegalStateException("Cannot set light level below 0 or above 15.");
+        }
+
+        lightUpdater.setLight(clickedBlock.getLocation(), lightTo);
+
+        e.setCancelled(creative);
+
+        if (! creative && e.getAction() == Action.RIGHT_CLICK_BLOCK) {
+            heldItem.setAmount(heldItem.getAmount() - 1);
+        }
+    }
+
+    private void displayMessage(Player player, LightUpdateResult lightUpdateResult) {
         switch (lightUpdateResult) {
+
+            case CANCELLED: {
+                if (isDebug()) {
+                    nmsAdapter.sendActionBarMessage(player, "Cancelled");
+                }
+            }
+
             case INVALID_BLOCK: {
                 if (isDebug()) {
                     nmsAdapter.sendActionBarMessage(player, "Invalid Block.");
