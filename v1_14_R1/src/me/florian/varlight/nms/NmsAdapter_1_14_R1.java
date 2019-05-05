@@ -18,11 +18,14 @@ import org.bukkit.entity.Player;
 import org.bukkit.material.Openable;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 public class NmsAdapter_1_14_R1 implements NmsAdapter {
 
 
-    private static final Field LIGHT_BLOCKING_FIELD, LIGHT_ENGINE_LAYER_FIELD, LIGHT_ENGINE_FIELD_CHUNK_MAP, LIGHT_ENGINE_FIELD_CHUNK_PROVIDER;
+    private static final Field LIGHT_BLOCKING_FIELD, LIGHT_ENGINE_LAYER_FIELD, LIGHT_ENGINE_FIELD_CHUNK_MAP, LIGHT_ENGINE_FIELD_CHUNK_PROVIDER, LIGHT_ENGINE_LAYER_STORAGE_FIELD, LIGHT_ENGINE_THREADED_MAILBOX_FIELD;
+    private static final Method LIGHT_ENGINE_STORAGE_WRITE_DATA_METHOD;
 
     static {
         try {
@@ -32,7 +35,13 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter {
             LIGHT_ENGINE_FIELD_CHUNK_MAP = ReflectionHelper.Safe.getField(PlayerChunkMap.class, "lightEngine");
             LIGHT_ENGINE_FIELD_CHUNK_PROVIDER = ReflectionHelper.Safe.getField(ChunkProviderServer.class, "lightEngine");
 
-        } catch (NoSuchFieldException e) {
+            LIGHT_ENGINE_THREADED_MAILBOX_FIELD = ReflectionHelper.Safe.getField(LightEngineThreaded.class, "e");
+
+            LIGHT_ENGINE_LAYER_STORAGE_FIELD = ReflectionHelper.Safe.getField(LightEngineLayer.class, "c");
+
+            LIGHT_ENGINE_STORAGE_WRITE_DATA_METHOD = ReflectionHelper.Safe.getMethod(LightEngineStorage.class, "b", long.class, int.class);
+
+        } catch (NoSuchFieldException | NoSuchMethodException e) {
             throw new NmsInitializationException(e);
         }
     }
@@ -93,7 +102,30 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter {
     public void recalculateBlockLight(Location at) {
 //        LightEngineThreaded lightEngine = getLightEngine(at.getWorld());
 //        lightEngine.a(new ChunkCoordIntPair(toBlockPosition(at)), true);
-//        lightEngine.a(new ChunkCoordIntPair(toBlockPosition(at)), true);
+    }
+
+    private LightEngineStorage getStorage(LightEngineLayer engineLayer) {
+        try {
+            return ReflectionHelper.Safe.get(LIGHT_ENGINE_LAYER_STORAGE_FIELD, engineLayer);
+        } catch (IllegalAccessException e) {
+            throw new LightUpdateFailedException(e);
+        }
+    }
+
+    private void writeToStorage(BlockPosition blockPosition, int lightLevel, LightEngineStorage theStorage) {
+        try {
+            ReflectionHelper.Safe.invoke(theStorage, LIGHT_ENGINE_STORAGE_WRITE_DATA_METHOD, blockPosition.asLong(), lightLevel);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new LightUpdateFailedException(e);
+        }
+    }
+
+    private Mailbox getMailbox(LightEngineThreaded lightEngineThreaded) {
+        try {
+            return ReflectionHelper.Safe.get(LIGHT_ENGINE_THREADED_MAILBOX_FIELD, lightEngineThreaded);
+        } catch (IllegalAccessException e) {
+            throw new LightUpdateFailedException(e);
+        }
     }
 
     @Override
@@ -108,10 +140,22 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter {
             throw new LightUpdateFailedException(e);
         }
 
+
         LightEngineThreaded lightEngine = getLightEngine(at.getWorld());
 
+        System.out.println(getMailbox(lightEngine).getClass().getName());
+
         LightEngineLayer<?, ?> lightEngineLayer = getLightEngineBlock(lightEngine);
-        lightEngineLayer.a(blockPosition, lightLevel);
+
+        writeToStorage(blockPosition, lightLevel, getStorage(lightEngineLayer));
+//        lightEngine.a(worldServer.getChunkAtWorldCoords(blockPosition), false);
+
+        worldServer.getChunkAtWorldCoords(blockPosition).b(false);
+
+        PlayerChunkMap playerChunkMap = worldServer.getChunkProvider().playerChunkMap;
+        playerChunkMap.a(playerChunkMap.visibleChunks.get(new ChunkCoordIntPair(blockPosition).pair()), ChunkStatus.LIGHT);
+
+
     }
 
     @Override

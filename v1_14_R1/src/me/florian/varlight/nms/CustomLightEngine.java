@@ -24,7 +24,7 @@ public class CustomLightEngine extends LightEngineThreaded {
             POST_UPDATE = values[1];
 
             METHOD_INIT_UPDATE = ReflectionHelper.Safe.getMethod(LightEngineThreaded.class, "a", int.class, int.class, updateClass, Runnable.class);
-            METHOD_UPDATE_SECTION = ReflectionHelper.Safe.getMethod(LightEngine.class, "a", SectionPosition.class, boolean.class);
+            METHOD_UPDATE_SECTION = ReflectionHelper.Safe.getMethod(LightEngine.class, "a", SectionPosition.class, boolean.class); // TODO This doesn't work, you cannot access the superclass' implementation using reflection
             METHOD_UPDATE_CHUNK = ReflectionHelper.Safe.getMethod(LightEngine.class, "a", ChunkCoordIntPair.class, boolean.class);
             METHOD_UPDATE_LIGHT = ReflectionHelper.Safe.getMethod(LightEngine.class, "a", BlockPosition.class, int.class);
 
@@ -50,7 +50,9 @@ public class CustomLightEngine extends LightEngineThreaded {
 
         this.base = base;
 
-        ReflectionHelper.Safe.set(this, FIELD_LIGHT_ENGINE_BLOCK, new CustomLightEngineBlock(ReflectionHelper.Safe.get(FIELD_LIGHT_ENGINE_BLOCK, base), worldServer));
+//        LightEngineBlock blockLayer = ReflectionHelper.Safe.get(FIELD_LIGHT_ENGINE_BLOCK, base);
+
+        ReflectionHelper.Safe.set(this, FIELD_LIGHT_ENGINE_BLOCK, ReflectionHelper.Safe.get(FIELD_LIGHT_ENGINE_BLOCK, base));
         ReflectionHelper.Safe.set(this, FIELD_LIGHT_ENGINE_SKY, ReflectionHelper.Safe.get(FIELD_LIGHT_ENGINE_SKY, base));
     }
 
@@ -90,7 +92,13 @@ public class CustomLightEngine extends LightEngineThreaded {
     public CompletableFuture<IChunkAccess> a(IChunkAccess iChunkAccess, boolean flag) {
         ChunkCoordIntPair chunkCoordIntPair = iChunkAccess.getPos();
 
+        System.out.println("lightChunk " + chunkCoordIntPair + " " + flag);
+//        Thread.dumpStack();
+
         initUpdate(chunkCoordIntPair.x, chunkCoordIntPair.z, PRE_UPDATE, SystemUtils.a(() -> {
+
+            System.out.println("Running");
+
             ChunkSection[] sections = iChunkAccess.getSections();
 
             for (int sectionY = 0; sectionY < 16; sectionY++) {
@@ -103,9 +111,17 @@ public class CustomLightEngine extends LightEngineThreaded {
 
             updateChunk(chunkCoordIntPair, true);
 
+            final LightEngineBlock lightEngineBlock = (LightEngineBlock) a(EnumSkyBlock.BLOCK);
+
             if (! flag) {
-                iChunkAccess.m().forEach(blockPos ->
-                        updateLight(blockPos, Math.max(iChunkAccess.h(blockPos), a(EnumSkyBlock.BLOCK).b(blockPos)))
+                iChunkAccess.m().forEach(blockPos -> {
+                            int emitting = iChunkAccess.h(blockPos);
+                            int brightness = lightEngineBlock.b(blockPos);
+
+                            System.out.printf("e: %d, b: %d%n", emitting, brightness);
+
+                            updateLight(blockPos, Math.max(emitting, brightness));
+                        }
                 );
             }
 
