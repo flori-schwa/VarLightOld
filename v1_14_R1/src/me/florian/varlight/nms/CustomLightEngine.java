@@ -1,11 +1,14 @@
 package me.florian.varlight.nms;
 
 import net.minecraft.server.v1_14_R1.*;
+import org.bukkit.craftbukkit.libs.it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 
+import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.StreamSupport;
 
 public class CustomLightEngine extends LightEngineThreaded {
 
@@ -38,22 +41,48 @@ public class CustomLightEngine extends LightEngineThreaded {
         }
     }
 
-    private LightEngineThreaded base;
+    private LightEngineThreaded wrapped;
 
-    public CustomLightEngine(LightEngineThreaded base, WorldServer worldServer) throws IllegalAccessException {
+    public CustomLightEngine(LightEngineThreaded wrapped, WorldServer worldServer) throws IllegalAccessException {
         super(
-                worldServer.getChunkProvider(),
+                new ILightAccess() {
+                    private final IBlockAccess cachedForWorld = new WrappedIBlockAccess(worldServer);
+                    private final Long2ObjectLinkedOpenHashMap<WrappedIBlockAccess> chunks = new Long2ObjectLinkedOpenHashMap<>();
+
+                    @Nullable
+                    @Override
+                    public IBlockAccess b(int chunkX, int chunkZ) {
+                        long encoded = ChunkCoordIntPair.pair(chunkX, chunkZ);
+
+                        if (chunks.containsKey(encoded)) {
+                            return chunks.get(encoded);
+                        }
+
+                        IBlockAccess iBlockAccess = worldServer.getChunkProvider().b(chunkX, chunkZ);
+
+                        if (iBlockAccess == null) {
+                            return null;
+                        }
+
+                        WrappedIBlockAccess wrapped = new WrappedIBlockAccess(iBlockAccess);
+                        chunks.put(encoded, wrapped);
+                        return wrapped;
+                    }
+
+                    @Override
+                    public IBlockAccess getWorld() {
+                        return cachedForWorld;
+                    }
+                },
                 worldServer.getChunkProvider().playerChunkMap,
                 worldServer.getWorldProvider().g(),
-                ReflectionHelper.Safe.get(FIELD_THREADED_MAILBOX, base),
-                ReflectionHelper.Safe.get(FIELD_MAILBOX, base));
+                ReflectionHelper.Safe.get(FIELD_THREADED_MAILBOX, wrapped),
+                ReflectionHelper.Safe.get(FIELD_MAILBOX, wrapped));
 
-        this.base = base;
+        this.wrapped = wrapped;
 
-//        LightEngineBlock blockLayer = ReflectionHelper.Safe.get(FIELD_LIGHT_ENGINE_BLOCK, base);
-
-        ReflectionHelper.Safe.set(this, FIELD_LIGHT_ENGINE_BLOCK, ReflectionHelper.Safe.get(FIELD_LIGHT_ENGINE_BLOCK, base));
-        ReflectionHelper.Safe.set(this, FIELD_LIGHT_ENGINE_SKY, ReflectionHelper.Safe.get(FIELD_LIGHT_ENGINE_SKY, base));
+        ReflectionHelper.Safe.set(this, FIELD_LIGHT_ENGINE_BLOCK, ReflectionHelper.Safe.get(FIELD_LIGHT_ENGINE_BLOCK, wrapped));
+        ReflectionHelper.Safe.set(this, FIELD_LIGHT_ENGINE_SKY, ReflectionHelper.Safe.get(FIELD_LIGHT_ENGINE_SKY, wrapped));
     }
 
     private void initUpdate(int x, int z, Object update, Runnable runnable) {
@@ -114,15 +143,16 @@ public class CustomLightEngine extends LightEngineThreaded {
             final LightEngineBlock lightEngineBlock = (LightEngineBlock) a(EnumSkyBlock.BLOCK);
 
             if (! flag) {
-                iChunkAccess.m().forEach(blockPos -> {
-                            int emitting = iChunkAccess.h(blockPos);
-                            int brightness = lightEngineBlock.b(blockPos);
+                StreamSupport.stream(BlockPosition.b(iChunkAccess.getPos().d(), 0, iChunkAccess.getPos().e(), iChunkAccess.getPos().f(), 255, iChunkAccess.getPos().g()).spliterator(), false).forEach(pos -> {
+                    int emitting = iChunkAccess.h(pos);
+                    int brightness = lightEngineBlock.b(pos);
 
-                            System.out.printf("e: %d, b: %d%n", emitting, brightness);
+                    if (emitting == 0 || brightness == 0) {
+                        return;
+                    }
 
-                            updateLight(blockPos, Math.max(emitting, brightness));
-                        }
-                );
+                    lightEngineBlock.a(pos, Math.max(emitting, brightness));
+                });
             }
 
 
@@ -136,21 +166,21 @@ public class CustomLightEngine extends LightEngineThreaded {
 
     @Override
     public void a(BlockPosition var0) {
-        base.a(var0);
+        wrapped.a(var0);
     }
 
     @Override
     public void a(ChunkCoordIntPair var0, boolean var1) {
-        base.a(var0, var1);
+        wrapped.a(var0, var1);
     }
 
     @Override
     public void a(EnumSkyBlock var0, SectionPosition var1, NibbleArray var2) {
-        base.a(var0, var1, var2);
+        wrapped.a(var0, var1, var2);
     }
 
     @Override
     public void queueUpdate() {
-        base.queueUpdate();
+        wrapped.queueUpdate();
     }
 }

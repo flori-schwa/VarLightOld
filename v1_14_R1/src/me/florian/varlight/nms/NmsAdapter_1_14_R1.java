@@ -228,11 +228,11 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter {
 //
 //        System.out.println(worldServer.getChunkAtWorldCoords(blockPosition).a(blockPosition, lightLevel, false));
 
-//        try {
-//            injectCustomLightEngine(worldServer);
-//        } catch (IllegalAccessException e) {
-//            throw new LightUpdateFailedException(e);
-//        }
+        try {
+            injectCustomLightEngine(worldServer);
+        } catch (IllegalAccessException e) {
+            throw new LightUpdateFailedException(e);
+        }
 
         LightEngineThreaded lightEngine = getLightEngine(at.getWorld());
         LightEngineLayer<?, ?> lightEngineLayer = getLightEngineBlock(lightEngine);
