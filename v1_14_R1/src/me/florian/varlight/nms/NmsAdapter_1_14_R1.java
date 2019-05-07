@@ -1,6 +1,8 @@
 package me.florian.varlight.nms;
 
 
+import me.florian.varlight.nms.persistence.LightSourcePersistor;
+import me.florian.varlight.nms.persistence.PersistentLightSource;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.server.v1_14_R1.*;
@@ -16,9 +18,6 @@ import org.bukkit.block.data.Powerable;
 import org.bukkit.block.data.type.Piston;
 import org.bukkit.craftbukkit.v1_14_R1.CraftWorld;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.block.*;
 import org.bukkit.material.Openable;
 import org.bukkit.plugin.Plugin;
 
@@ -62,7 +61,7 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter {
         }
     }
 
-    private Plugin getPlugin() {
+    private static Plugin getPlugin() {
         return Bukkit.getPluginManager().getPlugin("VarLight");
     }
 
@@ -114,102 +113,12 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter {
         }
     }
 
-    private LightEngineStorage getStorage(LightEngineLayer engineLayer) {
-        try {
-            return ReflectionHelper.Safe.get(FIELD_LIGHT_ENGINE_LAYER_STORAGE, engineLayer);
-        } catch (IllegalAccessException e) {
-            throw new LightUpdateFailedException(e);
-        }
-    }
-
-    private void writeToStorage(BlockPosition blockPosition, int lightLevel, LightEngineStorage theStorage) {
-        try {
-            ReflectionHelper.Safe.invoke(theStorage, LIGHT_ENGINE_STORAGE_WRITE_DATA_METHOD, blockPosition.asLong(), lightLevel);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new LightUpdateFailedException(e);
-        }
-    }
-
-    private Mailbox getMailbox(LightEngineThreaded lightEngineThreaded) {
-        try {
-            return ReflectionHelper.Safe.get(LIGHT_ENGINE_THREADED_MAILBOX_FIELD, lightEngineThreaded);
-        } catch (IllegalAccessException e) {
-            throw new LightUpdateFailedException(e);
-        }
-    }
-
-    private NibbleArray getNibbleArrayStorage(LightEngineLayer engineLayer, BlockPosition blockPosition, boolean flag) {
-        try {
-            return (NibbleArray) ReflectionHelper.Safe.invoke(getStorage(engineLayer), METHOD_LIGHT_ENGINE_STORAGE_GET_NIBBLE_ARRAY, SectionPosition.e(blockPosition.asLong()), flag);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new LightUpdateFailedException(e);
-        }
-    }
-
-    @EventHandler (priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onBlockExplode(BlockExplodeEvent e) {
-        invalidate(e);
-        update(e);
-    }
-
-    @EventHandler (priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onBlockBurn(BlockBurnEvent e) {
-        invalidate(e);
-        update(e);
-    }
-
-    @EventHandler (priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onBlockBreak(BlockBreakEvent e) {
-        invalidate(e);
-        update(e);
-    }
-
-    @EventHandler (priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onBlockPlace(BlockPlaceEvent e) {
-        update(e);
-    }
-
-
-//    private boolean validateBlock(Block block) {
-//        if (!block.hasMetadata(TAG_METADATA_KEY)) {
-//            return false;
-//        }
-//
-//        return block.getType() == block.getMetadata(TAG_METADATA_KEY).stream().filter(m -> m.getOwningPlugin().getName().equals("VarLight")).findAny().get().
-//    }
-    private void invalidate(BlockEvent blockEvent) {
-//        blockEvent.getBlock().removeMetadata(TAG_METADATA_KEY, getPlugin());
-    }
-
-    private void update(BlockEvent e) {
-//        Block theBlock = e.getBlock();
-//
-//        if (theBlock.getLightFromBlocks() == getEmittingLightLevel(theBlock)) {
-//            return;
-//        }
-//
-//        for (BlockFace blockFace : CHECK_FACES) {
-//            Block adjacent = theBlock.getRelative(blockFace);
-//
-//            int blockLight = adjacent.getLightFromBlocks();
-//            System.out.println(theBlock.getLocation() + " " + blockLight);
-//
-//            if (!adjacent.hasMetadata(TAG_METADATA_KEY)) {
-//                continue;
-//            }
-//
-//            Bukkit.getScheduler().scheduleSyncDelayedTask(
-//                    Objects.requireNonNull(Bukkit.getPluginManager().getPlugin("VarLight")),
-//                    () -> updateBlockLight(adjacent.getLocation(), blockLight), 1L);
-//        }
-    }
-
-    private void checkBlock(LightEngineLayer lightEngineLayer, BlockPosition blockPosition) {
-        try {
-            ReflectionHelper.Safe.invoke(lightEngineLayer, METHOD_LIGHT_ENGINE_LAYER_CHECK_BLOCK, blockPosition.asLong());
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new LightUpdateFailedException(e);
-        }
+    protected static int getBrightness(WorldServer world, BlockPosition blockPosition) {
+        return Math.max(LightSourcePersistor
+                .getPersistor(getPlugin(), world.getWorld())
+                .getPersistentLightSource(blockPosition.getX(), blockPosition.getY(), blockPosition.getZ())
+                .map(PersistentLightSource::getEmittingLight)
+                .orElse((byte) 0), world.getType(blockPosition).h());
     }
 
     @Override
@@ -240,12 +149,15 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter {
         lightEngineLayer.a(blockPosition, lightLevel); // Write light level to Block Light Engine
 //        getNibbleArrayStorage(lightEngineLayer, blockPosition, true).a(blockPosition.getX() & 0xF, blockPosition.getY() & 0xF, blockPosition.getZ() & 0xF, lightLevel);
 //
-        lightEngine.a(worldServer.getChunkAtWorldCoords(blockPosition), true);
 //        lightEngine.a(blockPosition);
 
-        for (EnumDirection direction : EnumDirection.values()) {
-            checkBlock(lightEngineLayer, blockPosition.shift(direction));
-        }
+//        for (EnumDirection direction : EnumDirection.values()) {
+//            checkBlock(lightEngineLayer, blockPosition.shift(direction));
+//        }
+
+        lightEngine.a(worldServer.getChunkAtWorldCoords(blockPosition), true);
+
+//        worldServer.getMinecraftServer().awaitTasks(lightEngine.a(worldServer.getChunkAtWorldCoords(blockPosition), true)::isDone);
 
 //        lightEngine.queueUpdate();
 //

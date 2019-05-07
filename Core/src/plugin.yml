@@ -3,7 +3,12 @@ version: 1.3-INDEV
 author: Florian
 main: me.florian.varlight.VarLightPlugin
 description: Turn Normal Blocks into Light Sources!
-api-version: 1.13
+api-version: "1.13"
 
 softdepend:
   - LightAPI
+
+commands:
+  save-lights:
+    description: Save all persisten lights to disk
+    permission: varlight.admin

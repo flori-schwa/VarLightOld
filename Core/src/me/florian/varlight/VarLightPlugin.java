@@ -1,10 +1,13 @@
 package me.florian.varlight;
 
 import me.florian.varlight.nms.*;
+import me.florian.varlight.nms.persistence.LightSourcePersistor;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -97,6 +100,23 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         Bukkit.getPluginManager().registerEvents(this, this);
     }
 
+    @Override
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if ("save-lights".equals(command.getName()) && sender instanceof Player) {
+            Player player = (Player) sender;
+
+            LightSourcePersistor lightSourcePersistor = LightSourcePersistor.getPersistor(this, player.getWorld());
+
+            if (isDebug()) {
+                lightSourcePersistor.createPersistentLightSource(new IntPosition(player.getLocation()), 5).setEmittingLight(10);
+            }
+
+            lightSourcePersistor.save(this);
+        }
+
+        return true;
+    }
+
     public NmsAdapter getNmsAdapter() {
         return nmsAdapter;
     }
@@ -159,6 +179,10 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         if (! isLightLevelInRange(lightTo)) {
             throw new IllegalStateException("Cannot set light level below 0 or above 15.");
         }
+
+        LightSourcePersistor.getPersistor(this, clickedBlock.getWorld())
+                .getOrCreatePersistentLightSource(new IntPosition(clickedBlock.getLocation()), lightTo)
+                .setEmittingLight(lightTo);
 
         lightUpdater.setLight(clickedBlock.getLocation(), lightTo);
 

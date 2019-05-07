@@ -3,13 +3,16 @@ package me.florian.varlight.nms;
 import net.minecraft.server.v1_14_R1.*;
 
 import javax.annotation.Nullable;
+import java.util.logging.Logger;
 
 public class WrappedIBlockAccess implements IBlockAccess {
 
     private IBlockAccess wrapped;
+    private WorldServer worldServer;
 
-    public WrappedIBlockAccess(IBlockAccess wrapped) {
+    public WrappedIBlockAccess(WorldServer worldServer, IBlockAccess wrapped) {
         this.wrapped = wrapped;
+        this.worldServer = worldServer;
     }
 
     @Nullable
@@ -30,9 +33,9 @@ public class WrappedIBlockAccess implements IBlockAccess {
 
     @Override
     public int h(BlockPosition position) {
-        int emitting = wrapped.h(position);
-        int customLightSource = 0;// TODO get light level from persistence
+        int b = NmsAdapter_1_14_R1.getBrightness(worldServer, position);
+        Logger.getLogger(getClass().getName()).info(String.valueOf(b));
 
-        return Math.max(emitting, customLightSource);
+        return b;
     }
 }

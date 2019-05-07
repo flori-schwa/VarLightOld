@@ -3,18 +3,19 @@ package me.florian.varlight.nms;
 import net.minecraft.server.v1_14_R1.*;
 import org.bukkit.craftbukkit.libs.it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 
-import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Logger;
 import java.util.stream.StreamSupport;
 
 public class CustomLightEngine extends LightEngineThreaded {
 
     private static final Object PRE_UPDATE, POST_UPDATE;
-    private static final Method METHOD_INIT_UPDATE, METHOD_UPDATE_SECTION, METHOD_UPDATE_CHUNK, METHOD_UPDATE_LIGHT;
-    private static final Field FIELD_LIGHT_ENGINE_BLOCK, FIELD_LIGHT_ENGINE_SKY, FIELD_THREADED_MAILBOX, FIELD_MAILBOX;
+    private static final Method METHOD_INIT_UPDATE;
+    private static final Field FIELD_LIGHT_ENGINE_BLOCK, FIELD_LIGHT_ENGINE_SKY, FIELD_THREADED_MAILBOX, FIELD_MAILBOX, FIELD_LIGHT_ENGINE_LAYER_I_LIGHT_ACCESS;
 
     static {
         try {
@@ -27,62 +28,79 @@ public class CustomLightEngine extends LightEngineThreaded {
             POST_UPDATE = values[1];
 
             METHOD_INIT_UPDATE = ReflectionHelper.Safe.getMethod(LightEngineThreaded.class, "a", int.class, int.class, updateClass, Runnable.class);
-            METHOD_UPDATE_SECTION = ReflectionHelper.Safe.getMethod(LightEngine.class, "a", SectionPosition.class, boolean.class); // TODO This doesn't work, you cannot access the superclass' implementation using reflection
-            METHOD_UPDATE_CHUNK = ReflectionHelper.Safe.getMethod(LightEngine.class, "a", ChunkCoordIntPair.class, boolean.class);
-            METHOD_UPDATE_LIGHT = ReflectionHelper.Safe.getMethod(LightEngine.class, "a", BlockPosition.class, int.class);
 
-            FIELD_LIGHT_ENGINE_BLOCK = ReflectionHelper.getField(LightEngine.class, "a");
-            FIELD_LIGHT_ENGINE_SKY = ReflectionHelper.getField(LightEngine.class, "b");
+            FIELD_LIGHT_ENGINE_BLOCK = ReflectionHelper.Safe.getField(LightEngine.class, "a");
+            FIELD_LIGHT_ENGINE_SKY = ReflectionHelper.Safe.getField(LightEngine.class, "b");
 
-            FIELD_THREADED_MAILBOX = ReflectionHelper.getField(LightEngineThreaded.class, "b");
-            FIELD_MAILBOX = ReflectionHelper.getField(LightEngineThreaded.class, "e");
-        } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+            FIELD_THREADED_MAILBOX = ReflectionHelper.Safe.getField(LightEngineThreaded.class, "b");
+            FIELD_MAILBOX = ReflectionHelper.Safe.getField(LightEngineThreaded.class, "e");
+
+            FIELD_LIGHT_ENGINE_LAYER_I_LIGHT_ACCESS = ReflectionHelper.Safe.getField(LightEngineLayer.class, "a");
+        } catch (NoSuchFieldException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
             throw new NmsInitializationException(e);
         }
     }
 
+    private WorldServer worldServer;
     private LightEngineThreaded wrapped;
 
     public CustomLightEngine(LightEngineThreaded wrapped, WorldServer worldServer) throws IllegalAccessException {
         super(
-                new ILightAccess() {
-                    private final IBlockAccess cachedForWorld = new WrappedIBlockAccess(worldServer);
-                    private final Long2ObjectLinkedOpenHashMap<WrappedIBlockAccess> chunks = new Long2ObjectLinkedOpenHashMap<>();
-
-                    @Nullable
-                    @Override
-                    public IBlockAccess b(int chunkX, int chunkZ) {
-                        long encoded = ChunkCoordIntPair.pair(chunkX, chunkZ);
-
-                        if (chunks.containsKey(encoded)) {
-                            return chunks.get(encoded);
-                        }
-
-                        IBlockAccess iBlockAccess = worldServer.getChunkProvider().b(chunkX, chunkZ);
-
-                        if (iBlockAccess == null) {
-                            return null;
-                        }
-
-                        WrappedIBlockAccess wrapped = new WrappedIBlockAccess(iBlockAccess);
-                        chunks.put(encoded, wrapped);
-                        return wrapped;
-                    }
-
-                    @Override
-                    public IBlockAccess getWorld() {
-                        return cachedForWorld;
-                    }
-                },
+                worldServer.getChunkProvider(),
                 worldServer.getChunkProvider().playerChunkMap,
                 worldServer.getWorldProvider().g(),
                 ReflectionHelper.Safe.get(FIELD_THREADED_MAILBOX, wrapped),
                 ReflectionHelper.Safe.get(FIELD_MAILBOX, wrapped));
 
+
+        ILightAccess custom = new ILightAccess() {
+            private final IBlockAccess cachedForWorld = new WrappedIBlockAccess(worldServer, worldServer);
+            private final Long2ObjectLinkedOpenHashMap<WrappedIBlockAccess> chunks = new Long2ObjectLinkedOpenHashMap<>();
+
+
+            @Override
+            public IBlockAccess b(int chunkX, int chunkZ) {
+//                        long encoded = ChunkCoordIntPair.pair(chunkX, chunkZ);
+//
+//                        if (chunks.containsKey(encoded) && chunks.get(encoded).) {
+//                            return chunks.get(encoded);
+//                        }
+//
+                IBlockAccess iBlockAccess = worldServer.getChunkProvider().b(chunkX, chunkZ);
+//
+//                        if (iBlockAccess == null) {
+//                            return null;
+//                        }
+//
+//                        WrappedIBlockAccess wrapped = ;
+//                        chunks.put(encoded, wrapped);
+                return new WrappedIBlockAccess(worldServer, iBlockAccess);
+            }
+
+            @Override
+            public IBlockAccess getWorld() {
+                return cachedForWorld;
+            }
+        };
+
+        this.worldServer = worldServer;
         this.wrapped = wrapped;
 
-        ReflectionHelper.Safe.set(this, FIELD_LIGHT_ENGINE_BLOCK, ReflectionHelper.Safe.get(FIELD_LIGHT_ENGINE_BLOCK, wrapped));
-        ReflectionHelper.Safe.set(this, FIELD_LIGHT_ENGINE_SKY, ReflectionHelper.Safe.get(FIELD_LIGHT_ENGINE_SKY, wrapped));
+        ReflectionHelper.Safe.set(this, FIELD_LIGHT_ENGINE_BLOCK, wrapped.a(EnumSkyBlock.BLOCK));
+        ReflectionHelper.Safe.set(this, FIELD_LIGHT_ENGINE_SKY, wrapped.a(EnumSkyBlock.SKY));
+
+        injectToBlockEngine(custom, EnumSkyBlock.BLOCK);
+        injectToBlockEngine(custom, EnumSkyBlock.SKY);
+    }
+
+    private void injectToBlockEngine(ILightAccess lightAccess, EnumSkyBlock enumSkyBlock) throws IllegalAccessException {
+        LightEngineLayer engineLayer = (LightEngineLayer) Optional.ofNullable(a(enumSkyBlock)).orElse(null);
+
+        if (engineLayer == null) {
+            return;
+        }
+
+        ReflectionHelper.Safe.set(engineLayer, FIELD_LIGHT_ENGINE_LAYER_I_LIGHT_ACCESS, lightAccess);
     }
 
     private void initUpdate(int x, int z, Object update, Runnable runnable) {
@@ -94,27 +112,13 @@ public class CustomLightEngine extends LightEngineThreaded {
     }
 
     private void updateSection(SectionPosition sectionPosition, boolean flag) {
-        try {
-            ReflectionHelper.Safe.invoke(this, METHOD_UPDATE_SECTION, sectionPosition, flag);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new LightUpdateFailedException(e);
-        }
+        Optional.ofNullable(a(EnumSkyBlock.BLOCK)).ifPresent(l -> l.a(sectionPosition, flag));
+        Optional.ofNullable(a(EnumSkyBlock.SKY)).ifPresent(l -> l.a(sectionPosition, flag));
     }
 
     private void updateChunk(ChunkCoordIntPair chunkCoordIntPair, boolean flag) {
-        try {
-            ReflectionHelper.Safe.invoke(this, METHOD_UPDATE_CHUNK, chunkCoordIntPair, flag);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new LightUpdateFailedException(e);
-        }
-    }
-
-    private void updateLight(BlockPosition blockPosition, int lightLevel) {
-        try {
-            ReflectionHelper.Safe.invoke(this, METHOD_UPDATE_LIGHT, blockPosition, lightLevel);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new LightUpdateFailedException(e);
-        }
+        Optional.ofNullable(a(EnumSkyBlock.BLOCK)).map(l -> (LightEngineLayer) l).ifPresent(l -> l.a(chunkCoordIntPair, flag));
+        Optional.ofNullable(a(EnumSkyBlock.SKY)).map(l -> (LightEngineLayer) l).ifPresent(l -> l.a(chunkCoordIntPair, flag));
     }
 
     @Override
@@ -144,14 +148,15 @@ public class CustomLightEngine extends LightEngineThreaded {
 
             if (! flag) {
                 StreamSupport.stream(BlockPosition.b(iChunkAccess.getPos().d(), 0, iChunkAccess.getPos().e(), iChunkAccess.getPos().f(), 255, iChunkAccess.getPos().g()).spliterator(), false).forEach(pos -> {
-                    int emitting = iChunkAccess.h(pos);
-                    int brightness = lightEngineBlock.b(pos);
+                    int brightness = NmsAdapter_1_14_R1.getBrightness(worldServer, pos);
 
-                    if (emitting == 0 || brightness == 0) {
+                    Logger.getLogger(getClass().getName()).info(String.valueOf(brightness));
+
+                    if (brightness == 0) {
                         return;
                     }
 
-                    lightEngineBlock.a(pos, Math.max(emitting, brightness));
+                    lightEngineBlock.a(pos, brightness);
                 });
             }
 

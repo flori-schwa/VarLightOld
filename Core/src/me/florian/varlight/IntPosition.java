@@ -33,6 +33,14 @@ public class IntPosition {
         return z;
     }
 
+    public int getChunkX() {
+        return x >> 4;
+    }
+
+    public int getChunkZ() {
+        return z >> 4;
+    }
+
     public boolean outOfBounds() {
         return y < 0 || y > 255;
     }
