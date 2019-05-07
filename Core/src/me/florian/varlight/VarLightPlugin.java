@@ -93,6 +93,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             return;
         }
 
+        Bukkit.getPluginManager().registerEvents(nmsAdapter, this);
         Bukkit.getPluginManager().registerEvents(this, this);
     }
 

@@ -4,25 +4,40 @@ package me.florian.varlight.nms;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.server.v1_14_R1.*;
+import org.bukkit.*;
 import org.bukkit.Chunk;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.AnaloguePowerable;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Powerable;
 import org.bukkit.block.data.type.Piston;
 import org.bukkit.craftbukkit.v1_14_R1.CraftWorld;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.material.Openable;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Objects;
+import java.util.concurrent.ExecutionException;
 
 public class NmsAdapter_1_14_R1 implements NmsAdapter {
 
+    private static final BlockFace[] CHECK_FACES = new BlockFace[] {
+            BlockFace.UP,
+            BlockFace.DOWN,
+            BlockFace.WEST,
+            BlockFace.EAST,
+            BlockFace.NORTH,
+            BlockFace.SOUTH
+    };
 
     private static final Field LIGHT_BLOCKING_FIELD, LIGHT_ENGINE_LAYER_FIELD, LIGHT_ENGINE_FIELD_CHUNK_MAP, LIGHT_ENGINE_FIELD_CHUNK_PROVIDER, LIGHT_ENGINE_LAYER_STORAGE_FIELD, LIGHT_ENGINE_THREADED_MAILBOX_FIELD;
     private static final Method LIGHT_ENGINE_STORAGE_WRITE_DATA_METHOD;
@@ -92,7 +107,7 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter {
     @Override
     public boolean isBlockTransparent(Block block) {
         try {
-            return ! (boolean) ReflectionHelper.Safe.get(LIGHT_BLOCKING_FIELD, getNmsWorld(block.getWorld()).getType(toBlockPosition(block.getLocation())).getBlock());
+            return !(boolean) ReflectionHelper.Safe.get(LIGHT_BLOCKING_FIELD, getNmsWorld(block.getWorld()).getType(toBlockPosition(block.getLocation())).getBlock());
         } catch (IllegalAccessException e) {
             throw new LightUpdateFailedException(e);
         }
@@ -128,34 +143,66 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter {
         }
     }
 
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent e) {
+        update(e);
+    }
+
+    @EventHandler
+    public void onBlockPlace(BlockPlaceEvent e) {
+        update(e);
+    }
+
+    private void update(BlockEvent e) {
+        Block theBlock = e.getBlock();
+
+        if (theBlock.getLightFromBlocks() == getEmittingLightLevel(theBlock)) {
+            return;
+        }
+
+        for (BlockFace blockFace : CHECK_FACES) {
+            Block adjacent  = theBlock.getRelative(blockFace);
+
+            int blockLight = adjacent.getLightFromBlocks();
+            System.out.println(theBlock.getLocation() + " " + blockLight);
+
+            if (blockLight == getEmittingLightLevel(adjacent)) {
+                continue;
+            }
+
+            Bukkit.getScheduler().scheduleSyncDelayedTask(
+                    Objects.requireNonNull(Bukkit.getPluginManager().getPlugin("VarLight")),
+                    () -> updateBlockLight(adjacent.getLocation(), blockLight), 1L);
+        }
+    }
+
     @Override
     public void updateBlockLight(Location at, int lightLevel) {
 
         WorldServer worldServer = getNmsWorld(at.getWorld());
         BlockPosition blockPosition = toBlockPosition(at);
 
-        try {
-            injectCustomLightEngine(worldServer);
-        } catch (IllegalAccessException e) {
-            throw new LightUpdateFailedException(e);
-        }
-
+//        try {
+//            injectCustomLightEngine(worldServer);
+//        } catch (IllegalAccessException e) {
+//            throw new LightUpdateFailedException(e);
+//        }
 
         LightEngineThreaded lightEngine = getLightEngine(at.getWorld());
-
-        System.out.println(getMailbox(lightEngine).getClass().getName());
-
         LightEngineLayer<?, ?> lightEngineLayer = getLightEngineBlock(lightEngine);
 
-        writeToStorage(blockPosition, lightLevel, getStorage(lightEngineLayer));
-//        lightEngine.a(worldServer.getChunkAtWorldCoords(blockPosition), false);
+        lightEngineLayer.a(blockPosition, lightLevel); // Write light level to Block Light Engine
+//        worldServer.getChunkAtWorldCoords(blockPosition).b(false); // Flag chunk as needs saving and presumably "dirty light"
 
-        worldServer.getChunkAtWorldCoords(blockPosition).b(false);
+//        PlayerChunkMap playerChunkMap = worldServer.getChunkProvider().playerChunkMap;
 
-        PlayerChunkMap playerChunkMap = worldServer.getChunkProvider().playerChunkMap;
-        playerChunkMap.a(playerChunkMap.visibleChunks.get(new ChunkCoordIntPair(blockPosition).pair()), ChunkStatus.LIGHT);
+        lightEngine.a(worldServer.getChunkAtWorldCoords(blockPosition), false);
+        lightEngine.queueUpdate();
 
-
+//        playerChunkMap
+//                .a(
+//                        playerChunkMap.visibleChunks.get(new ChunkCoordIntPair(blockPosition).pair()),
+//                        ChunkStatus.LIGHT); // Run Task "lightChunk"
     }
 
     @Override
@@ -190,7 +237,7 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter {
 
     @Override
     public boolean isValidBlock(Block block) {
-        if (! block.getType().isBlock()) {
+        if (!block.getType().isBlock()) {
             return false;
         }
 

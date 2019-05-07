@@ -4,8 +4,9 @@ import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Listener;
 
-public interface NmsAdapter {
+public interface NmsAdapter extends Listener {
 
     boolean isBlockTransparent(Block block);
 
