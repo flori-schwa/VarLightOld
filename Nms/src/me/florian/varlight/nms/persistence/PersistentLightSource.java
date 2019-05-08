@@ -1,31 +1,38 @@
 package me.florian.varlight.nms.persistence;
 
+import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import me.florian.varlight.IntPosition;
+import me.florian.varlight.VarLightPlugin;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 
-import java.io.IOException;
 import java.util.Objects;
 
 public class PersistentLightSource {
 
-    private boolean valid = true;
+    private transient boolean valid = true;
+    private transient final World world;
+    private transient VarLightPlugin plugin;
 
-    private final World world;
     private final IntPosition position;
     private final Material type;
     private byte emittingLight;
 
-    PersistentLightSource(World world, IntPosition position, int emittingLight) {
+    PersistentLightSource(VarLightPlugin plugin, World world, IntPosition position, int emittingLight) {
+        Objects.requireNonNull(plugin);
         Objects.requireNonNull(world);
         Objects.requireNonNull(position);
 
+        this.plugin = plugin;
         this.world = world;
         this.position = position;
         this.type = position.toLocation(world).getBlock().getType();
         this.emittingLight = (byte) (emittingLight & 0xF);
+
+        System.out.println("new created");
     }
 
     public World getWorld() {
@@ -42,7 +49,7 @@ public class PersistentLightSource {
 
     public byte getEmittingLight() {
 
-        if (! isStillValid()) {
+        if (! checkValidStatus()) {
             invalidate();
             return 0;
         }
@@ -55,10 +62,11 @@ public class PersistentLightSource {
     }
 
     public void invalidate() {
+        System.out.println("invalidated");
         valid = false;
     }
 
-    public boolean isStillValid() {
+    public boolean checkValidStatus() {
         if (! valid) {
             return false;
         }
@@ -69,32 +77,23 @@ public class PersistentLightSource {
             return false;
         }
 
+        if (! plugin.getNmsAdapter().isValidBlock(block)) {
+            return false;
+        }
+
         return block.getLightFromBlocks() >= emittingLight;
     }
 
-    public void write(JsonWriter jsonWriter) throws IOException {
-        jsonWriter.beginObject();               //  {
+    static PersistentLightSource read(Gson gson, JsonReader jsonReader) {
+        return gson.fromJson(jsonReader, PersistentLightSource.class);
+    }
 
-        jsonWriter.name("position");
-        jsonWriter.beginObject();               //      position: {
+    boolean writeIfValid(Gson gson, JsonWriter jsonWriter) {
+        if (checkValidStatus()) {
+            gson.toJson(this, PersistentLightSource.class, jsonWriter);
+            return true;
+        }
 
-        jsonWriter.name("x");
-        jsonWriter.value(position.getX());      //          x: x,
-
-        jsonWriter.name("y");
-        jsonWriter.value(position.getY());      //          y: y,
-
-        jsonWriter.name("z");
-        jsonWriter.value(position.getZ());      //          z: z,
-
-        jsonWriter.endObject();                 //      },
-
-        jsonWriter.name("type");
-        jsonWriter.value(type.name());          //      type: type,
-
-        jsonWriter.name("emittingLight");
-        jsonWriter.value(emittingLight);        //      emittingLight: emittingLight
-
-        jsonWriter.endObject();                 //  }
+        return false;
     }
 }

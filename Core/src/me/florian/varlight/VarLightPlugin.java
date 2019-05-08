@@ -87,6 +87,8 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             getLogger().info("Using Built-in Methods");
             lightUpdater = new LightUpdaterBuiltIn(this);
         }
+
+        nmsAdapter.onLoad(this, lightUpdater instanceof LightUpdaterBuiltIn);
     }
 
     @Override
@@ -98,20 +100,30 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         Bukkit.getPluginManager().registerEvents(nmsAdapter, this);
         Bukkit.getPluginManager().registerEvents(this, this);
+
+        Bukkit.getWorlds().forEach(w -> LightSourcePersistor.getPersistor(this, w));
+        nmsAdapter.onEnable(this, lightUpdater instanceof LightUpdaterBuiltIn);
+    }
+
+    @Override
+    public void onDisable() {
+        if (! doLoad) {
+            return;
+        }
+
+        nmsAdapter.onDisable(lightUpdater instanceof LightUpdaterBuiltIn);
+        LightSourcePersistor.getAllPersistors(this).forEach(LightSourcePersistor::save);
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if ("save-lights".equals(command.getName()) && sender instanceof Player) {
-            Player player = (Player) sender;
-
-            LightSourcePersistor lightSourcePersistor = LightSourcePersistor.getPersistor(this, player.getWorld());
-
-            if (isDebug()) {
-                lightSourcePersistor.createPersistentLightSource(new IntPosition(player.getLocation()), 5).setEmittingLight(10);
+        if ("save-lights".equals(command.getName())) {
+            if (args.length == 1 && "all".equalsIgnoreCase(args[0])) {
+                LightSourcePersistor.getAllPersistors(this).forEach(LightSourcePersistor::save);
+            } else if (sender instanceof Player) {
+                Player player = (Player) sender;
+                LightSourcePersistor.getPersistor(this, player.getWorld()).save();
             }
-
-            lightSourcePersistor.save(this);
         }
 
         return true;
@@ -166,7 +178,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-        LightUpdateEvent lightUpdateEvent = new LightUpdateEvent(clickedBlock, mod);
+        LightUpdateEvent lightUpdateEvent = new LightUpdateEvent(this, clickedBlock, mod);
         Bukkit.getPluginManager().callEvent(lightUpdateEvent);
 
         if (lightUpdateEvent.isCancelled()) {
@@ -174,24 +186,21 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-        int lightTo = lightUpdateEvent.getToLight();
-
-        if (! isLightLevelInRange(lightTo)) {
-            throw new IllegalStateException("Cannot set light level below 0 or above 15.");
-        }
+        int lightTo = lightUpdateEvent.getToLight() & 0xF;
 
         LightSourcePersistor.getPersistor(this, clickedBlock.getWorld())
-                .getOrCreatePersistentLightSource(new IntPosition(clickedBlock.getLocation()), lightTo)
+                .getOrCreatePersistentLightSource(new IntPosition(clickedBlock.getLocation()))
                 .setEmittingLight(lightTo);
 
         lightUpdater.setLight(clickedBlock.getLocation(), lightTo);
 
-        e.setCancelled(creative);
+        e.setCancelled(creative && e.getAction() == Action.LEFT_CLICK_BLOCK);
 
         if (! creative && e.getAction() == Action.RIGHT_CLICK_BLOCK) {
             heldItem.setAmount(heldItem.getAmount() - 1);
-            player.setCooldown(Material.GLOWSTONE_DUST, 5);
         }
+
+        player.setCooldown(Material.GLOWSTONE_DUST, 5);
     }
 
     private void displayMessage(Player player, LightUpdateResult lightUpdateResult) {

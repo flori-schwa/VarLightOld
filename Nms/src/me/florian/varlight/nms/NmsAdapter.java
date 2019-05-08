@@ -5,8 +5,21 @@ import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
+import org.bukkit.plugin.Plugin;
 
 public interface NmsAdapter extends Listener {
+
+    default void onLoad(Plugin plugin, boolean use) {
+
+    }
+
+    default void onEnable(Plugin plugin, boolean use) {
+
+    }
+
+    default void onDisable(boolean wasUsed) {
+
+    }
 
     boolean isBlockTransparent(Block block);
 

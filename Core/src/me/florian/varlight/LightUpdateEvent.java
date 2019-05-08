@@ -1,5 +1,6 @@
 package me.florian.varlight;
 
+import me.florian.varlight.nms.persistence.LightSourcePersistor;
 import org.bukkit.block.Block;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
@@ -9,8 +10,8 @@ public class LightUpdateEvent extends BlockEvent implements Cancellable {
 
     public static final HandlerList HANDLERS = new HandlerList();
 
-    public LightUpdateEvent(Block block, int mod) {
-        this(block, block.getLightFromBlocks(), mod > 0 ? Math.min(block.getLightFromBlocks() + mod, 15) : Math.max(block.getLightFromBlocks() + mod, 0));
+    public LightUpdateEvent(VarLightPlugin varLightPlugin, Block block, int mod) {
+        this(block, block.getLightFromBlocks(), LightSourcePersistor.getPersistor(varLightPlugin, block.getWorld()).getEmittingLightLevel(block.getLocation()) + mod);
     }
 
     public static HandlerList getHandlerList() {
@@ -29,12 +30,8 @@ public class LightUpdateEvent extends BlockEvent implements Cancellable {
     public LightUpdateEvent(Block theBlock, int fromLight, int toLight) {
         super(theBlock);
 
-        if (fromLight < 0 || fromLight > 15 || toLight < 0 || toLight > 15) {
-            throw new IllegalArgumentException("Light values must be in the range of 0 - 15");
-        }
-
-        this.fromLight = fromLight;
-        this.toLight = toLight;
+        this.fromLight = fromLight & 0xF;
+        this.toLight = toLight & 0xF;
     }
 
     public int getFromLight() {
@@ -46,11 +43,7 @@ public class LightUpdateEvent extends BlockEvent implements Cancellable {
     }
 
     public void setToLight(int toLight) {
-        if (toLight < 0 || toLight > 15) {
-            throw new IllegalArgumentException("Light values must be in the range of 0 - 15");
-        }
-
-        this.toLight = toLight;
+        this.toLight = toLight & 0xF;
     }
 
     @Override

@@ -3,7 +3,6 @@ package me.florian.varlight.nms;
 import net.minecraft.server.v1_14_R1.*;
 
 import javax.annotation.Nullable;
-import java.util.logging.Logger;
 
 public class WrappedIBlockAccess implements IBlockAccess {
 
@@ -33,9 +32,8 @@ public class WrappedIBlockAccess implements IBlockAccess {
 
     @Override
     public int h(BlockPosition position) {
-        int b = NmsAdapter_1_14_R1.getBrightness(worldServer, position);
-        Logger.getLogger(getClass().getName()).info(String.valueOf(b));
+        //        Logger.getLogger(getClass().getName()).info(String.valueOf(b));
 
-        return b;
+        return NmsAdapter_1_14_R1.getBrightness(worldServer, position);
     }
 }

@@ -9,5 +9,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="Nms" />
     <orderEntry type="library" name="spigot-1.14" level="project" />
+    <orderEntry type="module" module-name="Core" />
   </component>
 </module>

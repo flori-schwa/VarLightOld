@@ -13,7 +13,7 @@ public class RegionCoordinates {
     }
 
     public RegionCoordinates(IntPosition intPosition) {
-        this(intPosition.getChunkX() >> 5, intPosition.getChunkZ() >> 5);
+        this((intPosition.getX() >> 4) >> 5, (intPosition.getZ() >> 4) >> 5);
     }
 
     public RegionCoordinates(int regionX, int regionZ) {
