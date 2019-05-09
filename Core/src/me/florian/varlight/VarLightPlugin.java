@@ -147,6 +147,12 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             return;
         }
 
+        String requiredPermission = getConfig().getString("requiredPermission", null);
+
+        if (requiredPermission != null && ! e.getPlayer().hasPermission(requiredPermission)) {
+            return;
+        }
+
         Block clickedBlock = e.getClickedBlock();
         Player player = e.getPlayer();
         ItemStack heldItem = e.getItem();
