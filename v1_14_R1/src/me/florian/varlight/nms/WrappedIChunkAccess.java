@@ -25,13 +25,11 @@ public class WrappedIChunkAccess implements IChunkAccess {
 
     @Override
     public Stream<BlockPosition> m() {
-        System.out.println("m()");
         return StreamSupport.stream(BlockPosition.b(getPos().d(), 0, getPos().e(), getPos().f(), 255, getPos().g()).spliterator(), false).filter(pos -> this.h(pos) > 0);
     }
 
     @Override
     public int h(BlockPosition pos) {
-//        System.out.println("h(BlockPosition)");
         return NmsAdapter_1_14_R1.getBrightness(worldServer, pos);
     }
 

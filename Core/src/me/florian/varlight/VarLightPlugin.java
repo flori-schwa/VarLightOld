@@ -22,12 +22,13 @@ import java.util.Map;
 
 public class VarLightPlugin extends JavaPlugin implements Listener {
 
+
     private enum LightUpdateResult {
         INVALID_BLOCK,
         ZERO_REACHED,
         FIFTEEN_REACHED,
         CANCELLED,
-        UPDATED
+        UPDATED;
     }
 
     private static String SERVER_VERSION;
@@ -39,6 +40,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     private static Map<String, Class<? extends NmsAdapter>> ADAPTERS;
 
     private LightUpdater lightUpdater;
+
     private NmsAdapter nmsAdapter;
     private boolean doLoad = true;
 
@@ -98,7 +100,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-        Bukkit.getPluginManager().registerEvents(nmsAdapter, this);
         Bukkit.getPluginManager().registerEvents(this, this);
 
         Bukkit.getWorlds().forEach(w -> LightSourcePersistor.getPersistor(this, w));
@@ -133,6 +134,14 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         return nmsAdapter;
     }
 
+    public LightUpdater getLightUpdater() {
+        return lightUpdater;
+    }
+
+    public void setLightUpdater(LightUpdater lightUpdater) {
+        this.lightUpdater = lightUpdater;
+    }
+
     private boolean isLightLevelInRange(int lightLevel) {
         return lightLevel >= 0 && lightLevel <= 15;
     }
@@ -143,6 +152,20 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
+
+        if (isDebug() && e.getItem() != null && e.getItem().getType() == Material.DEBUG_STICK && e.getAction() == Action.RIGHT_CLICK_BLOCK && e.getPlayer().isSneaking()) {
+
+            IntPosition at = new IntPosition(e.getClickedBlock().getLocation());
+
+            e.getPlayer().sendMessage("Block Light at " + at + ": " + e.getClickedBlock().getLightFromBlocks());
+            e.getPlayer().sendMessage("Sky Light at " + at + ": " + e.getClickedBlock().getLightFromSky());
+            e.getPlayer().sendMessage("Light level at " + at + ": " + e.getClickedBlock().getLightLevel());
+
+            e.setCancelled(true);
+
+            return;
+        }
+
         if (e.isCancelled() || (e.getAction() != Action.RIGHT_CLICK_BLOCK && e.getAction() != Action.LEFT_CLICK_BLOCK) || e.getPlayer().hasCooldown(Material.GLOWSTONE_DUST)) {
             return;
         }

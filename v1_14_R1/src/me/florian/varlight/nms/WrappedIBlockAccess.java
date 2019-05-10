@@ -32,8 +32,6 @@ public class WrappedIBlockAccess implements IBlockAccess {
 
     @Override
     public int h(BlockPosition position) {
-        //        Logger.getLogger(getClass().getName()).info(String.valueOf(b));
-
         return NmsAdapter_1_14_R1.getBrightness(worldServer, position);
     }
 }

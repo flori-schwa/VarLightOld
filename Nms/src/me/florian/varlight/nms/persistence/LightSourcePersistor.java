@@ -10,6 +10,7 @@ import me.florian.varlight.VarLightPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.metadata.FixedMetadataValue;
 
 import java.io.File;
@@ -22,7 +23,7 @@ import java.util.stream.Stream;
 
 public class LightSourcePersistor {
 
-    public static final Logger LOGGER = Logger.getLogger(LightSourcePersistor.class.getName());
+//    public static final Logger LOGGER = Logger.getLogger(LightSourcePersistor.class.getName());
     public static final String TAG_WORLD_LIGHT_SOURCE_PERSISTOR = "varlight:persistor";
 
     private static final Map<UUID, Map<RegionCoordinates, Map<IntPosition, PersistentLightSource>>> LIGHT_SOURCES = new HashMap<>();
@@ -49,7 +50,7 @@ public class LightSourcePersistor {
         Objects.requireNonNull(plugin);
         Objects.requireNonNull(world);
 
-        LOGGER.info(String.format("Created a new Lightsource Persistor for world \"%s\"", world.getName()));
+        plugin.getLogger().info(String.format("Created a new Lightsource Persistor for world \"%s\"", world.getName()));
 
         this.plugin = plugin;
         this.world = world;
@@ -69,6 +70,10 @@ public class LightSourcePersistor {
         return getPersistentLightSource(location).map(PersistentLightSource::getEmittingLight).orElse((byte) 0);
     }
 
+    public Optional<PersistentLightSource> getPersistentLightSource(Block block) {
+        return getPersistentLightSource(block.getLocation());
+    }
+
     public Optional<PersistentLightSource> getPersistentLightSource(Location location) {
         return getPersistentLightSource(new IntPosition(location));
     }
@@ -79,18 +84,22 @@ public class LightSourcePersistor {
 
     public Optional<PersistentLightSource> getPersistentLightSource(IntPosition intPosition) {
         synchronized (world) {
-            return Optional.ofNullable(getRegionMap(new RegionCoordinates(intPosition)).get(intPosition));
+
+            Map<IntPosition, PersistentLightSource> regionMap = getRegionMap(new RegionCoordinates(intPosition));
+            PersistentLightSource persistentLightSource = regionMap.get(intPosition);
+
+            if (persistentLightSource != null && ! persistentLightSource.isValid()) {
+                persistentLightSource = null;
+            }
+
+            return Optional.ofNullable(persistentLightSource);
         }
     }
 
     public PersistentLightSource createPersistentLightSource(IntPosition intPosition, int emittingLight) {
         synchronized (world) {
             PersistentLightSource persistentLightSource = new PersistentLightSource(plugin, world, intPosition, emittingLight);
-            PersistentLightSource previous = getRegionMap(new RegionCoordinates(intPosition)).put(intPosition, persistentLightSource);
-
-            if (previous != null) {
-                previous.invalidate();
-            }
+            getRegionMap(new RegionCoordinates(intPosition)).put(intPosition, persistentLightSource);
 
             return persistentLightSource;
         }
@@ -129,7 +138,7 @@ public class LightSourcePersistor {
                 }
             }
 
-            LOGGER.info(String.format("All Custom Light Sources persisted for World \"%s\"", world.getName()));
+            plugin.getLogger().info(String.format("All Custom Light Sources persisted for World \"%s\"", world.getName()));
         }
 
     }
@@ -167,23 +176,6 @@ public class LightSourcePersistor {
         return varlightDir;
     }
 
-    private List<PersistentLightSource> getValidLightSources() {
-        synchronized (world) {
-            Map<RegionCoordinates, Map<IntPosition, PersistentLightSource>> worldMap = getWorldMap();
-            List<PersistentLightSource> valid = new ArrayList<>();
-
-            for (Map.Entry<RegionCoordinates, Map<IntPosition, PersistentLightSource>> entry : worldMap.entrySet()) {
-                for (PersistentLightSource persistentLightSource : entry.getValue().values()) {
-                    if (persistentLightSource.checkValidStatus()) {
-                        valid.add(persistentLightSource);
-                    }
-                }
-            }
-
-            return valid;
-        }
-    }
-
     private File getSaveFile(RegionCoordinates regionCoordinates) {
         return new File(getSaveDirectory(), String.format("r.%d.%d.json", regionCoordinates.getRegionX(), regionCoordinates.getRegionZ()));
     }
@@ -201,6 +193,10 @@ public class LightSourcePersistor {
                 }
 
                 PersistentLightSource persistentLightSource = PersistentLightSource.read(gson, jsonReader);
+                persistentLightSource.initialize(world, plugin);
+
+                plugin.getLightUpdater().setLight(persistentLightSource.getPosition().toLocation(world), persistentLightSource.getEmittingLight());
+
                 regionMap.put(persistentLightSource.getPosition(), persistentLightSource);
             }
 
@@ -213,5 +209,4 @@ public class LightSourcePersistor {
 
         return regionMap;
     }
-
 }

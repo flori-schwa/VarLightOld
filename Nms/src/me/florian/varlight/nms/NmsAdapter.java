@@ -7,7 +7,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
 
-public interface NmsAdapter extends Listener {
+public interface NmsAdapter {
 
     default void onLoad(Plugin plugin, boolean use) {
 

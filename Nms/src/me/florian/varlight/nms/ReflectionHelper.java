@@ -7,7 +7,7 @@ import java.util.function.Predicate;
 public class ReflectionHelper {
 
 
-    private static enum FieldAccess {
+    private enum FieldAccess {
         READ(AccessibleObject::isAccessible, field -> field.setAccessible(true)),
         READ_WRITE(
                 field -> field.isAccessible() && (field.getModifiers() & Modifier.FINAL) == 0,

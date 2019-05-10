@@ -13,8 +13,7 @@ import java.util.Objects;
 
 public class PersistentLightSource {
 
-    private transient boolean valid = true;
-    private transient final World world;
+    private transient World world;
     private transient VarLightPlugin plugin;
 
     private final IntPosition position;
@@ -31,8 +30,6 @@ public class PersistentLightSource {
         this.position = position;
         this.type = position.toLocation(world).getBlock().getType();
         this.emittingLight = (byte) (emittingLight & 0xF);
-
-        System.out.println("new created");
     }
 
     public World getWorld() {
@@ -49,8 +46,7 @@ public class PersistentLightSource {
 
     public byte getEmittingLight() {
 
-        if (! checkValidStatus()) {
-            invalidate();
+        if (! isValid()) {
             return 0;
         }
 
@@ -61,14 +57,9 @@ public class PersistentLightSource {
         this.emittingLight = (byte) (lightLevel & 0xF);
     }
 
-    public void invalidate() {
-        System.out.println("invalidated");
-        valid = false;
-    }
-
-    public boolean checkValidStatus() {
-        if (! valid) {
-            return false;
+    public boolean isValid() {
+        if (! world.isChunkLoaded(position.getChunkX(), position.getChunkZ())) {
+            return true; // Assume valid
         }
 
         Block block = position.toBlock(world);
@@ -84,12 +75,17 @@ public class PersistentLightSource {
         return block.getLightFromBlocks() >= emittingLight;
     }
 
+    void initialize(World world, VarLightPlugin plugin) {
+        this.world = world;
+        this.plugin = plugin;
+    }
+
     static PersistentLightSource read(Gson gson, JsonReader jsonReader) {
         return gson.fromJson(jsonReader, PersistentLightSource.class);
     }
 
     boolean writeIfValid(Gson gson, JsonWriter jsonWriter) {
-        if (checkValidStatus()) {
+        if (isValid()) {
             gson.toJson(this, PersistentLightSource.class, jsonWriter);
             return true;
         }

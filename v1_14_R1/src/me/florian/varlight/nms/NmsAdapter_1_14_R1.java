@@ -3,8 +3,10 @@ package me.florian.varlight.nms;
 
 import com.google.common.collect.BiMap;
 import com.mojang.datafixers.util.Either;
+import me.florian.varlight.LightUpdaterBuiltIn;
 import me.florian.varlight.VarLightPlugin;
 import me.florian.varlight.nms.persistence.LightSourcePersistor;
+import me.florian.varlight.nms.persistence.PersistentLightSource;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.server.v1_14_R1.*;
@@ -22,6 +24,8 @@ import org.bukkit.craftbukkit.v1_14_R1.CraftWorld;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.material.Openable;
 import org.bukkit.plugin.Plugin;
@@ -32,9 +36,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.EnumSet;
 import java.util.Optional;
-import java.util.logging.Logger;
+import java.util.concurrent.ExecutionException;
 
-public class NmsAdapter_1_14_R1 implements NmsAdapter {
+public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
 
     private static final BlockFace[] CHECK_FACES = new BlockFace[] {
             BlockFace.UP,
@@ -45,42 +49,25 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter {
             BlockFace.SOUTH
     };
 
-    public static final Logger LOGGER = Logger.getLogger(NmsAdapter_1_14_R1.class.getName());
     private static NmsAdapter_1_14_R1 INSTANCE = null;
 
-    private static final Field LIGHT_BLOCKING_FIELD, LIGHT_ENGINE_FIELD_CHUNK_MAP, LIGHT_ENGINE_FIELD_CHUNK_PROVIDER, FIELD_LIGHT_ENGINE_LAYER_STORAGE, LIGHT_ENGINE_THREADED_MAILBOX_FIELD, FIELD_LIGHT_ENGINE_LAYER_I_LIGHT_ACCESS;
-    private static final Method LIGHT_ENGINE_STORAGE_WRITE_DATA_METHOD, METHOD_LIGHT_ENGINE_STORAGE_GET_NIBBLE_ARRAY, METHOD_LIGHT_ENGINE_LAYER_CHECK_BLOCK;
-    public static final String TAG_METADATA_KEY = "varlight:tagged";
+    private final Field fieldLightBlocking, fieldLightEngineChunkMap, fieldLightEngineLayerILightAccess;
 
-    static {
-        try {
-            LIGHT_BLOCKING_FIELD = ReflectionHelper.Safe.getField(net.minecraft.server.v1_14_R1.Block.class, "v");
-
-            LIGHT_ENGINE_FIELD_CHUNK_MAP = ReflectionHelper.Safe.getField(PlayerChunkMap.class, "lightEngine");
-            LIGHT_ENGINE_FIELD_CHUNK_PROVIDER = ReflectionHelper.Safe.getField(ChunkProviderServer.class, "lightEngine");
-
-            LIGHT_ENGINE_THREADED_MAILBOX_FIELD = ReflectionHelper.Safe.getField(LightEngineThreaded.class, "e");
-
-            FIELD_LIGHT_ENGINE_LAYER_STORAGE = ReflectionHelper.Safe.getField(LightEngineLayer.class, "c");
-
-            LIGHT_ENGINE_STORAGE_WRITE_DATA_METHOD = ReflectionHelper.Safe.getMethod(LightEngineStorage.class, "b", long.class, int.class);
-
-            METHOD_LIGHT_ENGINE_STORAGE_GET_NIBBLE_ARRAY = ReflectionHelper.Safe.getMethod(LightEngineStorage.class, "a", long.class, boolean.class);
-            METHOD_LIGHT_ENGINE_LAYER_CHECK_BLOCK = ReflectionHelper.Safe.getMethod(LightEngineLayer.class, "f", long.class);
-
-            FIELD_LIGHT_ENGINE_LAYER_I_LIGHT_ACCESS = ReflectionHelper.Safe.getField(LightEngineLayer.class, "a");
-
-        } catch (NoSuchFieldException | NoSuchMethodException e) {
-            throw new NmsInitializationException(e);
-        }
-    }
-
-    {
+    public NmsAdapter_1_14_R1() {
         if (INSTANCE != null) {
             throw new IllegalStateException("Created second instance of Singleton Object " + getClass().getName());
         }
 
         INSTANCE = this;
+
+        try {
+            fieldLightBlocking = ReflectionHelper.Safe.getField(net.minecraft.server.v1_14_R1.Block.class, "v");
+            fieldLightEngineChunkMap = ReflectionHelper.Safe.getField(PlayerChunkMap.class, "lightEngine");
+            fieldLightEngineLayerILightAccess = ReflectionHelper.Safe.getField(LightEngineLayer.class, "a");
+
+        } catch (NoSuchFieldException e) {
+            throw new NmsInitializationException(e);
+        }
     }
 
     private VarLightPlugin plugin;
@@ -94,14 +81,6 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter {
         }
 
         injectCustomChunkStatus();
-
-//        try {
-//            for (World world : Bukkit.getWorlds()) {
-//                injectCustomLightEngine(getNmsWorld(world));
-//            }
-//        } catch (IllegalAccessException e) {
-//            throw new NmsInitializationException(e);
-//        }
     }
 
     @Override
@@ -110,6 +89,8 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter {
             return;
         }
 
+        Bukkit.getPluginManager().registerEvents(this, plugin);
+
         try {
             for (World world : Bukkit.getWorlds()) {
                 injectCustomIBlockAccess(world);
@@ -117,48 +98,88 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter {
         } catch (IllegalAccessException e) {
             throw new NmsInitializationException(e);
         }
+
+        this.plugin.setLightUpdater(new LightUpdaterBuiltIn(this.plugin) {
+            @Override
+            public void setLight(Location location, int lightLevel) {
+                WorldServer worldServer = NmsAdapter_1_14_R1.this.getNmsWorld(location.getWorld());
+                BlockPosition blockPosition = NmsAdapter_1_14_R1.toBlockPosition(location);
+
+                LightEngineThreaded lightEngine = worldServer.getChunkProvider().getLightEngine();
+
+                LightEngineBlock lightEngineBlock = (LightEngineBlock) lightEngine.a(EnumSkyBlock.BLOCK);
+
+
+                lightEngineBlock.a(blockPosition, 0);
+
+                if (lightLevel > 0) {
+                    lightEngineBlock.a(blockPosition, lightLevel);
+                }
+
+                lightEngine.a(blockPosition);
+
+                if (! lightEngine.a()) {
+                    return;
+                }
+
+                Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                    try {
+                        lightEngine.a(new WrappedIChunkAccess(worldServer, worldServer.getChunkAtWorldCoords(blockPosition)), true).get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        e.printStackTrace();
+                        return;
+                    }
+
+                    plugin.getLogger().info(String.valueOf(lightEngine.a(EnumSkyBlock.BLOCK)
+                            .a(SectionPosition.a(new ChunkCoordIntPair(location.getBlockX() / 16, location.getBlockZ() / 16), location.getBlockY() / 16))
+                            .a(location.getBlockX() & 0xF, location.getBlockY() & 0xF, location.getBlockZ() & 0xF)));
+
+                    Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                        ((VarLightPlugin) plugin).getLightUpdater()
+                                .getChunksToUpdate(location)
+                                .forEach(c -> queueChunkLightUpdate(c, location.getBlockY() / 16));
+                    }, 5L);
+                });
+            }
+        });
     }
 
     private void injectCustomChunkStatus() {
         try {
-            synchronized (IRegistry.CHUNK_STATUS) {
-                Class chunkStatusA = Class.forName("net.minecraft.server.v1_14_R1.ChunkStatus$a");
-                Field light = ReflectionHelper.Safe.getField(ChunkStatus.class, "LIGHT");
-                Field biMap = ReflectionHelper.Safe.getField(RegistryMaterials.class, "c");
-                Field fieldO = ReflectionHelper.Safe.getField(ChunkStatus.class, "o");
-                Method register = ReflectionHelper.Safe.getMethod(ChunkStatus.class, "a", String.class, ChunkStatus.class, int.class, EnumSet.class, ChunkStatus.Type.class, chunkStatusA);
+            Class chunkStatusA = Class.forName("net.minecraft.server.v1_14_R1.ChunkStatus$a");
+            Field light = ReflectionHelper.Safe.getField(ChunkStatus.class, "LIGHT");
+            Field biMap = ReflectionHelper.Safe.getField(RegistryMaterials.class, "c");
+            Field fieldO = ReflectionHelper.Safe.getField(ChunkStatus.class, "o");
+            Method register = ReflectionHelper.Safe.getMethod(ChunkStatus.class, "a", String.class, ChunkStatus.class, int.class, EnumSet.class, ChunkStatus.Type.class, chunkStatusA);
 
-                Object aImplementation = Proxy.newProxyInstance(chunkStatusA.getClassLoader(), new Class[] {chunkStatusA},
-                        (Object proxy, Method method, Object[] args) -> {
-                            if (method.getName().equals("doWork")) {
+            Object aImplementation = Proxy.newProxyInstance(chunkStatusA.getClassLoader(), new Class[] {chunkStatusA},
+                    (Object proxy, Method method, Object[] args) -> {
+                        if (method.getName().equals("doWork")) {
 
-                                System.out.println("doWork");
+                            ChunkStatus status = (ChunkStatus) args[0];
+                            WorldServer worldServer = (WorldServer) args[1];
+                            LightEngineThreaded lightEngineThreaded = (LightEngineThreaded) args[4];
+                            IChunkAccess iChunkAccess = new WrappedIChunkAccess(worldServer, (IChunkAccess) args[7]);
 
-                                ChunkStatus status = (ChunkStatus) args[0];
-                                WorldServer worldServer = (WorldServer) args[1];
-                                LightEngineThreaded lightEngineThreaded = (LightEngineThreaded) args[4];
-                                IChunkAccess iChunkAccess = new WrappedIChunkAccess(worldServer, (IChunkAccess) args[7]);
+                            boolean flag = iChunkAccess.getChunkStatus().b(status) && iChunkAccess.r();
 
-                                boolean flag = iChunkAccess.getChunkStatus().b(status) && iChunkAccess.r();
-
-                                if (! iChunkAccess.getChunkStatus().b(status)) {
-                                    ((ProtoChunk) args[7]).a(status);
-                                }
-
-                                return lightEngineThreaded.a(iChunkAccess, flag).thenAccept(Either::left);
+                            if (! iChunkAccess.getChunkStatus().b(status)) {
+                                ((ProtoChunk) args[7]).a(status);
                             }
 
-                            return null;
+                            return lightEngineThreaded.a(iChunkAccess, flag).thenAccept(Either::left);
                         }
-                );
 
-                IRegistry chunkStatus = IRegistry.CHUNK_STATUS;
-                ((BiMap) ReflectionHelper.get(biMap, chunkStatus)).remove(new MinecraftKey("light"));
-                ChunkStatus customLight = (ChunkStatus) ReflectionHelper.Safe.invokeStatic(register, "light", ChunkStatus.FEATURES, 1, ReflectionHelper.Safe.getStatic(fieldO), ChunkStatus.Type.PROTOCHUNK, aImplementation);
+                        return null;
+                    }
+            );
 
-                ReflectionHelper.setStatic(light, customLight);
-                LOGGER.info("Injected Custom Light ChunkStatus");
-            }
+            IRegistry chunkStatus = IRegistry.CHUNK_STATUS;
+            ((BiMap) ReflectionHelper.get(biMap, chunkStatus)).remove(new MinecraftKey("light"));
+            ChunkStatus customLight = (ChunkStatus) ReflectionHelper.Safe.invokeStatic(register, "light", ChunkStatus.FEATURES, 1, ReflectionHelper.Safe.getStatic(fieldO), ChunkStatus.Type.PROTOCHUNK, aImplementation);
+
+            ReflectionHelper.setStatic(light, customLight);
+            plugin.getLogger().info("Injected Custom Light ChunkStatus");
         } catch (NoSuchFieldException | ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             throw new NmsInitializationException(e);
         }
@@ -166,7 +187,6 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter {
 
     private void injectCustomIBlockAccess(World world) throws IllegalAccessException {
         WorldServer worldServer = getNmsWorld(world);
-        LightEngineThreaded lightEngineThreaded = ReflectionHelper.Safe.get(LIGHT_ENGINE_FIELD_CHUNK_MAP, worldServer.getChunkProvider().playerChunkMap);
 
         ILightAccess custom = new ILightAccess() {
             private final IBlockAccess world = new WrappedIBlockAccess(worldServer, worldServer);
@@ -182,13 +202,13 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter {
             }
         };
 
-        injectToEngine(ReflectionHelper.Safe.get(LIGHT_ENGINE_FIELD_CHUNK_MAP, worldServer.getChunkProvider().playerChunkMap), custom, EnumSkyBlock.BLOCK);
-        injectToEngine(ReflectionHelper.Safe.get(LIGHT_ENGINE_FIELD_CHUNK_MAP, worldServer.getChunkProvider().playerChunkMap), custom, EnumSkyBlock.SKY);
+        injectToEngine(ReflectionHelper.Safe.get(fieldLightEngineChunkMap, worldServer.getChunkProvider().playerChunkMap), custom, EnumSkyBlock.BLOCK);
+        injectToEngine(ReflectionHelper.Safe.get(fieldLightEngineChunkMap, worldServer.getChunkProvider().playerChunkMap), custom, EnumSkyBlock.SKY);
 
         injectToEngine(worldServer.getChunkProvider().getLightEngine(), custom, EnumSkyBlock.BLOCK);
         injectToEngine(worldServer.getChunkProvider().getLightEngine(), custom, EnumSkyBlock.SKY);
 
-        LOGGER.info(String.format("Injected custom IBlockAccess into world \"%s\"", world.getName()));
+        plugin.getLogger().info(String.format("Injected custom IBlockAccess into world \"%s\"", world.getName()));
     }
 
     private void injectToEngine(LightEngineThreaded lightEngineThreaded, ILightAccess lightAccess, EnumSkyBlock enumSkyBlock) throws IllegalAccessException {
@@ -198,15 +218,7 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter {
             return;
         }
 
-        ReflectionHelper.Safe.set(engineLayer, FIELD_LIGHT_ENGINE_LAYER_I_LIGHT_ACCESS, lightAccess);
-    }
-
-    private LightEngineThreaded getLightEngine(World world) {
-        return getNmsWorld(world).getChunkProvider().getLightEngine();
-    }
-
-    private LightEngineLayer<?, ?> getLightEngineBlock(LightEngine lightEngine) {
-        return (LightEngineLayer<?, ?>) lightEngine.a(EnumSkyBlock.BLOCK);
+        ReflectionHelper.Safe.set(engineLayer, fieldLightEngineLayerILightAccess, lightAccess);
     }
 
     private WorldServer getNmsWorld(World world) {
@@ -221,15 +233,6 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter {
         return new Location(null, blockPosition.getX(), blockPosition.getY(), blockPosition.getZ());
     }
 
-    @Override
-    public boolean isBlockTransparent(Block block) {
-        try {
-            return ! (boolean) ReflectionHelper.Safe.get(LIGHT_BLOCKING_FIELD, getNmsWorld(block.getWorld()).getType(toBlockPosition(block.getLocation())).getBlock());
-        } catch (IllegalAccessException e) {
-            throw new LightUpdateFailedException(e);
-        }
-    }
-
     protected static int getBrightness(WorldServer world, BlockPosition blockPosition) {
         return Math.max(LightSourcePersistor
                 .getPersistor(INSTANCE.plugin, world.getWorld())
@@ -237,12 +240,12 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter {
     }
 
     @Override
-    public void recalculateBlockLight(Location at) {
-        LightEngineThreaded lightEngine = getLightEngine(at.getWorld());
-
-        BlockPosition blockPosition = toBlockPosition(at);
-
-
+    public boolean isBlockTransparent(Block block) {
+        try {
+            return ! (boolean) ReflectionHelper.Safe.get(fieldLightBlocking, getNmsWorld(block.getWorld()).getType(toBlockPosition(block.getLocation())).getBlock());
+        } catch (IllegalAccessException e) {
+            throw new LightUpdateFailedException(e);
+        }
     }
 
     @EventHandler (priority = EventPriority.MONITOR)
@@ -254,35 +257,52 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter {
         }
     }
 
+    @EventHandler (priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onBlockPlace(BlockPlaceEvent e) {
+        Block theBlock = e.getBlock();
+
+        for (BlockFace blockFace : CHECK_FACES) {
+            PersistentLightSource persistentLightSource = LightSourcePersistor.getPersistor(plugin, theBlock.getWorld()).getPersistentLightSource(theBlock.getRelative(blockFace)).orElse(null);
+
+            if (persistentLightSource == null) {
+                continue;
+            }
+
+
+            if (persistentLightSource.getEmittingLight() > 0) {
+
+                int sectionY = theBlock.getY() / 16;
+
+                plugin.getLightUpdater().getChunksToUpdate(theBlock.getLocation()).forEach(c -> queueChunkLightUpdate(c, sectionY));
+
+                return;
+            }
+        }
+
+    }
+
     @Override
+    @Deprecated
+    public void recalculateBlockLight(Location at) {
+        throw new UnsupportedOperationException("Not used for v1_14_R1!");
+    }
+
+    @Override
+    @Deprecated
     public void updateBlockLight(Location at, int lightLevel) {
+        throw new UnsupportedOperationException("Not used for v1_14_R1!");
+    }
 
-        WorldServer worldServer = getNmsWorld(at.getWorld());
-        BlockPosition blockPosition = toBlockPosition(at);
+    @Override
+    @Deprecated
+    public void sendChunkUpdates(Chunk chunk) {
+        throw new UnsupportedOperationException("Not used for v1_14_R1!");
+    }
 
-//        try {
-//            injectCustomLightEngine(worldServer);
-//        } catch (IllegalAccessException e) {
-//            throw new LightUpdateFailedException(e);
-//        }
-
-        PlayerChunkMap playerChunkMap = worldServer.getChunkProvider().playerChunkMap;
-
-        LightEngineThreaded lightEngine = getLightEngine(at.getWorld());
-        LightEngineLayer<?, ?> lightEngineLayer = getLightEngineBlock(lightEngine);
-
-        lightEngineLayer.a(blockPosition, lightLevel); // Write light level to Block Light Engine
-
-//        CompletableFuture<IChunkAccess> future = lightEngine.a(worldServer.getChunkAtWorldCoords(blockPosition), true);
-
-        System.out.println(lightLevel);
-
-        lightEngine.a(new WrappedIChunkAccess(worldServer, worldServer.getChunkAtWorldCoords(blockPosition)), true);
-
-//        worldServer.getChunkAtWorldCoords(blockPosition).b(false);
-//        playerChunkMap.a(playerChunkMap.visibleChunks.get(ChunkCoordIntPair.pair(blockPosition.getX() >> 4, blockPosition.getZ() >> 4)), ChunkStatus.LIGHT);
-        //.thenRun(() -> lightEngine.a(blockPosition));
-
+    @Override
+    @Deprecated
+    public void sendChunkUpdates(Chunk chunk, int mask) {
+        throw new UnsupportedOperationException("Not used for v1_14_R1!");
     }
 
     @Override
@@ -292,27 +312,20 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter {
         return blockData.getBlock().a(blockData);
     }
 
-    @Override
-    public void sendChunkUpdates(Chunk chunk, int mask) {
+    public void queueChunkLightUpdate(Chunk chunk, int sectionY) {
         WorldServer nmsWorld = getNmsWorld(chunk.getWorld());
         PlayerChunkMap playerChunkMap = nmsWorld.getChunkProvider().playerChunkMap;
         PlayerChunk playerChunk = playerChunkMap.visibleChunks.get(ChunkCoordIntPair.pair(chunk.getX(), chunk.getZ()));
 
-        for (int cy = 0; cy < 16; cy++) {
-            if ((mask & (1 << cy)) == 0) {
-                continue;
-            }
+        playerChunk.a(EnumSkyBlock.BLOCK, sectionY - 1);
+        playerChunk.a(EnumSkyBlock.BLOCK, sectionY);
+        playerChunk.a(EnumSkyBlock.BLOCK, sectionY + 1);
 
-            for (int y = 0; y < 16; y++) {
-                for (int z = 0; z < 16; z++) {
-                    for (int x = 0; x < 16; x++) {
-                        playerChunk.a(x, cy * 16 + y, z);
-                    }
-                }
-            }
-        }
+//        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+//            playerChunk.a(((CraftChunk) chunk).getHandle());
+//        });
 
-        playerChunk.a(playerChunk.getChunk());
+        // PlayerChunk.a(Chunk) gets called on the next server tick and then sends the LightUpdate Packet
     }
 
     @Override
