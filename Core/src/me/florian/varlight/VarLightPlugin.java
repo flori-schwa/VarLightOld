@@ -19,9 +19,12 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class VarLightPlugin extends JavaPlugin implements Listener {
 
+    public static final int DEFAULT_AUTOSAVE_INTERVALL = 5;
+    public static final long TICK_RATE = 20L;
 
     private enum LightUpdateResult {
         INVALID_BLOCK,
@@ -104,6 +107,19 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         Bukkit.getWorlds().forEach(w -> LightSourcePersistor.getPersistor(this, w));
         nmsAdapter.onEnable(this, lightUpdater instanceof LightUpdaterBuiltIn);
+
+        int saveInterval = getConfig().getInt("autosave", DEFAULT_AUTOSAVE_INTERVALL);
+
+        if (saveInterval <= 0) {
+            saveInterval = DEFAULT_AUTOSAVE_INTERVALL;
+        }
+
+        long ticks = TimeUnit.MINUTES.toSeconds(saveInterval) * TICK_RATE;
+
+        Bukkit.getScheduler().runTaskTimerAsynchronously(this,
+                () -> LightSourcePersistor.getAllPersistors(this).forEach(p -> p.save(Bukkit.getConsoleSender())),
+                ticks, ticks
+        );
     }
 
     @Override
@@ -228,7 +244,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             heldItem.setAmount(heldItem.getAmount() - 1);
         }
 
-        nmsAdapter.setCooldown(player, Material.GLOWSTONE_DUST, 5);
+        nmsAdapter.setCooldown(player, Material.GLOWSTONE_DUST, DEFAULT_AUTOSAVE_INTERVALL);
         displayMessage(player, LightUpdateResult.UPDATED);
     }
 
