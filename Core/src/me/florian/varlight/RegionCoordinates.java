@@ -2,18 +2,16 @@ package me.florian.varlight;
 
 import org.bukkit.Location;
 
-import java.util.Objects;
-
 public class RegionCoordinates {
 
     private final int regionX, regionZ;
 
     public RegionCoordinates(Location location) {
-        this((location.getBlockX() >> 4) >> 5, (location.getBlockZ() >> 4) >> 5);
+        this(new IntPosition(location));
     }
 
     public RegionCoordinates(IntPosition intPosition) {
-        this((intPosition.getX() >> 4) >> 5, (intPosition.getZ() >> 4) >> 5);
+        this(intPosition.getChunkX() >> 5, intPosition.getChunkZ() >> 5);
     }
 
     public RegionCoordinates(int regionX, int regionZ) {
@@ -40,6 +38,12 @@ public class RegionCoordinates {
 
     @Override
     public int hashCode() {
-        return Objects.hash(regionX, regionZ);
+        int result = 89 * 113 + regionX;
+        return 89 * result + regionZ;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%d %d", regionX, regionZ);
     }
 }

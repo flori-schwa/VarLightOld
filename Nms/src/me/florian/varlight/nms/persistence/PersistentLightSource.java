@@ -3,6 +3,7 @@ package me.florian.varlight.nms.persistence;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
+import com.sun.org.apache.xpath.internal.SourceTree;
 import me.florian.varlight.IntPosition;
 import me.florian.varlight.VarLightPlugin;
 import org.bukkit.Material;
@@ -84,12 +85,9 @@ public class PersistentLightSource {
         return gson.fromJson(jsonReader, PersistentLightSource.class);
     }
 
-    boolean writeIfValid(Gson gson, JsonWriter jsonWriter) {
-        if (isValid()) {
-            gson.toJson(this, PersistentLightSource.class, jsonWriter);
-            return true;
-        }
-
-        return false;
+    void write(Gson gson, JsonWriter jsonWriter) {
+        gson.toJson(this, PersistentLightSource.class, jsonWriter);
     }
+
+
 }

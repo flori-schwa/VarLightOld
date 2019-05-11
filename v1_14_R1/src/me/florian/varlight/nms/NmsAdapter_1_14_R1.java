@@ -112,13 +112,8 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
 
                 LightEngineBlock lightEngineBlock = (LightEngineBlock) lightEngine.a(EnumSkyBlock.BLOCK);
 
-
-                Runnable updateTask = () -> update(worldServer, location, blockPosition, lightEngine);
-
-                lightEngineBlock.a(blockPosition, 0);
-
                 Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                    updateTask.run();
+                    update(worldServer, location, blockPosition, lightEngine);
 
                     if (lightLevel > 0) {
                         lightEngineBlock.a(blockPosition, lightLevel);
@@ -128,7 +123,7 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
                         return;
                     }
 
-                    updateTask.run();
+                    update(worldServer, location, blockPosition, lightEngine);
                 });
             }
 
@@ -206,7 +201,14 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
 
             @Override
             public IBlockAccess b(int chunkX, int chunkZ) {
-                return new WrappedIBlockAccess(worldServer, worldServer.getChunkProvider().b(chunkX, chunkZ));
+
+                IBlockAccess toWrap = worldServer.getChunkProvider().b(chunkX, chunkZ);
+
+                if (toWrap == null) {
+                    return null;
+                }
+
+                return new WrappedIBlockAccess(worldServer, toWrap);
             }
 
             @Override
