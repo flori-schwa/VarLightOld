@@ -1,15 +1,11 @@
 package me.florian.varlight;
 
-import net.minecraft.server.v1_13_R2.BlockPosition;
-import net.minecraft.server.v1_13_R2.WorldServer;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.craftbukkit.v1_13_R2.CraftWorld;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class LightUpdaterBuiltIn implements LightUpdater {
@@ -29,13 +25,6 @@ public class LightUpdaterBuiltIn implements LightUpdater {
         this.varLightPlugin = varLightPlugin;
     }
 
-    private WorldServer getNmsWorld(World world) {
-        return ((CraftWorld) world).getHandle();
-    }
-
-    private BlockPosition toBlockPosition(Location location) {
-        return new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-    }
 
     @Override
     public void setLight(Location location, int lightLevel) {
@@ -64,23 +53,7 @@ public class LightUpdaterBuiltIn implements LightUpdater {
         }
 
 
-        int chunkX = location.getChunk().getX();
-        int chunkZ = location.getChunk().getZ();
-
-        List<Chunk> chunksToUpdate = new ArrayList<>();
-
-        for (int dx = - 1; dx <= 1; dx++) {
-            for (int dz = - 1; dz <= 1; dz++) {
-                int x = chunkX + dx;
-                int z = chunkZ + dz;
-
-                if (! world.isChunkLoaded(x, z)) {
-                    continue;
-                }
-
-                chunksToUpdate.add(world.getChunkAt(x, z));
-            }
-        }
+        List<Chunk> chunksToUpdate = getChunksToUpdate(location);
 
         int mask = getChunkBitMask(location);
 
@@ -88,4 +61,5 @@ public class LightUpdaterBuiltIn implements LightUpdater {
             varLightPlugin.getNmsAdapter().sendChunkUpdates(chunk, mask);
         }
     }
+
 }
