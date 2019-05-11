@@ -165,7 +165,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
-        if (e.isCancelled() || (e.getAction() != Action.RIGHT_CLICK_BLOCK && e.getAction() != Action.LEFT_CLICK_BLOCK) || e.getPlayer().hasCooldown(Material.GLOWSTONE_DUST)) {
+        if (e.isCancelled() || (e.getAction() != Action.RIGHT_CLICK_BLOCK && e.getAction() != Action.LEFT_CLICK_BLOCK) || nmsAdapter.hasCooldown(e.getPlayer(), Material.GLOWSTONE_DUST)) {
             return;
         }
 
@@ -228,7 +228,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             heldItem.setAmount(heldItem.getAmount() - 1);
         }
 
-        player.setCooldown(Material.GLOWSTONE_DUST, 5);
+        nmsAdapter.setCooldown(player, Material.GLOWSTONE_DUST, 5);
         displayMessage(player, LightUpdateResult.UPDATED);
     }
 
