@@ -6,7 +6,6 @@ import com.mojang.datafixers.util.Either;
 import me.florian.varlight.LightUpdaterBuiltIn;
 import me.florian.varlight.VarLightPlugin;
 import me.florian.varlight.nms.persistence.LightSourcePersistor;
-import me.florian.varlight.nms.persistence.PersistentLightSource;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.server.v1_14_R1.*;
@@ -25,6 +24,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockEvent;
+import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.material.Openable;
@@ -37,6 +39,7 @@ import java.lang.reflect.Proxy;
 import java.util.EnumSet;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
 
@@ -110,36 +113,46 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
                 LightEngineBlock lightEngineBlock = (LightEngineBlock) lightEngine.a(EnumSkyBlock.BLOCK);
 
 
+                Runnable updateTask = () -> update(worldServer, location, blockPosition, lightEngine);
+
                 lightEngineBlock.a(blockPosition, 0);
 
-                if (lightLevel > 0) {
-                    lightEngineBlock.a(blockPosition, lightLevel);
-                }
-
-                lightEngine.a(blockPosition);
-
-                if (! lightEngine.a()) {
-                    return;
-                }
-
                 Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                    updateTask.run();
+
+                    if (lightLevel > 0) {
+                        lightEngineBlock.a(blockPosition, lightLevel);
+                    }
+
+                    if (! lightEngine.a()) {
+                        return;
+                    }
+
+                    updateTask.run();
+                });
+            }
+
+            private void update(WorldServer worldServer, Location location, BlockPosition blockPosition, LightEngineThreaded lightEngineThreaded) {
+                lightEngineThreaded.a(blockPosition);
+                Future future = lightEngineThreaded.a(new WrappedIChunkAccess(worldServer, worldServer.getChunkAtWorldCoords(blockPosition)), true);
+
+                Runnable updateChunkTask = () -> ((VarLightPlugin) plugin).getLightUpdater()
+                        .getChunksToUpdate(location)
+                        .forEach(c -> queueChunkLightUpdate(c, location.getBlockY() / 16));
+
+                if (worldServer.getMinecraftServer().isMainThread()) {
+                    worldServer.getMinecraftServer().awaitTasks(future::isDone);
+                    updateChunkTask.run();
+                } else {
                     try {
-                        lightEngine.a(new WrappedIChunkAccess(worldServer, worldServer.getChunkAtWorldCoords(blockPosition)), true).get();
+                        future.get();
                     } catch (InterruptedException | ExecutionException e) {
                         e.printStackTrace();
                         return;
                     }
 
-                    plugin.getLogger().info(String.valueOf(lightEngine.a(EnumSkyBlock.BLOCK)
-                            .a(SectionPosition.a(new ChunkCoordIntPair(location.getBlockX() / 16, location.getBlockZ() / 16), location.getBlockY() / 16))
-                            .a(location.getBlockX() & 0xF, location.getBlockY() & 0xF, location.getBlockZ() & 0xF)));
-
-                    Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                        ((VarLightPlugin) plugin).getLightUpdater()
-                                .getChunksToUpdate(location)
-                                .forEach(c -> queueChunkLightUpdate(c, location.getBlockY() / 16));
-                    }, 5L);
-                });
+                    Bukkit.getScheduler().runTask(plugin, updateChunkTask);
+                }
             }
         });
     }
@@ -233,7 +246,7 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
         return new Location(null, blockPosition.getX(), blockPosition.getY(), blockPosition.getZ());
     }
 
-    protected static int getBrightness(WorldServer world, BlockPosition blockPosition) {
+    protected static int getLuminance(WorldServer world, BlockPosition blockPosition) {
         return Math.max(LightSourcePersistor
                 .getPersistor(INSTANCE.plugin, world.getWorld())
                 .getEmittingLightLevel(toLocation(blockPosition)), world.getType(blockPosition).h());
@@ -259,26 +272,39 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
 
     @EventHandler (priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent e) {
+        handleBlockUpdate(e);
+    }
+
+    @EventHandler (priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onBlockBreak(BlockBreakEvent e) {
+        handleBlockUpdate(e);
+    }
+
+    @EventHandler (priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onFluid(BlockFromToEvent e) {
+        handleBlockUpdate(e);
+    }
+
+    private void handleBlockUpdate(BlockEvent e) {
         Block theBlock = e.getBlock();
 
+        WorldServer worldServer = getNmsWorld(theBlock.getWorld());
+//        BlockPosition blockPosition = toBlockPosition(theBlock.getLocation());
+
         for (BlockFace blockFace : CHECK_FACES) {
-            PersistentLightSource persistentLightSource = LightSourcePersistor.getPersistor(plugin, theBlock.getWorld()).getPersistentLightSource(theBlock.getRelative(blockFace)).orElse(null);
+            BlockPosition relative = toBlockPosition(theBlock.getLocation().add(blockFace.getDirection()));
+//            PersistentLightSource persistentLightSource = LightSourcePersistor.getPersistor(plugin, theBlock.getWorld()).getPersistentLightSource(theBlock.getRelative(blockFace)).orElse(null);
+//
+//            if (persistentLightSource == null) {
+//                continue;
+//            }
 
-            if (persistentLightSource == null) {
-                continue;
-            }
-
-
-            if (persistentLightSource.getEmittingLight() > 0) {
-
+            if (getLuminance(worldServer, relative) > 0 && worldServer.getType(relative).h() == 0) {
                 int sectionY = theBlock.getY() / 16;
-
                 plugin.getLightUpdater().getChunksToUpdate(theBlock.getLocation()).forEach(c -> queueChunkLightUpdate(c, sectionY));
-
                 return;
             }
         }
-
     }
 
     @Override
@@ -316,16 +342,13 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
         WorldServer nmsWorld = getNmsWorld(chunk.getWorld());
         PlayerChunkMap playerChunkMap = nmsWorld.getChunkProvider().playerChunkMap;
         PlayerChunk playerChunk = playerChunkMap.visibleChunks.get(ChunkCoordIntPair.pair(chunk.getX(), chunk.getZ()));
+        ChunkCoordIntPair chunkCoordIntPair = new ChunkCoordIntPair(chunk.getX(), chunk.getZ());
 
-        playerChunk.a(EnumSkyBlock.BLOCK, sectionY - 1);
-        playerChunk.a(EnumSkyBlock.BLOCK, sectionY);
-        playerChunk.a(EnumSkyBlock.BLOCK, sectionY + 1);
+        int mask = plugin.getLightUpdater().getChunkBitMask(sectionY);
 
-//        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-//            playerChunk.a(((CraftChunk) chunk).getHandle());
-//        });
+        PacketPlayOutLightUpdate packetPlayOutLightUpdate = new PacketPlayOutLightUpdate(chunkCoordIntPair, nmsWorld.getChunkProvider().getLightEngine(), 0, mask << 1); // Mask has to be shifted, because LSB is section Y -1
 
-        // PlayerChunk.a(Chunk) gets called on the next server tick and then sends the LightUpdate Packet
+        playerChunk.players.a(chunkCoordIntPair, false).forEach(e -> e.playerConnection.sendPacket(packetPlayOutLightUpdate));
     }
 
     @Override
@@ -358,5 +381,15 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
     @Override
     public void sendActionBarMessage(Player player, String message) {
         player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(message));
+    }
+
+    @Override
+    public void setCooldown(Player player, Material material, int ticks) {
+        player.setCooldown(material, ticks);
+    }
+
+    @Override
+    public boolean hasCooldown(Player player, Material material) {
+        return player.hasCooldown(material);
     }
 }

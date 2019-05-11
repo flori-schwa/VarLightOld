@@ -11,6 +11,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.command.CommandSender;
 import org.bukkit.metadata.FixedMetadataValue;
 
 import java.io.File;
@@ -18,12 +19,10 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 public class LightSourcePersistor {
 
-//    public static final Logger LOGGER = Logger.getLogger(LightSourcePersistor.class.getName());
     public static final String TAG_WORLD_LIGHT_SOURCE_PERSISTOR = "varlight:persistor";
 
     private static final Map<UUID, Map<RegionCoordinates, Map<IntPosition, PersistentLightSource>>> LIGHT_SOURCES = new HashMap<>();
@@ -109,7 +108,7 @@ public class LightSourcePersistor {
         return getPersistentLightSource(position).orElseGet(() -> createPersistentLightSource(position, 0));
     }
 
-    public void save() {
+    public void save(CommandSender commandSender) {
         synchronized (world) {
             Map<RegionCoordinates, Map<IntPosition, PersistentLightSource>> worldMap = getWorldMap();
             Gson gson = new Gson();
@@ -138,9 +137,8 @@ public class LightSourcePersistor {
                 }
             }
 
-            plugin.getLogger().info(String.format("All Custom Light Sources persisted for World \"%s\"", world.getName()));
+            commandSender.sendMessage(String.format("All Custom Light Sources persisted for World \"%s\"", world.getName()));
         }
-
     }
 
     private Map<RegionCoordinates, Map<IntPosition, PersistentLightSource>> getWorldMap() {

@@ -12,7 +12,10 @@ public interface LightUpdater {
     void setLight(Location location, int lightLevel);
 
     default int getChunkBitMask(Location location) {
-        int sectionY = location.getBlockY() / 16;
+        return getChunkBitMask(location.getBlockY() / 16);
+    }
+
+    default int getChunkBitMask(int sectionY) {
         int mask = 1 << sectionY;
 
         if (sectionY == 0) {

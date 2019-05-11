@@ -125,4 +125,14 @@ public class NmsAdapter_1_8_R3 implements NmsAdapter {
 
         ((CraftPlayer) player).getHandle().playerConnection.sendPacket(packetPlayOutChat);
     }
+
+    @Override
+    public void setCooldown(Player player, Material material, int ticks) {
+        // Ignore
+    }
+
+    @Override
+    public boolean hasCooldown(Player player, Material material) {
+        return false;
+    }
 }

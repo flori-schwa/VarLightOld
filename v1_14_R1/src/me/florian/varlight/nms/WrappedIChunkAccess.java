@@ -30,7 +30,7 @@ public class WrappedIChunkAccess implements IChunkAccess {
 
     @Override
     public int h(BlockPosition pos) {
-        return NmsAdapter_1_14_R1.getBrightness(worldServer, pos);
+        return NmsAdapter_1_14_R1.getLuminance(worldServer, pos);
     }
 
     // region Wrapped Behaviour

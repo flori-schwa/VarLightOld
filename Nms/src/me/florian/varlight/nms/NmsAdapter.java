@@ -2,9 +2,9 @@ package me.florian.varlight.nms;
 
 import org.bukkit.Chunk;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
 
 public interface NmsAdapter {
@@ -38,4 +38,8 @@ public interface NmsAdapter {
     boolean isValidBlock(Block block);
 
     void sendActionBarMessage(Player player, String message);
+
+    void setCooldown(Player player, Material material, int ticks);
+
+    boolean hasCooldown(Player player, Material material);
 }

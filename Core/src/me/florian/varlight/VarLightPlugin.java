@@ -113,18 +113,31 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         }
 
         nmsAdapter.onDisable(lightUpdater instanceof LightUpdaterBuiltIn);
-        LightSourcePersistor.getAllPersistors(this).forEach(LightSourcePersistor::save);
+        LightSourcePersistor.getAllPersistors(this).forEach(l -> l.save(Bukkit.getConsoleSender()));
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if ("save-lights".equals(command.getName())) {
+        if ("save-lights".equals(command.getName()) && sender.hasPermission(command.getPermission())) {
             if (args.length == 1 && "all".equalsIgnoreCase(args[0])) {
-                LightSourcePersistor.getAllPersistors(this).forEach(LightSourcePersistor::save);
+                LightSourcePersistor.getAllPersistors(this).forEach(l -> l.save(sender));
             } else if (sender instanceof Player) {
                 Player player = (Player) sender;
-                LightSourcePersistor.getPersistor(this, player.getWorld()).save();
+                LightSourcePersistor.getPersistor(this, player.getWorld()).save(sender);
             }
+
+            return true;
+        }
+
+        if ("set-permission".equals(command.getName()) && sender.hasPermission(command.getPermission())) {
+            if (args.length != 1) {
+                return false;
+            }
+
+            getConfig().set("requiredPermission", args[0]);
+            saveConfig();
+            sender.sendMessage("Permission required updated!");
+            return true;
         }
 
         return true;
@@ -152,20 +165,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
-
-        if (isDebug() && e.getItem() != null && e.getItem().getType() == Material.DEBUG_STICK && e.getAction() == Action.RIGHT_CLICK_BLOCK && e.getPlayer().isSneaking()) {
-
-            IntPosition at = new IntPosition(e.getClickedBlock().getLocation());
-
-            e.getPlayer().sendMessage("Block Light at " + at + ": " + e.getClickedBlock().getLightFromBlocks());
-            e.getPlayer().sendMessage("Sky Light at " + at + ": " + e.getClickedBlock().getLightFromSky());
-            e.getPlayer().sendMessage("Light level at " + at + ": " + e.getClickedBlock().getLightLevel());
-
-            e.setCancelled(true);
-
-            return;
-        }
-
         if (e.isCancelled() || (e.getAction() != Action.RIGHT_CLICK_BLOCK && e.getAction() != Action.LEFT_CLICK_BLOCK) || e.getPlayer().hasCooldown(Material.GLOWSTONE_DUST)) {
             return;
         }
@@ -230,6 +229,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         }
 
         player.setCooldown(Material.GLOWSTONE_DUST, 5);
+        displayMessage(player, LightUpdateResult.UPDATED);
     }
 
     private void displayMessage(Player player, LightUpdateResult lightUpdateResult) {

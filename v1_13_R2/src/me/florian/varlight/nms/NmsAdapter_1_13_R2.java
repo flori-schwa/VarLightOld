@@ -121,4 +121,14 @@ public class NmsAdapter_1_13_R2 implements NmsAdapter {
     public void sendActionBarMessage(Player player, String message) {
         player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(message));
     }
+
+    @Override
+    public void setCooldown(Player player, Material material, int ticks) {
+        player.setCooldown(material, ticks);
+    }
+
+    @Override
+    public boolean hasCooldown(Player player, Material material) {
+        return player.hasCooldown(material);
+    }
 }
