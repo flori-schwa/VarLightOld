@@ -60,7 +60,8 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     }
 
     public boolean isDebug() {
-        return getDescription().getVersion().endsWith("-INDEV");
+        return true;
+//        return getDescription().getVersion().endsWith("-INDEV");
     }
 
     @Override
@@ -230,7 +231,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-        int lightTo = lightUpdateEvent.getToLight() & 0xF;
+        int lightTo = lightUpdateEvent.getToLight();
 
         LightSourcePersistor.getPersistor(this, clickedBlock.getWorld())
                 .getOrCreatePersistentLightSource(new IntPosition(clickedBlock.getLocation()))

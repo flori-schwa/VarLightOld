@@ -11,7 +11,7 @@ public class LightUpdateEvent extends BlockEvent implements Cancellable {
     public static final HandlerList HANDLERS = new HandlerList();
 
     public LightUpdateEvent(VarLightPlugin varLightPlugin, Block block, int mod) {
-        this(block, block.getLightFromBlocks(), LightSourcePersistor.getPersistor(varLightPlugin, block.getWorld()).getEmittingLightLevel(block.getLocation()) + mod);
+        this(block, block.getLightFromBlocks(), LightSourcePersistor.getPersistor(varLightPlugin, block.getWorld()).getEmittingLightLevel(block.getLocation(), (byte) 0) + mod);
     }
 
     public static HandlerList getHandlerList() {
@@ -35,11 +35,11 @@ public class LightUpdateEvent extends BlockEvent implements Cancellable {
     }
 
     public int getFromLight() {
-        return fromLight;
+        return fromLight & 0xF;
     }
 
     public int getToLight() {
-        return toLight;
+        return toLight & 0xF;
     }
 
     public void setToLight(int toLight) {

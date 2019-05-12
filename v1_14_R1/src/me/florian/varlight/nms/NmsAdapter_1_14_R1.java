@@ -37,9 +37,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.EnumSet;
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.function.Supplier;
 
 public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
 
@@ -217,19 +217,16 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
             }
         };
 
-        injectToEngine(ReflectionHelper.Safe.get(fieldLightEngineChunkMap, worldServer.getChunkProvider().playerChunkMap), custom, EnumSkyBlock.BLOCK);
-        injectToEngine(ReflectionHelper.Safe.get(fieldLightEngineChunkMap, worldServer.getChunkProvider().playerChunkMap), custom, EnumSkyBlock.SKY);
-
-        injectToEngine(worldServer.getChunkProvider().getLightEngine(), custom, EnumSkyBlock.BLOCK);
-        injectToEngine(worldServer.getChunkProvider().getLightEngine(), custom, EnumSkyBlock.SKY);
+        injectToEngine(ReflectionHelper.Safe.get(fieldLightEngineChunkMap, worldServer.getChunkProvider().playerChunkMap), custom);
+        injectToEngine(worldServer.getChunkProvider().getLightEngine(), custom);
 
         plugin.getLogger().info(String.format("Injected custom IBlockAccess into world \"%s\"", world.getName()));
     }
 
-    private void injectToEngine(LightEngineThreaded lightEngineThreaded, ILightAccess lightAccess, EnumSkyBlock enumSkyBlock) throws IllegalAccessException {
-        LightEngineLayer engineLayer = (LightEngineLayer) Optional.ofNullable(lightEngineThreaded.a(enumSkyBlock)).orElse(null);
+    private void injectToEngine(LightEngineThreaded lightEngineThreaded, ILightAccess lightAccess) throws IllegalAccessException {
+        LightEngineLayerEventListener engineLayer = lightEngineThreaded.a(EnumSkyBlock.BLOCK);
 
-        if (engineLayer == null) {
+        if (engineLayer == LightEngineLayerEventListener.Void.INSTANCE) {
             return;
         }
 
@@ -248,10 +245,8 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
         return new Location(null, blockPosition.getX(), blockPosition.getY(), blockPosition.getZ());
     }
 
-    protected static int getLuminance(WorldServer world, BlockPosition blockPosition) {
-        return Math.max(LightSourcePersistor
-                .getPersistor(INSTANCE.plugin, world.getWorld())
-                .getEmittingLightLevel(toLocation(blockPosition)), world.getType(blockPosition).h());
+    protected static int getCustomLuminance(WorldServer world, BlockPosition blockPosition, Supplier<Integer> def) {
+        return LightSourcePersistor.getPersistor(INSTANCE.plugin, world.getWorld()).getEmittingLightLevel(toLocation(blockPosition), def.get());
     }
 
     @Override
@@ -289,19 +284,12 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
 
     private void handleBlockUpdate(BlockEvent e) {
         Block theBlock = e.getBlock();
-
         WorldServer worldServer = getNmsWorld(theBlock.getWorld());
-//        BlockPosition blockPosition = toBlockPosition(theBlock.getLocation());
 
         for (BlockFace blockFace : CHECK_FACES) {
             BlockPosition relative = toBlockPosition(theBlock.getLocation().add(blockFace.getDirection()));
-//            PersistentLightSource persistentLightSource = LightSourcePersistor.getPersistor(plugin, theBlock.getWorld()).getPersistentLightSource(theBlock.getRelative(blockFace)).orElse(null);
-//
-//            if (persistentLightSource == null) {
-//                continue;
-//            }
 
-            if (getLuminance(worldServer, relative) > 0 && worldServer.getType(relative).h() == 0) {
+            if (getCustomLuminance(worldServer, relative, () -> worldServer.getType(relative).h()) > 0 && worldServer.getType(relative).h() == 0) {
                 int sectionY = theBlock.getY() / 16;
                 plugin.getLightUpdater().getChunksToUpdate(theBlock.getLocation()).forEach(c -> queueChunkLightUpdate(c, sectionY));
                 return;
