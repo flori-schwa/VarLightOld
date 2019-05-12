@@ -1,11 +1,15 @@
-package me.florian.varlight.nms;
+package me.florian.varlight.nms.v1_14_R1;
 
 
 import com.google.common.collect.BiMap;
 import com.mojang.datafixers.util.Either;
 import me.florian.varlight.LightUpdaterBuiltIn;
 import me.florian.varlight.VarLightPlugin;
-import me.florian.varlight.nms.persistence.LightSourcePersistor;
+import me.florian.varlight.nms.LightUpdateFailedException;
+import me.florian.varlight.nms.NmsAdapter;
+import me.florian.varlight.nms.ReflectionHelper;
+import me.florian.varlight.nms.VarLightInitializationException;
+import me.florian.varlight.persistence.LightSourcePersistor;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.server.v1_14_R1.*;
@@ -30,7 +34,6 @@ import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.material.Openable;
-import org.bukkit.plugin.Plugin;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -69,15 +72,15 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
             fieldLightEngineLayerILightAccess = ReflectionHelper.Safe.getField(LightEngineLayer.class, "a");
 
         } catch (NoSuchFieldException e) {
-            throw new NmsInitializationException(e);
+            throw new VarLightInitializationException(e);
         }
     }
 
     private VarLightPlugin plugin;
 
     @Override
-    public void onLoad(Plugin plugin, boolean use) {
-        this.plugin = (VarLightPlugin) plugin;
+    public void onLoad(VarLightPlugin plugin, boolean use) {
+        this.plugin = plugin;
 
         if (! use) {
             return;
@@ -87,7 +90,7 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
     }
 
     @Override
-    public void onEnable(Plugin plugin, boolean use) {
+    public void onEnable(VarLightPlugin plugin, boolean use) {
         if (! use) {
             return;
         }
@@ -99,7 +102,7 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
                 injectCustomIBlockAccess(world);
             }
         } catch (IllegalAccessException e) {
-            throw new NmsInitializationException(e);
+            throw new VarLightInitializationException(e);
         }
 
         this.plugin.setLightUpdater(new LightUpdaterBuiltIn(this.plugin) {
@@ -108,12 +111,18 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
                 WorldServer worldServer = NmsAdapter_1_14_R1.this.getNmsWorld(location.getWorld());
                 BlockPosition blockPosition = NmsAdapter_1_14_R1.toBlockPosition(location);
 
+                net.minecraft.server.v1_14_R1.Chunk chunk = worldServer.getChunkProvider().getChunkAt(blockPosition.getX() >> 4, blockPosition.getZ() >> 4, false);
+
+                if (chunk == null || ! chunk.loaded) {
+                    return;
+                }
+
                 LightEngineThreaded lightEngine = worldServer.getChunkProvider().getLightEngine();
 
                 LightEngineBlock lightEngineBlock = (LightEngineBlock) lightEngine.a(EnumSkyBlock.BLOCK);
 
                 Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                    update(worldServer, location, blockPosition, lightEngine);
+                    update(worldServer, location, blockPosition, chunk, lightEngine);
 
                     if (lightLevel > 0) {
                         lightEngineBlock.a(blockPosition, lightLevel);
@@ -123,13 +132,13 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
                         return;
                     }
 
-                    update(worldServer, location, blockPosition, lightEngine);
+                    update(worldServer, location, blockPosition, chunk, lightEngine);
                 });
             }
 
-            private void update(WorldServer worldServer, Location location, BlockPosition blockPosition, LightEngineThreaded lightEngineThreaded) {
+            private void update(WorldServer worldServer, Location location, BlockPosition blockPosition, net.minecraft.server.v1_14_R1.Chunk chunk, LightEngineThreaded lightEngineThreaded) {
                 lightEngineThreaded.a(blockPosition);
-                Future future = lightEngineThreaded.a(new WrappedIChunkAccess(worldServer, worldServer.getChunkAtWorldCoords(blockPosition)), true);
+                Future future = lightEngineThreaded.a(new WrappedIChunkAccess(worldServer, chunk), true);
 
                 Runnable updateChunkTask = () -> ((VarLightPlugin) plugin).getLightUpdater()
                         .getChunksToUpdate(location)
@@ -189,7 +198,7 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
             ReflectionHelper.setStatic(light, customLight);
             plugin.getLogger().info("Injected Custom Light ChunkStatus");
         } catch (NoSuchFieldException | ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            throw new NmsInitializationException(e);
+            throw new VarLightInitializationException(e);
         }
     }
 
@@ -245,8 +254,8 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
         return new Location(null, blockPosition.getX(), blockPosition.getY(), blockPosition.getZ());
     }
 
-    protected static int getCustomLuminance(WorldServer world, BlockPosition blockPosition, Supplier<Integer> def) {
-        return LightSourcePersistor.getPersistor(INSTANCE.plugin, world.getWorld()).getEmittingLightLevel(toLocation(blockPosition), def.get());
+    protected static int getLuminance(WorldServer world, BlockPosition blockPosition, Supplier<Integer> def) {
+        return LightSourcePersistor.getPersistor(INSTANCE.plugin, world.getWorld()).map(persistor -> persistor.getEmittingLightLevel(toLocation(blockPosition), def.get())).orElseGet(def);
     }
 
     @Override
@@ -263,7 +272,7 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
         try {
             injectCustomIBlockAccess(e.getWorld());
         } catch (IllegalAccessException ex) {
-            throw new NmsInitializationException(ex);
+            throw new VarLightInitializationException(ex);
         }
     }
 
@@ -283,18 +292,20 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
     }
 
     private void handleBlockUpdate(BlockEvent e) {
-        Block theBlock = e.getBlock();
-        WorldServer worldServer = getNmsWorld(theBlock.getWorld());
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            Block theBlock = e.getBlock();
+            WorldServer worldServer = getNmsWorld(theBlock.getWorld());
 
-        for (BlockFace blockFace : CHECK_FACES) {
-            BlockPosition relative = toBlockPosition(theBlock.getLocation().add(blockFace.getDirection()));
+            for (BlockFace blockFace : CHECK_FACES) {
+                BlockPosition relative = toBlockPosition(theBlock.getLocation().add(blockFace.getDirection()));
 
-            if (getCustomLuminance(worldServer, relative, () -> worldServer.getType(relative).h()) > 0 && worldServer.getType(relative).h() == 0) {
-                int sectionY = theBlock.getY() / 16;
-                plugin.getLightUpdater().getChunksToUpdate(theBlock.getLocation()).forEach(c -> queueChunkLightUpdate(c, sectionY));
-                return;
+                if (getLuminance(worldServer, relative, () -> worldServer.getType(relative).h()) > 0 && worldServer.getType(relative).h() == 0) {
+                    int sectionY = theBlock.getY() / 16;
+                    plugin.getLightUpdater().getChunksToUpdate(theBlock.getLocation()).forEach(c -> queueChunkLightUpdate(c, sectionY));
+                    return;
+                }
             }
-        }
+        }, 1L);
     }
 
     @Override

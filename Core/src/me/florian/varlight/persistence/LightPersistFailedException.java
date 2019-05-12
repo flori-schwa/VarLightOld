@@ -1,4 +1,4 @@
-package me.florian.varlight.nms.persistence;
+package me.florian.varlight.persistence;
 
 public class LightPersistFailedException extends RuntimeException {
 

@@ -1,5 +1,6 @@
 package me.florian.varlight.nms;
 
+import me.florian.varlight.VarLightPlugin;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -9,11 +10,11 @@ import org.bukkit.plugin.Plugin;
 
 public interface NmsAdapter {
 
-    default void onLoad(Plugin plugin, boolean use) {
+    default void onLoad(VarLightPlugin plugin, boolean use) {
 
     }
 
-    default void onEnable(Plugin plugin, boolean use) {
+    default void onEnable(VarLightPlugin plugin, boolean use) {
 
     }
 

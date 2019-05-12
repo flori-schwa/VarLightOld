@@ -1,28 +1,28 @@
-package me.florian.varlight.nms;
+package me.florian.varlight.nms.v1_9_R2;
 
+import me.florian.varlight.nms.NmsAdapter;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
-import net.minecraft.server.v1_11_R1.*;
+import net.minecraft.server.v1_9_R2.*;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.v1_11_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_9_R2.CraftWorld;
 import org.bukkit.entity.Player;
 import org.bukkit.material.DirectionalContainer;
 import org.bukkit.material.MaterialData;
 import org.bukkit.material.PistonBaseMaterial;
 import org.bukkit.material.Redstone;
 
-public class NmsAdapter_1_11_R1 implements NmsAdapter {
+public class NmsAdapter_1_9_R2 implements NmsAdapter {
 
     private Class[] blacklistedDatas = new Class[] {
             Redstone.class,
             DirectionalContainer.class,
             PistonBaseMaterial.class
     };
-
 
     private WorldServer getNmsWorld(World world) {
         return ((CraftWorld) world).getHandle();
@@ -58,7 +58,21 @@ public class NmsAdapter_1_11_R1 implements NmsAdapter {
         PlayerChunkMap playerChunkMap = nmsWorld.getPlayerChunkMap();
         PlayerChunk playerChunk = playerChunkMap.getChunk(chunk.getX(), chunk.getZ());
 
-        playerChunk.a(new PacketPlayOutMapChunk(playerChunk.chunk, mask));
+        for (int cy = 0; cy < 16; cy++) {
+            if ((mask & (1 << cy)) == 0) {
+                continue;
+            }
+
+            for (int y = 0; y < 16; y++) {
+                for (int z = 0; z < 16; z++) {
+                    for (int x = 0; x < 16; x++) {
+                        playerChunk.a(x, cy * 16 + y, z);
+                    }
+                }
+            }
+        }
+
+        playerChunk.d();
     }
 
     @Override
@@ -93,11 +107,11 @@ public class NmsAdapter_1_11_R1 implements NmsAdapter {
 
     @Override
     public void setCooldown(Player player, Material material, int ticks) {
-        player.setCooldown(material, ticks);
+        // Ignore
     }
 
     @Override
     public boolean hasCooldown(Player player, Material material) {
-        return player.hasCooldown(material);
+        return false;
     }
 }

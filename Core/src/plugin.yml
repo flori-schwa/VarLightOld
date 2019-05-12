@@ -1,5 +1,5 @@
 name: VarLight
-version: "1.3.2"
+version: "1.3.3"
 author: Florian
 main: me.florian.varlight.VarLightPlugin
 description: Turn Normal Blocks into Light Sources!
@@ -8,11 +8,16 @@ api-version: "1.13"
 softdepend:
   - LightAPI
 
+permissions:
+  varlight.admin:
+    description: "Provides access to the varlight admin commands"
+    children:
+      varlight.admin.save:
+        description: "Provides access to the varlight save command"
+      varlight.admin.perm:
+        description: "Provides access to the varlight permission command"
+
 commands:
-  save-lights:
-    description: Save all persisten lights to disk
-    permission: varlight.admin
-  set-permission:
-    description: Update the required permission to place custom light sources
-    permission: varlight.admin
-    usage: /set-permission <node>
+  varlight:
+    description: "VarLight admin command"
+    permission: "varlight.admin"

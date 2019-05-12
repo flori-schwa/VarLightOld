@@ -1,27 +1,31 @@
-package me.florian.varlight.nms;
+package me.florian.varlight.nms.v1_12_R1;
 
+import me.florian.varlight.nms.NmsAdapter;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
-import net.minecraft.server.v1_10_R1.*;
+import net.minecraft.server.v1_12_R1.*;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.v1_10_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_12_R1.CraftWorld;
 import org.bukkit.entity.Player;
 import org.bukkit.material.DirectionalContainer;
 import org.bukkit.material.MaterialData;
 import org.bukkit.material.PistonBaseMaterial;
 import org.bukkit.material.Redstone;
 
-public class NmsAdapter_1_10_R1 implements NmsAdapter {
+public class NmsAdapter_1_12_R1 implements NmsAdapter {
 
     private Class[] blacklistedDatas = new Class[] {
             Redstone.class,
             DirectionalContainer.class,
             PistonBaseMaterial.class
     };
+
+    public NmsAdapter_1_12_R1() {
+    }
 
     private WorldServer getNmsWorld(World world) {
         return ((CraftWorld) world).getHandle();
@@ -106,11 +110,11 @@ public class NmsAdapter_1_10_R1 implements NmsAdapter {
 
     @Override
     public void setCooldown(Player player, Material material, int ticks) {
-        // Ignore
+        player.setCooldown(material, ticks);
     }
 
     @Override
     public boolean hasCooldown(Player player, Material material) {
-        return false;
+        return player.hasCooldown(material);
     }
 }

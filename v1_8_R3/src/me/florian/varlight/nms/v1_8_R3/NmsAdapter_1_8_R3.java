@@ -1,5 +1,6 @@
-package me.florian.varlight.nms;
+package me.florian.varlight.nms.v1_8_R3;
 
+import me.florian.varlight.nms.NmsAdapter;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.server.v1_8_R3.*;

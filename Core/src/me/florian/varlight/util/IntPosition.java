@@ -1,4 +1,4 @@
-package me.florian.varlight;
+package me.florian.varlight.util;
 
 import org.bukkit.Location;
 import org.bukkit.World;

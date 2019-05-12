@@ -1,4 +1,4 @@
-package me.florian.varlight.nms;
+package me.florian.varlight.nms.v1_14_R1;
 
 import net.minecraft.server.v1_14_R1.*;
 
@@ -32,6 +32,6 @@ public class WrappedIBlockAccess implements IBlockAccess {
 
     @Override
     public int h(BlockPosition position) {
-        return NmsAdapter_1_14_R1.getCustomLuminance(worldServer, position, () -> IBlockAccess.super.h(position));
+        return NmsAdapter_1_14_R1.getLuminance(worldServer, position, () -> IBlockAccess.super.h(position));
     }
 }

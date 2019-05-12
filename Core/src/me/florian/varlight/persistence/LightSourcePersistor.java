@@ -1,18 +1,19 @@
-package me.florian.varlight.nms.persistence;
+package me.florian.varlight.persistence;
 
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
-import me.florian.varlight.IntPosition;
-import me.florian.varlight.RegionCoordinates;
 import me.florian.varlight.VarLightPlugin;
+import me.florian.varlight.util.IntPosition;
+import me.florian.varlight.util.RegionCoordinates;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
 import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.metadata.MetadataValue;
 
 import java.io.File;
 import java.io.FileReader;
@@ -26,18 +27,46 @@ public class LightSourcePersistor {
     public static final String TAG_WORLD_LIGHT_SOURCE_PERSISTOR = "varlight:persistor";
 
     public static Stream<LightSourcePersistor> getAllPersistors(VarLightPlugin plugin) {
-        return Bukkit.getWorlds().stream().map(w -> getPersistor(plugin, w));
+        return Bukkit.getWorlds().stream().map(w -> getPersistor(plugin, w)).filter(Optional::isPresent).map(Optional::get);
     }
 
-    public static LightSourcePersistor getPersistor(VarLightPlugin plugin, World world) {
-        return (LightSourcePersistor) world.getMetadata(TAG_WORLD_LIGHT_SOURCE_PERSISTOR).stream().filter(m -> m.getOwningPlugin().equals(plugin)).findFirst().orElseGet(() -> {
+    public static LightSourcePersistor createPersistor(VarLightPlugin plugin, World world) {
+        if (world.hasMetadata(TAG_WORLD_LIGHT_SOURCE_PERSISTOR)) {
+            return (LightSourcePersistor) world.getMetadata(TAG_WORLD_LIGHT_SOURCE_PERSISTOR)
+                    .stream()
+                    .filter(m -> m.getOwningPlugin().equals(plugin))
+                    .findFirst().map(MetadataValue::value).orElse(null);
+        }
 
-            FixedMetadataValue fixedMetadataValue = new FixedMetadataValue(plugin, new LightSourcePersistor(plugin, world));
-            world.setMetadata(TAG_WORLD_LIGHT_SOURCE_PERSISTOR, fixedMetadataValue);
+        FixedMetadataValue fixedMetadataValue = new FixedMetadataValue(plugin, new LightSourcePersistor(plugin, world));
+        world.setMetadata(TAG_WORLD_LIGHT_SOURCE_PERSISTOR, fixedMetadataValue);
 
-            return fixedMetadataValue;
+        return (LightSourcePersistor) fixedMetadataValue.value();
+    }
 
-        }).value();
+    public static boolean hasPersistor(VarLightPlugin plugin, World world) {
+        return getPersistor(plugin, world).isPresent();
+    }
+
+    public static Optional<LightSourcePersistor> getPersistor(VarLightPlugin plugin, World world) {
+        return world.getMetadata(TAG_WORLD_LIGHT_SOURCE_PERSISTOR).stream().filter(m -> m.getOwningPlugin().equals(plugin)).findFirst().map(m -> (LightSourcePersistor) m.value());
+    }
+
+    public static int getEmittingLightLevel(VarLightPlugin plugin, Location location) {
+        Optional<LightSourcePersistor> optPersistor = getPersistor(plugin, location.getWorld());
+
+        if (! optPersistor.isPresent()) {
+            return plugin.getNmsAdapter().getEmittingLightLevel(location.getBlock());
+        }
+
+        LightSourcePersistor persistor = optPersistor.get();
+        Optional<PersistentLightSource> optPersistentLightSource = persistor.getPersistentLightSource(location);
+
+        if (! optPersistentLightSource.isPresent()) {
+            return plugin.getNmsAdapter().getEmittingLightLevel(location.getBlock());
+        }
+
+        return optPersistentLightSource.get().getEmittingLight();
     }
 
 
@@ -158,7 +187,7 @@ public class LightSourcePersistor {
             unloadRegion(regionCoordinates);
         }
 
-        commandSender.sendMessage(String.format("Light Sources persisted for World \"%s\", Files written to disk: %d", world.getName(), persistedRegions));
+        commandSender.sendMessage(String.format("[VarLight] Light Sources persisted for World \"%s\", Files written: %d", world.getName(), persistedRegions));
     }
 
     private void unloadRegion(RegionCoordinates key) {

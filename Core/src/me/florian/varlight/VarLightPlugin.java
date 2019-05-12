@@ -1,13 +1,23 @@
 package me.florian.varlight;
 
-import me.florian.varlight.nms.*;
-import me.florian.varlight.nms.persistence.LightSourcePersistor;
+import me.florian.varlight.command.VarLightCommand;
+import me.florian.varlight.event.LightUpdateEvent;
+import me.florian.varlight.nms.NmsAdapter;
+import me.florian.varlight.nms.ReflectionHelper;
+import me.florian.varlight.nms.VarLightInitializationException;
+import me.florian.varlight.nms.v1_10_R1.NmsAdapter_1_10_R1;
+import me.florian.varlight.nms.v1_11_R1.NmsAdapter_1_11_R1;
+import me.florian.varlight.nms.v1_12_R1.NmsAdapter_1_12_R1;
+import me.florian.varlight.nms.v1_13_R2.NmsAdapter_1_13_R2;
+import me.florian.varlight.nms.v1_14_R1.NmsAdapter_1_14_R1;
+import me.florian.varlight.nms.v1_8_R3.NmsAdapter_1_8_R3;
+import me.florian.varlight.nms.v1_9_R2.NmsAdapter_1_9_R2;
+import me.florian.varlight.persistence.LightSourcePersistor;
+import me.florian.varlight.util.IntPosition;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -19,12 +29,10 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public class VarLightPlugin extends JavaPlugin implements Listener {
-
-    public static final int DEFAULT_AUTOSAVE_INTERVALL = 5;
-    public static final long TICK_RATE = 20L;
 
     private enum LightUpdateResult {
         INVALID_BLOCK,
@@ -34,17 +42,17 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         UPDATED;
     }
 
+    public static final long TICK_RATE = 20L;
+    private static Map<String, Class<? extends NmsAdapter>> ADAPTERS;
     private static String SERVER_VERSION;
 
     public static String getServerVersion() {
         return SERVER_VERSION;
     }
 
-    private static Map<String, Class<? extends NmsAdapter>> ADAPTERS;
-
     private LightUpdater lightUpdater;
-
     private NmsAdapter nmsAdapter;
+    private VarLightConfiguration configuration;
     private boolean doLoad = true;
 
     static {
@@ -65,6 +73,28 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     @Override
     public void onLoad() {
+        if ((int) ReflectionHelper.get(Bukkit.getServer(), "reloadCount") > 0) {
+            getLogger().severe("------------------------------------------------------");
+            getLogger().severe("VarLight does not support /reload!");
+            getLogger().severe("");
+            getLogger().severe("VarLight will shutdown the server in 10 seconds!");
+            getLogger().severe("Keeping the server running at this state");
+            getLogger().severe("will result it countless bugs and errors in the console!");
+            getLogger().severe("------------------------------------------------------");
+
+
+            try {
+                Thread.sleep(TimeUnit.SECONDS.toMillis(10L));
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            Bukkit.shutdown();
+
+            doLoad = false;
+            return;
+        }
+
         SERVER_VERSION = Bukkit.getServer().getClass().getPackage().getName();
         SERVER_VERSION = SERVER_VERSION.substring(SERVER_VERSION.lastIndexOf('.') + 1);
 
@@ -79,7 +109,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         try {
             nmsAdapter = ADAPTERS.get(SERVER_VERSION).getConstructor().newInstance();
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | NmsInitializationException e) {
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | VarLightInitializationException e) {
             getLogger().throwing(getClass().getName(), "onLoad", e);
             doLoad = false;
             return;
@@ -103,15 +133,31 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             return;
         }
 
+        Bukkit.getWorlds().forEach(w -> LightSourcePersistor.createPersistor(this, w));
+
+        try {
+            nmsAdapter.onEnable(this, lightUpdater instanceof LightUpdaterBuiltIn);
+        } catch (VarLightInitializationException e) {
+            getLogger().throwing(getClass().getName(), "onEnable", e);
+            Bukkit.getPluginManager().disablePlugin(this);
+            doLoad = false;
+            return;
+        }
+
+        configuration = new VarLightConfiguration(this);
+
+        initAutosave();
+
         Bukkit.getPluginManager().registerEvents(this, this);
 
-        Bukkit.getWorlds().forEach(w -> LightSourcePersistor.getPersistor(this, w));
-        nmsAdapter.onEnable(this, lightUpdater instanceof LightUpdaterBuiltIn);
+        getCommand("varlight").setExecutor(new VarLightCommand(this));
+    }
 
-        int saveInterval = getConfig().getInt("autosave", DEFAULT_AUTOSAVE_INTERVALL);
+    private void initAutosave() {
+        int saveInterval = configuration.getAutosaveInterval();
 
         if (saveInterval <= 0) {
-            saveInterval = DEFAULT_AUTOSAVE_INTERVALL;
+            saveInterval = VarLightConfiguration.AUTOSAVE_DEFAULT;
         }
 
         long ticks = TimeUnit.MINUTES.toSeconds(saveInterval) * TICK_RATE;
@@ -128,35 +174,13 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             return;
         }
 
+        configuration.save();
         nmsAdapter.onDisable(lightUpdater instanceof LightUpdaterBuiltIn);
         LightSourcePersistor.getAllPersistors(this).forEach(l -> l.save(Bukkit.getConsoleSender()));
     }
 
-    @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if ("save-lights".equals(command.getName()) && sender.hasPermission(command.getPermission())) {
-            if (args.length == 1 && "all".equalsIgnoreCase(args[0])) {
-                LightSourcePersistor.getAllPersistors(this).forEach(l -> l.save(sender));
-            } else if (sender instanceof Player) {
-                Player player = (Player) sender;
-                LightSourcePersistor.getPersistor(this, player.getWorld()).save(sender);
-            }
-
-            return true;
-        }
-
-        if ("set-permission".equals(command.getName()) && sender.hasPermission(command.getPermission())) {
-            if (args.length != 1) {
-                return false;
-            }
-
-            getConfig().set("requiredPermission", args[0]);
-            saveConfig();
-            sender.sendMessage("Permission required updated!");
-            return true;
-        }
-
-        return true;
+    public VarLightConfiguration getConfiguration() {
+        return configuration;
     }
 
     public NmsAdapter getNmsAdapter() {
@@ -181,7 +205,9 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
-        if (e.isCancelled() || (e.getAction() != Action.RIGHT_CLICK_BLOCK && e.getAction() != Action.LEFT_CLICK_BLOCK) || nmsAdapter.hasCooldown(e.getPlayer(), Material.GLOWSTONE_DUST)) {
+        Optional<LightSourcePersistor> optPersistor = LightSourcePersistor.getPersistor(this, e.getPlayer().getWorld());
+
+        if (e.isCancelled() || (e.getAction() != Action.RIGHT_CLICK_BLOCK && e.getAction() != Action.LEFT_CLICK_BLOCK) || nmsAdapter.hasCooldown(e.getPlayer(), Material.GLOWSTONE_DUST) || ! optPersistor.isPresent()) {
             return;
         }
 
@@ -232,8 +258,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         int lightTo = lightUpdateEvent.getToLight();
 
-        LightSourcePersistor.getPersistor(this, clickedBlock.getWorld())
-                .getOrCreatePersistentLightSource(new IntPosition(clickedBlock.getLocation()))
+        optPersistor.get().getOrCreatePersistentLightSource(new IntPosition(clickedBlock.getLocation()))
                 .setEmittingLight(lightTo);
 
         lightUpdater.setLight(clickedBlock.getLocation(), lightTo);
@@ -244,7 +269,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             heldItem.setAmount(heldItem.getAmount() - 1);
         }
 
-        nmsAdapter.setCooldown(player, Material.GLOWSTONE_DUST, DEFAULT_AUTOSAVE_INTERVALL);
+        nmsAdapter.setCooldown(player, Material.GLOWSTONE_DUST, 5);
         displayMessage(player, LightUpdateResult.UPDATED);
     }
 

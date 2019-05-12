@@ -1,10 +1,9 @@
-package me.florian.varlight.nms.persistence;
+package me.florian.varlight.persistence;
 
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import com.sun.org.apache.xpath.internal.SourceTree;
-import me.florian.varlight.IntPosition;
+import me.florian.varlight.util.IntPosition;
 import me.florian.varlight.VarLightPlugin;
 import org.bukkit.Material;
 import org.bukkit.World;

@@ -1,4 +1,4 @@
-package me.florian.varlight.nms;
+package me.florian.varlight.nms.v1_14_R1;
 
 import net.minecraft.server.v1_14_R1.*;
 import org.bukkit.craftbukkit.libs.it.unimi.dsi.fastutil.longs.LongSet;
@@ -30,7 +30,7 @@ public class WrappedIChunkAccess implements IChunkAccess {
 
     @Override
     public int h(BlockPosition pos) {
-        return NmsAdapter_1_14_R1.getCustomLuminance(worldServer, pos, () -> IChunkAccess.super.h(pos));
+        return NmsAdapter_1_14_R1.getLuminance(worldServer, pos, () -> IChunkAccess.super.h(pos));
     }
 
     // region Wrapped Behaviour

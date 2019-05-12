@@ -1,6 +1,7 @@
-package me.florian.varlight;
+package me.florian.varlight.event;
 
-import me.florian.varlight.nms.persistence.LightSourcePersistor;
+import me.florian.varlight.VarLightPlugin;
+import me.florian.varlight.persistence.LightSourcePersistor;
 import org.bukkit.block.Block;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
@@ -11,7 +12,8 @@ public class LightUpdateEvent extends BlockEvent implements Cancellable {
     public static final HandlerList HANDLERS = new HandlerList();
 
     public LightUpdateEvent(VarLightPlugin varLightPlugin, Block block, int mod) {
-        this(block, block.getLightFromBlocks(), LightSourcePersistor.getPersistor(varLightPlugin, block.getWorld()).getEmittingLightLevel(block.getLocation(), (byte) 0) + mod);
+        this(block, block.getLightFromBlocks(),
+                LightSourcePersistor.getEmittingLightLevel(varLightPlugin, block.getLocation()) + mod);
     }
 
     public static HandlerList getHandlerList() {

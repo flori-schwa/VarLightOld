@@ -1,21 +1,22 @@
-package me.florian.varlight.nms;
+package me.florian.varlight.nms.v1_10_R1;
 
+import me.florian.varlight.nms.NmsAdapter;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
-import net.minecraft.server.v1_9_R2.*;
+import net.minecraft.server.v1_10_R1.*;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.v1_9_R2.CraftWorld;
+import org.bukkit.craftbukkit.v1_10_R1.CraftWorld;
 import org.bukkit.entity.Player;
 import org.bukkit.material.DirectionalContainer;
 import org.bukkit.material.MaterialData;
 import org.bukkit.material.PistonBaseMaterial;
 import org.bukkit.material.Redstone;
 
-public class NmsAdapter_1_9_R2 implements NmsAdapter {
+public class NmsAdapter_1_10_R1 implements NmsAdapter {
 
     private Class[] blacklistedDatas = new Class[] {
             Redstone.class,
