@@ -27,7 +27,7 @@ public class VarLightCommand implements CommandExecutor {
                 "/varlight save: Save All Light sources in current world",
                 "/varlight save <world>: Save All Light sources in the specified world",
                 "/varlight save all: Save All Light sources",
-                "/varlight autosave <interval>: Set the autosave interval. Effective after restart",
+                "/varlight autosave <interval>: Set the autosave interval",
                 "",
                 "/varlight getperm: Get the required permission node",
                 "/varlight setperm <permission>: Set the required permission node",
