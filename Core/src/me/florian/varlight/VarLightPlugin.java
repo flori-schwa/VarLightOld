@@ -25,6 +25,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
@@ -53,6 +54,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     private LightUpdater lightUpdater;
     private NmsAdapter nmsAdapter;
     private VarLightConfiguration configuration;
+    private BukkitTask autosaveTask;
     private boolean doLoad = true;
 
     static {
@@ -153,16 +155,28 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         getCommand("varlight").setExecutor(new VarLightCommand(this));
     }
 
-    private void initAutosave() {
+    public void initAutosave() {
+        if (autosaveTask != null && !autosaveTask.isCancelled()) {
+            autosaveTask.cancel();
+            autosaveTask = null;
+        }
+
         int saveInterval = configuration.getAutosaveInterval();
 
-        if (saveInterval <= 0) {
+        if (saveInterval == 0) {
+
+            getLogger().warning("Autosave is disabled! All Light sources will be lost if the server crashes and Light sources were not manually saved!");
+
+            return;
+        }
+
+        if (saveInterval < 0) {
             saveInterval = VarLightConfiguration.AUTOSAVE_DEFAULT;
         }
 
         long ticks = TimeUnit.MINUTES.toSeconds(saveInterval) * TICK_RATE;
 
-        Bukkit.getScheduler().runTaskTimerAsynchronously(this,
+        autosaveTask = Bukkit.getScheduler().runTaskTimerAsynchronously(this,
                 () -> LightSourcePersistor.getAllPersistors(this).forEach(p -> p.save(Bukkit.getConsoleSender())),
                 ticks, ticks
         );

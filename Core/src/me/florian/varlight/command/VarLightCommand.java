@@ -130,13 +130,20 @@ public class VarLightCommand implements CommandExecutor {
             return true;
         }
 
-        if (newInterval <= 0) {
-            commandSender.sendMessage("interval must be > 0");
+        if (newInterval < 0) {
+            commandSender.sendMessage("interval must be >= 0");
             return true;
         }
 
         plugin.getConfiguration().setAutosaveInterval(newInterval);
-        broadcastResult(commandSender, String.format("Updated autosave interval to %d Minuted", newInterval), "varlight.admin.save");
+        plugin.initAutosave();
+
+        if (newInterval > 0) {
+            broadcastResult(commandSender, String.format("Updated autosave interval to %d Minutes", newInterval), "varlight.admin.save");
+        } else {
+            broadcastResult(commandSender, "Disabled Autosave", "varlight.admin.save");
+        }
+
         return true;
     }
 
@@ -184,9 +191,9 @@ public class VarLightCommand implements CommandExecutor {
     }
 
     private static final void broadcastResult(CommandSender source, String message, String node) {
-        String msg = String.format("%s: %s", source.getName(), message);
+        String msg = String.format("%s: [VarLight] %s", source.getName(), message);
         String formatted = ChatColor.GRAY + "" + ChatColor.ITALIC + String.format("[%s]", msg);
-        source.sendMessage(message);
+        source.sendMessage(String.format("[VarLight] %s", message));
 
         Bukkit.getPluginManager().getPermissionSubscriptions(node).stream().filter(p -> p != source && p instanceof CommandSender).forEach(p -> {
             if (p instanceof ConsoleCommandSender) {

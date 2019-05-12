@@ -29,7 +29,7 @@ public class VarLightConfiguration {
     }
 
     public void setAutosaveInterval(int interval) {
-        Preconditions.checkArgument(interval > 0, "interval must be > 0");
+        Preconditions.checkArgument(interval >= 0, "interval must be >= 0");
         plugin.getConfig().set(CONFIG_KEY_AUTOSAVE, interval);
         save();
     }
