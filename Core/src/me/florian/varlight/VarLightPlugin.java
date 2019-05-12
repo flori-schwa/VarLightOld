@@ -60,8 +60,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     }
 
     public boolean isDebug() {
-        return true;
-//        return getDescription().getVersion().endsWith("-INDEV");
+        return getDescription().getVersion().endsWith("-INDEV");
     }
 
     @Override
