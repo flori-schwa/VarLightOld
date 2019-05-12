@@ -325,7 +325,7 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
     public int getEmittingLightLevel(Block block) {
         IBlockData blockData = ((CraftWorld) block.getWorld()).getHandle().getChunkAt(block.getChunk().getX(), block.getChunk().getZ()).getType(toBlockPosition(block.getLocation()));
 
-        return blockData.getBlock().a(blockData);
+        return blockData.h();
     }
 
     public void queueChunkLightUpdate(Chunk chunk, int sectionY) {
