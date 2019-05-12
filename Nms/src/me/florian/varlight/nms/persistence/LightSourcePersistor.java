@@ -64,8 +64,8 @@ public class LightSourcePersistor {
         return world;
     }
 
-    public int getEmittingLightLevel(Location location) {
-        return getPersistentLightSource(location).map(PersistentLightSource::getEmittingLight).orElse((byte) 0);
+    public int getEmittingLightLevel(Location location, int def) {
+        return getPersistentLightSource(location).map(PersistentLightSource::getEmittingLight).orElse(def);
     }
 
     public Optional<PersistentLightSource> getPersistentLightSource(Block block) {

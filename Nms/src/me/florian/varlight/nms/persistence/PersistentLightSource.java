@@ -19,7 +19,7 @@ public class PersistentLightSource {
 
     private final IntPosition position;
     private final Material type;
-    private byte emittingLight;
+    private int emittingLight;
 
     PersistentLightSource(VarLightPlugin plugin, World world, IntPosition position, int emittingLight) {
         Objects.requireNonNull(plugin);
@@ -30,7 +30,7 @@ public class PersistentLightSource {
         this.world = world;
         this.position = position;
         this.type = position.toLocation(world).getBlock().getType();
-        this.emittingLight = (byte) (emittingLight & 0xF);
+        this.emittingLight = (emittingLight & 0xF);
     }
 
     public World getWorld() {
@@ -45,17 +45,17 @@ public class PersistentLightSource {
         return type;
     }
 
-    public byte getEmittingLight() {
+    public int getEmittingLight() {
 
         if (! isValid()) {
             return 0;
         }
 
-        return emittingLight;
+        return emittingLight & 0xF;
     }
 
     public void setEmittingLight(int lightLevel) {
-        this.emittingLight = (byte) (lightLevel & 0xF);
+        this.emittingLight = (lightLevel & 0xF);
     }
 
     public boolean isValid() {
