@@ -16,6 +16,8 @@ permissions:
         description: "Provides access to the varlight save command"
       varlight.admin.perm:
         description: "Provides access to the varlight permission command"
+      varlight.admin.world:
+        description: "Provides access to the varlight whitelist/blacklist commands"
 
 commands:
   varlight:

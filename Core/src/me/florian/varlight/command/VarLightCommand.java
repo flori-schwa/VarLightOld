@@ -205,16 +205,16 @@ public class VarLightCommand implements CommandExecutor {
                         )
                         .add(
                                 BookUtil.TextBuilder.of(" ?")
-                                .color(ChatColor.BLUE)
-                                .onHover(BookUtil.HoverAction.showText(
-                                        BookUtil.TextBuilder.of("How does the Whitelist/Blacklist work?\n\n").color(ChatColor.WHITE).build(),
-                                        BookUtil.TextBuilder.of("Does a Whitelist exist?\n").color(ChatColor.WHITE).build(),
-                                        BookUtil.TextBuilder.of("   Yes -> Use that list\n").color(ChatColor.WHITE).build(),
-                                        BookUtil.TextBuilder.of("   No  -> Get all worlds and use that list\n\n").color(ChatColor.WHITE).build(),
-                                        BookUtil.TextBuilder.of("Does a Blacklist exists?\n").color(ChatColor.WHITE).build(),
-                                        BookUtil.TextBuilder.of("   Yes -> Remove every entry in the Blacklist from the List\n\n").color(ChatColor.WHITE).build(),
-                                        BookUtil.TextBuilder.of(" => Enable VarLight with all worlds in the List").color(ChatColor.WHITE).build()
-                                )).build()
+                                        .color(ChatColor.BLUE)
+                                        .onHover(BookUtil.HoverAction.showText(
+                                                BookUtil.TextBuilder.of("How does the Whitelist/Blacklist work?\n\n").color(ChatColor.WHITE).build(),
+                                                BookUtil.TextBuilder.of("Does a Whitelist exist?\n").color(ChatColor.WHITE).build(),
+                                                BookUtil.TextBuilder.of("   Yes -> Use that list\n").color(ChatColor.WHITE).build(),
+                                                BookUtil.TextBuilder.of("   No  -> Get all worlds and use that list\n\n").color(ChatColor.WHITE).build(),
+                                                BookUtil.TextBuilder.of("Does a Blacklist exists?\n").color(ChatColor.WHITE).build(),
+                                                BookUtil.TextBuilder.of("   Yes -> Remove every entry in the Blacklist from the List\n\n").color(ChatColor.WHITE).build(),
+                                                BookUtil.TextBuilder.of(" => Enable VarLight with all worlds in the List").color(ChatColor.WHITE).build()
+                                        )).build()
                         )
                         .newLine()
                         .newLine()
@@ -348,6 +348,13 @@ public class VarLightCommand implements CommandExecutor {
         commandSender.sendMessage(commandReference);
     }
 
+    private boolean hasAnyVarLightPermission(CommandSender commandSender) {
+        return commandSender.hasPermission("varlight.admin") ||
+                commandSender.hasPermission("varlight.admin.save") ||
+                commandSender.hasPermission("varlight.admin.perm") ||
+                commandSender.hasPermission("varlight.admin.world");
+    }
+
     @Override
     public boolean onCommand(CommandSender commandSender, Command command, String s, String[] strings) {
         if (! "varlight".equalsIgnoreCase(command.getName())) {
@@ -364,6 +371,10 @@ public class VarLightCommand implements CommandExecutor {
     private boolean execute(CommandSender commandSender, ArgumentIterator args) {
         if (args.length == 0) {
             return false;
+        }
+
+        if (! hasAnyVarLightPermission(commandSender)) {
+            return true;
         }
 
         switch (args.next().toLowerCase()) {
@@ -407,72 +418,6 @@ public class VarLightCommand implements CommandExecutor {
 
     private void suggestCommand(Player player, ArgumentIterator args) {
         plugin.getNmsAdapter().suggestCommand(player, args.join());
-    }
-
-    private boolean worldCommand(CommandSender commandSender, VarLightConfiguration.WorldListType worldListType, ArgumentIterator args) {
-        if (! checkPerm(commandSender, "varlight.admin.world")) {
-            return true;
-        }
-
-        if (! args.hasNext()) {
-            return false;
-        }
-
-        String subCommand = args.next();
-
-        if ("add".equalsIgnoreCase(subCommand)) {
-            if (! args.hasNext()) {
-                return false;
-            }
-
-            World world = args.parseNext(Bukkit::getWorld);
-
-            if (world == null) {
-                sendPrefixedMessage(commandSender, String.format("Could not find world \"%s\"", args.previous()));
-                return true;
-            }
-
-            if (plugin.getConfiguration().addWorldToList(world, worldListType)) {
-                broadcastResult(commandSender, String.format("Added world \"%s\" to the VarLight %s", world.getName(), worldListType.getName()), "varlight.admin.world");
-            } else {
-                sendPrefixedMessage(commandSender, String.format("World \"%s\" is already on the VarLight %s", world.getName(), worldListType.getName()));
-            }
-
-            return true;
-        }
-
-        if ("remove".equalsIgnoreCase(subCommand)) {
-            if (! args.hasNext()) {
-                return false;
-            }
-
-            World world = args.parseNext(Bukkit::getWorld);
-
-            if (world == null) {
-                sendPrefixedMessage(commandSender, String.format("Could not find world \"%s\"", args.previous()));
-                return true;
-            }
-
-            if (plugin.getConfiguration().removeWorldFromList(world, worldListType)) {
-                broadcastResult(commandSender, String.format("Removed world \"%s\" from the VarLight %s", world.getName(), worldListType.getName()), "varlight.admin.world");
-            } else {
-                sendPrefixedMessage(commandSender, String.format("World \"%s\" is not on the VarLight %s", world.getName(), worldListType.getName()));
-            }
-
-            return true;
-        }
-
-        if ("list".equalsIgnoreCase(subCommand)) {
-            sendPrefixedMessage(commandSender, String.format("Worlds on the VarLight %s:", worldListType.getName()));
-
-            for (World world : plugin.getConfiguration().getWorlds(worldListType)) {
-                commandSender.sendMessage(String.format("   - \"%s\"", world.getName()));
-            }
-
-            return true;
-        }
-
-        return false;
     }
 
     private boolean save(CommandSender commandSender, ArgumentIterator args) {
@@ -584,6 +529,72 @@ public class VarLightCommand implements CommandExecutor {
         plugin.getConfiguration().setRequiredPermissionNode(null);
         broadcastResult(commandSender, "Unset Required Permission Node", "varlight.admin.perm");
         return true;
+    }
+
+    private boolean worldCommand(CommandSender commandSender, VarLightConfiguration.WorldListType worldListType, ArgumentIterator args) {
+        if (! checkPerm(commandSender, "varlight.admin.world")) {
+            return true;
+        }
+
+        if (! args.hasNext()) {
+            return false;
+        }
+
+        String subCommand = args.next();
+
+        if ("add".equalsIgnoreCase(subCommand)) {
+            if (! args.hasNext()) {
+                return false;
+            }
+
+            World world = args.parseNext(Bukkit::getWorld);
+
+            if (world == null) {
+                sendPrefixedMessage(commandSender, String.format("Could not find world \"%s\"", args.previous()));
+                return true;
+            }
+
+            if (plugin.getConfiguration().addWorldToList(world, worldListType)) {
+                broadcastResult(commandSender, String.format("Added world \"%s\" to the VarLight %s", world.getName(), worldListType.getName()), "varlight.admin.world");
+            } else {
+                sendPrefixedMessage(commandSender, String.format("World \"%s\" is already on the VarLight %s", world.getName(), worldListType.getName()));
+            }
+
+            return true;
+        }
+
+        if ("remove".equalsIgnoreCase(subCommand)) {
+            if (! args.hasNext()) {
+                return false;
+            }
+
+            World world = args.parseNext(Bukkit::getWorld);
+
+            if (world == null) {
+                sendPrefixedMessage(commandSender, String.format("Could not find world \"%s\"", args.previous()));
+                return true;
+            }
+
+            if (plugin.getConfiguration().removeWorldFromList(world, worldListType)) {
+                broadcastResult(commandSender, String.format("Removed world \"%s\" from the VarLight %s", world.getName(), worldListType.getName()), "varlight.admin.world");
+            } else {
+                sendPrefixedMessage(commandSender, String.format("World \"%s\" is not on the VarLight %s", world.getName(), worldListType.getName()));
+            }
+
+            return true;
+        }
+
+        if ("list".equalsIgnoreCase(subCommand)) {
+            sendPrefixedMessage(commandSender, String.format("Worlds on the VarLight %s:", worldListType.getName()));
+
+            for (World world : plugin.getConfiguration().getWorlds(worldListType)) {
+                commandSender.sendMessage(String.format("   - \"%s\"", world.getName()));
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     private boolean checkPerm(CommandSender commandSender, String node) {
