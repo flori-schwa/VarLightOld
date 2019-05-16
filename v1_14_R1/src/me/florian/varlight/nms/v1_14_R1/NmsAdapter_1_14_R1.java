@@ -161,6 +161,14 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
         });
     }
 
+    private boolean isUsed(World world) {
+        return LightSourcePersistor.hasPersistor(plugin, world);
+    }
+
+    private boolean isUsed(net.minecraft.server.v1_14_R1.World world) {
+        return isUsed(world.getWorld());
+    }
+
     private void injectCustomChunkStatus() {
         try {
             Class chunkStatusA = Class.forName("net.minecraft.server.v1_14_R1.ChunkStatus$a");
@@ -169,14 +177,18 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
             Field fieldO = ReflectionHelper.Safe.getField(ChunkStatus.class, "o");
             Method register = ReflectionHelper.Safe.getMethod(ChunkStatus.class, "a", String.class, ChunkStatus.class, int.class, EnumSet.class, ChunkStatus.Type.class, chunkStatusA);
 
+            final IRegistry chunkStatus = IRegistry.CHUNK_STATUS;
+
             Object aImplementation = Proxy.newProxyInstance(chunkStatusA.getClassLoader(), new Class[] {chunkStatusA},
                     (Object proxy, Method method, Object[] args) -> {
                         if (method.getName().equals("doWork")) {
+                            WorldServer worldServer = (WorldServer) args[1];
+
+                            boolean useWrapped = isUsed(worldServer);
 
                             ChunkStatus status = (ChunkStatus) args[0];
-                            WorldServer worldServer = (WorldServer) args[1];
                             LightEngineThreaded lightEngineThreaded = (LightEngineThreaded) args[4];
-                            IChunkAccess iChunkAccess = new WrappedIChunkAccess(worldServer, (IChunkAccess) args[7]);
+                            IChunkAccess iChunkAccess = useWrapped ? new WrappedIChunkAccess(worldServer, (IChunkAccess) args[7]) : (IChunkAccess) args[7];
 
                             boolean flag = iChunkAccess.getChunkStatus().b(status) && iChunkAccess.r();
 
@@ -191,7 +203,6 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
                     }
             );
 
-            IRegistry chunkStatus = IRegistry.CHUNK_STATUS;
             ((BiMap) ReflectionHelper.get(biMap, chunkStatus)).remove(new MinecraftKey("light"));
             ChunkStatus customLight = (ChunkStatus) ReflectionHelper.Safe.invokeStatic(register, "light", ChunkStatus.FEATURES, 1, ReflectionHelper.Safe.getStatic(fieldO), ChunkStatus.Type.PROTOCHUNK, aImplementation);
 
@@ -203,6 +214,11 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
     }
 
     private void injectCustomIBlockAccess(World world) throws IllegalAccessException {
+        if (!isUsed(world)) {
+            return;
+        }
+
+
         WorldServer worldServer = getNmsWorld(world);
 
         ILightAccess custom = new ILightAccess() {

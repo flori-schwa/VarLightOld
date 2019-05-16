@@ -18,5 +18,6 @@
     <orderEntry type="module" module-name="v1_9_R2" />
     <orderEntry type="module" module-name="v1_8_R3" />
     <orderEntry type="module" module-name="v1_14_R1" />
+    <orderEntry type="library" name="xyz.upperlevel.spigot.book:spigot-book-api:1.2" level="project" />
   </component>
 </module>

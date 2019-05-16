@@ -1,23 +1,25 @@
 package me.florian.varlight.command;
 
+import java.util.Iterator;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class ArgumentStream {
+public class ArgumentIterator implements Iterator<String> {
     public final int length;
     private String[] arguments;
     private int position = 0;
 
-    public ArgumentStream(String[] args) {
+    public ArgumentIterator(String[] args) {
         this.length = args.length;
         this.arguments = args;
     }
 
-    public String get(int position) {
+    public String next(int position) {
         return arguments[position];
     }
 
+    @Override
     public boolean hasNext() {
         return position < length;
     }
@@ -26,12 +28,17 @@ public class ArgumentStream {
         return arguments[position];
     }
 
-    public String get() {
+    @Override
+    public String next() {
         return arguments[position++];
     }
 
+    public String previous() {
+        return arguments[position - 1];
+    }
+
     public <P> P parseNext(Function<String, P> function) {
-        return function.apply(get());
+        return function.apply(next());
     }
 
     public String join() {
@@ -40,11 +47,7 @@ public class ArgumentStream {
 
     public Stream<String> streamRemaining() {
         Stream.Builder<String> streamBuilder = Stream.builder();
-
-        while (hasNext()) {
-            streamBuilder.accept(get());
-        }
-
+        forEachRemaining(streamBuilder);
         return streamBuilder.build();
     }
 

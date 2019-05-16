@@ -135,7 +135,8 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-        Bukkit.getWorlds().forEach(w -> LightSourcePersistor.createPersistor(this, w));
+        configuration = new VarLightConfiguration(this);
+        configuration.getVarLightEnabledWorlds().forEach(w -> LightSourcePersistor.createPersistor(this, w));
 
         try {
             nmsAdapter.onEnable(this, lightUpdater instanceof LightUpdaterBuiltIn);
@@ -146,7 +147,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-        configuration = new VarLightConfiguration(this);
 
         initAutosave();
 
