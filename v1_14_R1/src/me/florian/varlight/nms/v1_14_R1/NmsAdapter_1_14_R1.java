@@ -34,12 +34,14 @@ import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.material.Openable;
+import org.bukkit.metadata.FixedMetadataValue;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.EnumSet;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.function.Supplier;
@@ -54,6 +56,8 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
             BlockFace.NORTH,
             BlockFace.SOUTH
     };
+
+    public static final String TAG_VARLIGHT_INJECTED = "varlight:injected";
 
     private static NmsAdapter_1_14_R1 INSTANCE = null;
 
@@ -87,6 +91,19 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
         }
 
         injectCustomChunkStatus();
+    }
+
+    private void injectCustomChunkStatus() {
+        switch (MinecraftServer.getServer().getVersion()) {
+            case "1.14.2": {
+                injectCustomChunkStatusPost_1_14_2();
+                break;
+            }
+            default: {
+                injectCustomChunkStatusPre_1_14_2();
+                break;
+            }
+        }
     }
 
     @Override
@@ -169,7 +186,72 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
         return isUsed(world.getWorld());
     }
 
-    private void injectCustomChunkStatus() {
+    private CompletableFuture<Void> doWork(ChunkStatus status, WorldServer worldServer, IChunkAccess iChunkAccess, LightEngineThreaded lightEngineThreaded) {
+        boolean useWrapped = isUsed(worldServer);
+
+        boolean flag = iChunkAccess.getChunkStatus().b(status) && iChunkAccess.r();
+        IChunkAccess wrapped = useWrapped ? new WrappedIChunkAccess(worldServer, iChunkAccess) : iChunkAccess;
+
+        if (! wrapped.getChunkStatus().b(status)) {
+            ((ProtoChunk) iChunkAccess).a(status);
+        }
+
+        return lightEngineThreaded.a(wrapped, flag).thenAccept(Either::left);
+    }
+
+    private void injectCustomChunkStatusPost_1_14_2() {
+        try {
+            Class chunkStatusB = Class.forName("net.minecraft.server.v1_14_R1.ChunkStatus$b");
+            Class chunkStatusC = Class.forName("net.minecraft.server.v1_14_R1.ChunkStatus$c");
+
+            Field light = ReflectionHelper.Safe.getField(ChunkStatus.class, "LIGHT");
+            Field biMap = ReflectionHelper.Safe.getField(RegistryMaterials.class, "c");
+            Field fieldO = ReflectionHelper.Safe.getField(ChunkStatus.class, "o");
+            Method register = ReflectionHelper.Safe.getMethod(ChunkStatus.class, "a", String.class, ChunkStatus.class, int.class, EnumSet.class, ChunkStatus.Type.class, chunkStatusB, chunkStatusC);
+
+            final IRegistry chunkStatus = IRegistry.CHUNK_STATUS;
+
+
+            Object bImplementation = Proxy.newProxyInstance(chunkStatusB.getClassLoader(), new Class[] {chunkStatusB},
+                    (Object proxy, Method method, Object[] args) -> {
+                        if (method.getName().equals("doWork")) {
+                            ChunkStatus status = (ChunkStatus) args[0];
+                            WorldServer worldServer = (WorldServer) args[1];
+                            LightEngineThreaded lightEngineThreaded = (LightEngineThreaded) args[4];
+                            IChunkAccess iChunkAccess = (IChunkAccess) args[7];
+
+                            return doWork(status, worldServer, iChunkAccess, lightEngineThreaded);
+                        }
+
+                        return null;
+                    }
+            );
+
+            Object cImplementation = Proxy.newProxyInstance(chunkStatusC.getClassLoader(), new Class[] {chunkStatusC},
+                    (Object proxy, Method method, Object[] args) -> {
+                        if (method.getName().equals("doWork")) {
+                            ChunkStatus status = (ChunkStatus) args[0];
+                            WorldServer worldServer = (WorldServer) args[1];
+                            LightEngineThreaded lightEngineThreaded = (LightEngineThreaded) args[3];
+                            IChunkAccess iChunkAccess = (IChunkAccess) args[5];
+
+                            return doWork(status, worldServer, iChunkAccess, lightEngineThreaded);
+                        }
+                        return null;
+                    }
+            );
+
+            ((BiMap) ReflectionHelper.get(biMap, chunkStatus)).remove(new MinecraftKey("light"));
+            ChunkStatus customLight = (ChunkStatus) ReflectionHelper.Safe.invokeStatic(register, "light", ChunkStatus.FEATURES, 1, ReflectionHelper.Safe.getStatic(fieldO), ChunkStatus.Type.PROTOCHUNK, bImplementation, cImplementation);
+
+            ReflectionHelper.setStatic(light, customLight);
+            plugin.getLogger().info("Injected Custom Light ChunkStatus");
+        } catch (NoSuchFieldException | ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            throw new VarLightInitializationException(e);
+        }
+    }
+
+    private void injectCustomChunkStatusPre_1_14_2() {
         try {
             Class chunkStatusA; // = Class.forName("net.minecraft.server.v1_14_R1.ChunkStatus$a");
 
@@ -190,20 +272,11 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
                     (Object proxy, Method method, Object[] args) -> {
                         if (method.getName().equals("doWork")) {
                             WorldServer worldServer = (WorldServer) args[1];
-
-                            boolean useWrapped = isUsed(worldServer);
-
                             ChunkStatus status = (ChunkStatus) args[0];
                             LightEngineThreaded lightEngineThreaded = (LightEngineThreaded) args[4];
-                            IChunkAccess iChunkAccess = useWrapped ? new WrappedIChunkAccess(worldServer, (IChunkAccess) args[7]) : (IChunkAccess) args[7];
+                            IChunkAccess iChunkAccess = (IChunkAccess) args[7];
 
-                            boolean flag = iChunkAccess.getChunkStatus().b(status) && iChunkAccess.r();
-
-                            if (! iChunkAccess.getChunkStatus().b(status)) {
-                                ((ProtoChunk) args[7]).a(status);
-                            }
-
-                            return lightEngineThreaded.a(iChunkAccess, flag).thenAccept(Either::left);
+                            return doWork(status, worldServer, iChunkAccess, lightEngineThreaded);
                         }
 
                         return null;
@@ -225,6 +298,9 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
             return;
         }
 
+        if (world.hasMetadata(TAG_VARLIGHT_INJECTED) && world.getMetadata(TAG_VARLIGHT_INJECTED).get(0).asBoolean()) {
+            return;
+        }
 
         WorldServer worldServer = getNmsWorld(world);
 
@@ -251,6 +327,8 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
 
         injectToEngine(ReflectionHelper.Safe.get(fieldLightEngineChunkMap, worldServer.getChunkProvider().playerChunkMap), custom);
         injectToEngine(worldServer.getChunkProvider().getLightEngine(), custom);
+
+        world.setMetadata(TAG_VARLIGHT_INJECTED, new FixedMetadataValue(plugin, true));
 
         plugin.getLogger().info(String.format("Injected custom IBlockAccess into world \"%s\"", world.getName()));
     }
