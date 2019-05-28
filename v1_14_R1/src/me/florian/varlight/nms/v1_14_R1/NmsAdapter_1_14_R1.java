@@ -171,7 +171,14 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
 
     private void injectCustomChunkStatus() {
         try {
-            Class chunkStatusA = Class.forName("net.minecraft.server.v1_14_R1.ChunkStatus$a");
+            Class chunkStatusA; // = Class.forName("net.minecraft.server.v1_14_R1.ChunkStatus$a");
+
+            if ("1.14.2".equals(MinecraftServer.getServer().getVersion())) {
+                chunkStatusA = Class.forName("net.minecraft.server.v1_14_R1.ChunkStatus$b");
+            } else {
+                chunkStatusA = Class.forName("net.minecraft.server.v1_14_R1.ChunkStatus$a");
+            }
+
             Field light = ReflectionHelper.Safe.getField(ChunkStatus.class, "LIGHT");
             Field biMap = ReflectionHelper.Safe.getField(RegistryMaterials.class, "c");
             Field fieldO = ReflectionHelper.Safe.getField(ChunkStatus.class, "o");
@@ -214,7 +221,7 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
     }
 
     private void injectCustomIBlockAccess(World world) throws IllegalAccessException {
-        if (!isUsed(world)) {
+        if (! isUsed(world)) {
             return;
         }
 
