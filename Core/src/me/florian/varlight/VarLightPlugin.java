@@ -35,6 +35,8 @@ import java.util.concurrent.TimeUnit;
 
 public class VarLightPlugin extends JavaPlugin implements Listener {
 
+    public static final boolean INDEV = false;
+
     private enum LightUpdateResult {
         INVALID_BLOCK,
         ZERO_REACHED,
@@ -45,10 +47,10 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     public static final long TICK_RATE = 20L;
     private static Map<String, Class<? extends NmsAdapter>> ADAPTERS;
-    private static String SERVER_VERSION;
+    private static String PACKAGE_VERSION;
 
-    public static String getServerVersion() {
-        return SERVER_VERSION;
+    public static String getPackageVersion() {
+        return PACKAGE_VERSION;
     }
 
     private LightUpdater lightUpdater;
@@ -67,10 +69,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         ADAPTERS.put("v1_10_R1", NmsAdapter_1_10_R1.class);
         ADAPTERS.put("v1_9_R2", NmsAdapter_1_9_R2.class);
         ADAPTERS.put("v1_8_R3", NmsAdapter_1_8_R3.class);
-    }
-
-    public boolean isDebug() {
-        return getDescription().getVersion().endsWith("-INDEV");
     }
 
     @Override
@@ -97,12 +95,12 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-        SERVER_VERSION = Bukkit.getServer().getClass().getPackage().getName();
-        SERVER_VERSION = SERVER_VERSION.substring(SERVER_VERSION.lastIndexOf('.') + 1);
+        PACKAGE_VERSION = Bukkit.getServer().getClass().getPackage().getName();
+        PACKAGE_VERSION = PACKAGE_VERSION.substring(PACKAGE_VERSION.lastIndexOf('.') + 1);
 
-        if (! ADAPTERS.containsKey(SERVER_VERSION)) {
+        if (! ADAPTERS.containsKey(PACKAGE_VERSION)) {
             getLogger().severe("------------------------------------------------------");
-            getLogger().severe(String.format("Unsupported Minecraft version: %s", SERVER_VERSION));
+            getLogger().severe(String.format("Unsupported Minecraft version: %s", PACKAGE_VERSION));
             getLogger().severe("------------------------------------------------------");
 
             doLoad = false;
@@ -110,7 +108,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         }
 
         try {
-            nmsAdapter = ADAPTERS.get(SERVER_VERSION).getConstructor().newInstance();
+            nmsAdapter = ADAPTERS.get(PACKAGE_VERSION).getConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | VarLightInitializationException e) {
             getLogger().throwing(getClass().getName(), "onLoad", e);
             doLoad = false;
@@ -292,13 +290,13 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         switch (lightUpdateResult) {
 
             case CANCELLED: {
-                if (isDebug()) {
+                if (INDEV) {
                     nmsAdapter.sendActionBarMessage(player, "Cancelled");
                 }
             }
 
             case INVALID_BLOCK: {
-                if (isDebug()) {
+                if (INDEV) {
                     nmsAdapter.sendActionBarMessage(player, "Invalid Block.");
                 }
 
