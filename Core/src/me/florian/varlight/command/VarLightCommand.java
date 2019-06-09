@@ -452,6 +452,9 @@ public class VarLightCommand implements CommandExecutor {
                     } else {
                         skipped.i++;
                     }
+                } else {
+                    lightSource.update();
+                    migrated.i++;
                 }
             });
 
