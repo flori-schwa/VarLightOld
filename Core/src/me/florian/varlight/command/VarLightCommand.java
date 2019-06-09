@@ -3,6 +3,7 @@ package me.florian.varlight.command;
 import me.florian.varlight.VarLightConfiguration;
 import me.florian.varlight.VarLightPlugin;
 import me.florian.varlight.persistence.LightSourcePersistor;
+import me.florian.varlight.persistence.PersistentLightSource;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.World;
@@ -388,6 +389,8 @@ public class VarLightCommand implements CommandExecutor {
                 return true;
             }
 
+            case "migrate":
+                return migrate(commandSender, args);
             case "save":
                 return save(commandSender, args);
             case "autosave":
@@ -418,6 +421,49 @@ public class VarLightCommand implements CommandExecutor {
 
     private void suggestCommand(Player player, ArgumentIterator args) {
         plugin.getNmsAdapter().suggestCommand(player, args.join());
+    }
+
+    private boolean migrate(final CommandSender commandSender, final ArgumentIterator args) {
+        final String node = "varlight.admin";
+
+        if (! checkPerm(commandSender, node)) {
+            return true;
+        }
+
+        class IntContainer {
+            int i = 0;
+        }
+
+        IntContainer totalMigrated = new IntContainer(), totalSkipped = new IntContainer();
+
+        broadcastResult(commandSender, "Starting migration...", node);
+
+        LightSourcePersistor.getAllPersistors(plugin).forEach((p) -> {
+
+            IntContainer migrated = new IntContainer(), skipped = new IntContainer();
+
+            broadcastResult(commandSender, String.format("Migrating \"%s\"", p.getWorld().getName()), node);
+
+            p.getAllLightSources().filter(PersistentLightSource::needsMigration).forEach(lightSource -> {
+                if (! lightSource.getPosition().isChunkLoaded(lightSource.getWorld())) {
+                    if (lightSource.getPosition().loadChunk(lightSource.getWorld(), false)) {
+                        lightSource.update();
+                        migrated.i++;
+                    } else {
+                        skipped.i++;
+                    }
+                }
+            });
+
+            broadcastResult(commandSender, String.format("Migrated Light sources in world \"%s\" (migrated: %d, skipped: %d)", p.getWorld().getName(), migrated.i, skipped.i), node);
+
+            totalMigrated.i += migrated.i;
+            totalSkipped.i += skipped.i;
+        });
+
+        broadcastResult(commandSender, String.format("All Light sources migrated (total migrated: %d, skipped: %d)", totalMigrated.i, totalSkipped.i), node);
+
+        return true;
     }
 
     private boolean save(CommandSender commandSender, ArgumentIterator args) {

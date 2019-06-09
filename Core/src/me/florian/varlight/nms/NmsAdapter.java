@@ -1,6 +1,7 @@
 package me.florian.varlight.nms;
 
 import me.florian.varlight.VarLightPlugin;
+import me.florian.varlight.util.NumericMajorMinorVersion;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
@@ -46,6 +47,12 @@ public interface NmsAdapter {
     void setCooldown(Player player, Material material, int ticks);
 
     boolean hasCooldown(Player player, Material material);
+
+    String getNumericMinecraftVersion();
+
+    default NumericMajorMinorVersion getMinecraftVersion() {
+        return new NumericMajorMinorVersion(getNumericMinecraftVersion());
+    }
 
     default void suggestCommand(Player player, String command) {
         player.spigot().sendMessage(

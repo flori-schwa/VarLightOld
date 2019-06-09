@@ -3,8 +3,9 @@ package me.florian.varlight.persistence;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import me.florian.varlight.util.IntPosition;
 import me.florian.varlight.VarLightPlugin;
+import me.florian.varlight.util.IntPosition;
+import me.florian.varlight.util.NumericMajorMinorVersion;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -13,12 +14,16 @@ import java.util.Objects;
 
 public class PersistentLightSource {
 
+    public static final NumericMajorMinorVersion V1_14_2 = new NumericMajorMinorVersion("1.14.2");
+
     private transient World world;
     private transient VarLightPlugin plugin;
 
     private final IntPosition position;
     private final Material type;
     private int emittingLight;
+
+    boolean migrated = false;
 
     PersistentLightSource(VarLightPlugin plugin, World world, IntPosition position, int emittingLight) {
         Objects.requireNonNull(plugin);
@@ -51,6 +56,25 @@ public class PersistentLightSource {
         }
 
         return emittingLight & 0xF;
+    }
+
+    public boolean needsMigration() {
+        return plugin.getNmsAdapter().getMinecraftVersion().newerOrEquals(V1_14_2) && ! isMigrated();
+    }
+
+    public boolean isMigrated() {
+        return migrated;
+    }
+
+    public void migrate() {
+        plugin.getLightUpdater().setLight(position.toLocation(world), emittingLight);
+        migrated = true;
+    }
+
+    public void update() {
+        if (needsMigration() && world.isChunkLoaded(position.getChunkX(), position.getChunkZ())) {
+            migrate();
+        }
     }
 
     public void setEmittingLight(int lightLevel) {

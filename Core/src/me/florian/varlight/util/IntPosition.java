@@ -57,6 +57,14 @@ public class IntPosition {
         return new IntPosition(x + blockFace.getModX(), y + blockFace.getModY(), z + blockFace.getModZ());
     }
 
+    public boolean isChunkLoaded(World world) {
+        return world.isChunkLoaded(getChunkX(), getChunkZ());
+    }
+
+    public boolean loadChunk(World world, boolean generate) {
+        return world.loadChunk(getChunkX(), getChunkZ(), generate);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

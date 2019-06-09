@@ -119,6 +119,11 @@ public class NmsAdapter_1_13_R2 implements NmsAdapter {
     }
 
     @Override
+    public String getNumericMinecraftVersion() {
+        return MinecraftServer.getServer().getVersion();
+    }
+
+    @Override
     public void sendActionBarMessage(Player player, String message) {
         player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(message));
     }

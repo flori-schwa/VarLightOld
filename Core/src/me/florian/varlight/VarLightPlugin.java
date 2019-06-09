@@ -102,7 +102,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         if (! ADAPTERS.containsKey(SERVER_VERSION)) {
             getLogger().severe("------------------------------------------------------");
-            getLogger().severe("Unsupported Minecraft version: " + SERVER_VERSION);
+            getLogger().severe(String.format("Unsupported Minecraft version: %s", SERVER_VERSION));
             getLogger().severe("------------------------------------------------------");
 
             doLoad = false;
@@ -125,6 +125,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             lightUpdater = new LightUpdaterBuiltIn(this);
         }
 
+        getLogger().info(String.format("Loading VarLight for Minecraft version %s", nmsAdapter.getMinecraftVersion().toString()));
         nmsAdapter.onLoad(this, lightUpdater instanceof LightUpdaterBuiltIn);
     }
 
@@ -156,7 +157,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     }
 
     public void initAutosave() {
-        if (autosaveTask != null && !autosaveTask.isCancelled()) {
+        if (autosaveTask != null && ! autosaveTask.isCancelled()) {
             autosaveTask.cancel();
             autosaveTask = null;
         }

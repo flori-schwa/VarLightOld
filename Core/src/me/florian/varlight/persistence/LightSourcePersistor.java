@@ -113,8 +113,12 @@ public class LightSourcePersistor {
         Map<IntPosition, PersistentLightSource> regionMap = getRegionMap(new RegionCoordinates(intPosition));
         PersistentLightSource persistentLightSource = regionMap.get(intPosition);
 
-        if (persistentLightSource != null && ! persistentLightSource.isValid()) {
-            persistentLightSource = null;
+        if (persistentLightSource != null) {
+            persistentLightSource.update();
+
+            if (! persistentLightSource.isValid()) {
+                persistentLightSource = null;
+            }
         }
 
         return Optional.ofNullable(persistentLightSource);
@@ -122,6 +126,8 @@ public class LightSourcePersistor {
 
     public PersistentLightSource createPersistentLightSource(IntPosition intPosition, int emittingLight) {
         PersistentLightSource persistentLightSource = new PersistentLightSource(plugin, world, intPosition, emittingLight);
+        persistentLightSource.migrated = plugin.getNmsAdapter().getMinecraftVersion().newerOrEquals(PersistentLightSource.V1_14_2);
+
         getRegionMap(new RegionCoordinates(intPosition)).put(intPosition, persistentLightSource);
 
         return persistentLightSource;
@@ -129,6 +135,27 @@ public class LightSourcePersistor {
 
     public PersistentLightSource getOrCreatePersistentLightSource(IntPosition position) {
         return getPersistentLightSource(position).orElseGet(() -> createPersistentLightSource(position, 0));
+    }
+
+    public Stream<PersistentLightSource> getAllLightSources() {
+
+        File[] files = getSaveDirectory().listFiles();
+
+        if (files != null) {
+            for (File regionFile : files) {
+                try {
+                    String name = regionFile.getName().substring(2, regionFile.getName().length() - ".json".length());
+                    String[] coords = name.split("\\.");
+
+                    RegionCoordinates regionCoordinates = new RegionCoordinates(Integer.parseInt(coords[0]), Integer.parseInt(coords[1]));
+                    getRegionMap(regionCoordinates);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        return worldMap.values().stream().map(Map::values).flatMap(Collection::stream);
     }
 
     public void save(CommandSender commandSender) {
@@ -239,8 +266,6 @@ public class LightSourcePersistor {
 
                 PersistentLightSource persistentLightSource = PersistentLightSource.read(gson, jsonReader);
                 persistentLightSource.initialize(world, plugin);
-
-                plugin.getLightUpdater().setLight(persistentLightSource.getPosition().toLocation(world), persistentLightSource.getEmittingLight());
 
                 regionMap.put(persistentLightSource.getPosition(), persistentLightSource);
             }

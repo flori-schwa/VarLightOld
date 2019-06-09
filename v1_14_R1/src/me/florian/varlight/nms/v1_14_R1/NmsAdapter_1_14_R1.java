@@ -139,7 +139,13 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
                 LightEngineBlock lightEngineBlock = (LightEngineBlock) lightEngine.a(EnumSkyBlock.BLOCK);
 
                 Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                    update(worldServer, location, blockPosition, chunk, lightEngine);
+                    net.minecraft.server.v1_14_R1.Chunk c = worldServer.getChunkProvider().getChunkAt(blockPosition.getX() >> 4, blockPosition.getZ() >> 4, false);
+
+                    if (c == null || ! c.loaded) {
+                        return;
+                    }
+
+                    update(worldServer, location, blockPosition, c, lightEngine);
 
                     if (lightLevel > 0) {
                         lightEngineBlock.a(blockPosition, lightLevel);
@@ -149,7 +155,7 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
                         return;
                     }
 
-                    update(worldServer, location, blockPosition, chunk, lightEngine);
+                    update(worldServer, location, blockPosition, c, lightEngine);
                 });
             }
 
@@ -478,6 +484,11 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
         }
 
         return block.getType().isSolid() && block.getType().isOccluding();
+    }
+
+    @Override
+    public String getNumericMinecraftVersion() {
+        return MinecraftServer.getServer().getVersion();
     }
 
     @Override

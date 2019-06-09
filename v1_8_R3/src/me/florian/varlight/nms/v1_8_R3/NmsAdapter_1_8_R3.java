@@ -128,6 +128,11 @@ public class NmsAdapter_1_8_R3 implements NmsAdapter {
     }
 
     @Override
+    public String getNumericMinecraftVersion() {
+        return MinecraftServer.getServer().getVersion();
+    }
+
+    @Override
     public void setCooldown(Player player, Material material, int ticks) {
         // Ignore
     }
