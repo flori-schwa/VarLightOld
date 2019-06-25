@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="ExcludeFromValidation">
-    <file url="file://$PROJECT_DIR$/1.13.2/src/me/florian/varlight/nms/NmsAdapter_1_13_R2.java" />
-  </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_1_8" default="true" project-jdk-name="1.8" project-jdk-type="JavaSDK">
     <output url="file://$PROJECT_DIR$/out" />
   </component>
