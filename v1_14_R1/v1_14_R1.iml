@@ -10,5 +10,6 @@
     <orderEntry type="library" name="spigot-1.14" level="project" />
     <orderEntry type="module" module-name="Core" />
     <orderEntry type="library" name="spigot-1.14.2" level="project" />
+    <orderEntry type="library" name="spigot-1.14.3" level="project" />
   </component>
 </module>

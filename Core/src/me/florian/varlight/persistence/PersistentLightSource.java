@@ -5,7 +5,6 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import me.florian.varlight.VarLightPlugin;
 import me.florian.varlight.util.IntPosition;
-import me.florian.varlight.util.NumericMajorMinorVersion;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -13,8 +12,6 @@ import org.bukkit.block.Block;
 import java.util.Objects;
 
 public class PersistentLightSource {
-
-    public static final NumericMajorMinorVersion V1_14_2 = new NumericMajorMinorVersion("1.14.2");
 
     private transient World world;
     private transient VarLightPlugin plugin;
@@ -59,7 +56,7 @@ public class PersistentLightSource {
     }
 
     public boolean needsMigration() {
-        return plugin.getNmsAdapter().getMinecraftVersion().newerOrEquals(V1_14_2) && ! isMigrated();
+        return plugin.getNmsAdapter().getMinecraftVersion().newerOrEquals(VarLightPlugin.V1_14_2) && ! isMigrated();
     }
 
     public boolean isMigrated() {

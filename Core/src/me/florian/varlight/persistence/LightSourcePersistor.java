@@ -126,7 +126,7 @@ public class LightSourcePersistor {
 
     public PersistentLightSource createPersistentLightSource(IntPosition intPosition, int emittingLight) {
         PersistentLightSource persistentLightSource = new PersistentLightSource(plugin, world, intPosition, emittingLight);
-        persistentLightSource.migrated = plugin.getNmsAdapter().getMinecraftVersion().newerOrEquals(PersistentLightSource.V1_14_2);
+        persistentLightSource.migrated = plugin.getNmsAdapter().getMinecraftVersion().newerOrEquals(VarLightPlugin.V1_14_2);
 
         getRegionMap(new RegionCoordinates(intPosition)).put(intPosition, persistentLightSource);
 

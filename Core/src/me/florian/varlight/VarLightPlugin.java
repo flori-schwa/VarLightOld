@@ -14,6 +14,7 @@ import me.florian.varlight.nms.v1_8_R3.NmsAdapter_1_8_R3;
 import me.florian.varlight.nms.v1_9_R2.NmsAdapter_1_9_R2;
 import me.florian.varlight.persistence.LightSourcePersistor;
 import me.florian.varlight.util.IntPosition;
+import me.florian.varlight.util.NumericMajorMinorVersion;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
@@ -35,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 
 public class VarLightPlugin extends JavaPlugin implements Listener {
 
+    public static final NumericMajorMinorVersion V1_14_2 = new NumericMajorMinorVersion("1.14.2");
     public static final boolean INDEV = false;
 
     private enum LightUpdateResult {

@@ -10,6 +10,7 @@ import me.florian.varlight.nms.NmsAdapter;
 import me.florian.varlight.nms.ReflectionHelper;
 import me.florian.varlight.nms.VarLightInitializationException;
 import me.florian.varlight.persistence.LightSourcePersistor;
+import me.florian.varlight.util.NumericMajorMinorVersion;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.server.v1_14_R1.*;
@@ -94,15 +95,12 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
     }
 
     private void injectCustomChunkStatus() {
-        switch (MinecraftServer.getServer().getVersion()) {
-            case "1.14.2": {
-                injectCustomChunkStatusPost_1_14_2();
-                break;
-            }
-            default: {
-                injectCustomChunkStatusPre_1_14_2();
-                break;
-            }
+        NumericMajorMinorVersion currentVersion = new NumericMajorMinorVersion(MinecraftServer.getServer().getVersion());
+
+        if (currentVersion.newerOrEquals(VarLightPlugin.V1_14_2)) {
+            injectCustomChunkStatusPost_1_14_2();
+        } else {
+            injectCustomChunkStatusPre_1_14_2();
         }
     }
 
