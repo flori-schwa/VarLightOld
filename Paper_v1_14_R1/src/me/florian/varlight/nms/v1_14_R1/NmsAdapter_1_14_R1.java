@@ -9,8 +9,8 @@ import me.florian.varlight.nms.LightUpdateFailedException;
 import me.florian.varlight.nms.NmsAdapter;
 import me.florian.varlight.nms.ReflectionHelper;
 import me.florian.varlight.nms.VarLightInitializationException;
-import me.florian.varlight.nms.v1_14_R1.spigot.WrappedIBlockAccessSpigot;
-import me.florian.varlight.nms.v1_14_R1.spigot.WrappedIChunkAccessSpigot;
+import me.florian.varlight.nms.v1_14_R1.paper.WrappedIBlockAccessPaper;
+import me.florian.varlight.nms.v1_14_R1.paper.WrappedIChunkAccessPaper;
 import me.florian.varlight.persistence.LightSourcePersistor;
 import me.florian.varlight.util.NumericMajorMinorVersion;
 import net.md_5.bungee.api.ChatMessageType;
@@ -161,7 +161,7 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
 
             private void update(WorldServer worldServer, Location location, BlockPosition blockPosition, net.minecraft.server.v1_14_R1.Chunk chunk, LightEngineThreaded lightEngineThreaded) {
                 lightEngineThreaded.a(blockPosition);
-                Future future = lightEngineThreaded.a(new WrappedIChunkAccessSpigot(worldServer, chunk), true);
+                Future future = lightEngineThreaded.a(new WrappedIChunkAccessPaper(worldServer, chunk), true);
 
                 Runnable updateChunkTask = () -> ((VarLightPlugin) plugin).getLightUpdater()
                         .getChunksToUpdate(location)
@@ -196,7 +196,7 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
         boolean useWrapped = isUsed(worldServer);
 
         boolean flag = iChunkAccess.getChunkStatus().b(status) && iChunkAccess.r();
-        IChunkAccess wrapped = useWrapped ? new WrappedIChunkAccessSpigot(worldServer, iChunkAccess) : iChunkAccess;
+        IChunkAccess wrapped = useWrapped ? new WrappedIChunkAccessPaper(worldServer, iChunkAccess) : iChunkAccess;
 
         if (!wrapped.getChunkStatus().b(status)) {
             ((ProtoChunk) iChunkAccess).a(status);
@@ -311,7 +311,7 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
         WorldServer worldServer = getNmsWorld(world);
 
         ILightAccess custom = new ILightAccess() {
-            private final IBlockAccess world = new WrappedIBlockAccessSpigot(worldServer, worldServer);
+            private final IBlockAccess world = new WrappedIBlockAccessPaper(worldServer, worldServer);
 
             @Override
             public IBlockAccess b(int chunkX, int chunkZ) {
@@ -322,7 +322,7 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
                     return null;
                 }
 
-                return new WrappedIBlockAccessSpigot(worldServer, toWrap);
+                return new WrappedIBlockAccessPaper(worldServer, toWrap);
             }
 
             @Override

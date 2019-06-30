@@ -1,8 +1,9 @@
-package me.florian.varlight.nms.v1_14_R1;
+package me.florian.varlight.nms.v1_14_R1.paper;
 
+import it.unimi.dsi.fastutil.longs.LongSet;
+import it.unimi.dsi.fastutil.shorts.ShortList;
+import me.florian.varlight.nms.v1_14_R1.NmsAdapter_1_14_R1;
 import net.minecraft.server.v1_14_R1.*;
-import org.bukkit.craftbukkit.libs.it.unimi.dsi.fastutil.longs.LongSet;
-import org.bukkit.craftbukkit.libs.it.unimi.dsi.fastutil.shorts.ShortList;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
@@ -11,12 +12,12 @@ import java.util.Set;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public class WrappedIChunkAccess implements IChunkAccess {
+public class WrappedIChunkAccessPaper implements IChunkAccess {
 
     private IChunkAccess wrapped;
     private WorldServer worldServer;
 
-    public WrappedIChunkAccess(WorldServer worldServer, IChunkAccess wrapped) {
+    public WrappedIChunkAccessPaper(WorldServer worldServer, IChunkAccess wrapped) {
         this.worldServer = worldServer;
         this.wrapped = wrapped;
     }
@@ -214,13 +215,36 @@ public class WrappedIChunkAccess implements IChunkAccess {
     }
 
     @Override
+    public IBlockData getTypeIfLoaded(BlockPosition blockPosition) {
+        return wrapped.getTypeIfLoaded(blockPosition);
+    }
+
+    @Override
     public IBlockData getType(BlockPosition blockPosition) {
         return wrapped.getType(blockPosition);
+    }
+
+    @Override
+    public Fluid getFluidIfLoaded(BlockPosition blockPosition) {
+        return wrapped.getFluidIfLoaded(blockPosition);
     }
 
     @Override
     public Fluid getFluid(BlockPosition blockPosition) {
         return wrapped.getFluid(blockPosition);
     }
+
+    @Nullable
+    @Override
+    public NBTTagCompound i(BlockPosition blockPosition) {
+        return wrapped.i(blockPosition);
+    }
+
+    @Nullable
+    @Override
+    public NBTTagCompound j(BlockPosition blockPosition) {
+        return wrapped.j(blockPosition);
+    }
+
     //endregion
 }

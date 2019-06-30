@@ -17,7 +17,7 @@
     <orderEntry type="module" module-name="v1_10_R1" />
     <orderEntry type="module" module-name="v1_9_R2" />
     <orderEntry type="module" module-name="v1_8_R3" />
-    <orderEntry type="module" module-name="v1_14_R1" />
+    <orderEntry type="module" module-name="Spigot_v1_14_R1" />
     <orderEntry type="library" name="xyz.upperlevel.spigot.book:spigot-book-api:1.2" level="project" />
     <orderEntry type="module-library" scope="TEST">
       <library name="JUnit5.3">

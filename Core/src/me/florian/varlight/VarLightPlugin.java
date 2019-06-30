@@ -73,34 +73,57 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         ADAPTERS.put("v1_8_R3", NmsAdapter_1_8_R3.class);
     }
 
+    private boolean isPaperImplementation() {
+        try {
+            Class.forName("me.florian.varlight.nms.v1_14_R1.paper.WrappedIChunkAccessPaper");
+            Class.forName("me.florian.varlight.nms.v1_14_R1.paper.WrappedIBlockAccessPaper");
+
+            return true;
+
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
+    private boolean isPaper() {
+        return Package.getPackage("com.destroystokyo.paper") != null;
+    }
+
+    private void unsupportedShutdown(String message) {
+        getLogger().severe("------------------------------------------------------");
+        getLogger().severe(message);
+        getLogger().severe("");
+        getLogger().severe("VarLight will shutdown the server!");
+        getLogger().severe("Keeping the server running in this state");
+        getLogger().severe("will result in countless bugs and errors in the console!");
+        getLogger().severe("------------------------------------------------------");
+
+        Bukkit.shutdown();
+
+        doLoad = false;
+    }
+
     @Override
     public void onLoad() {
+        if (isPaper() && !isPaperImplementation()) {
+            unsupportedShutdown("You are running Paper but installed the Spigot Version of VarLight");
+            return;
+        }
+
+        if (!isPaper() && isPaperImplementation()) {
+            unsupportedShutdown("You are running Spigot but installed the Paper Version of VarLight");
+            return;
+        }
+
         if ((int) ReflectionHelper.get(Bukkit.getServer(), "reloadCount") > 0) {
-            getLogger().severe("------------------------------------------------------");
-            getLogger().severe("VarLight does not support /reload!");
-            getLogger().severe("");
-            getLogger().severe("VarLight will shutdown the server in 10 seconds!");
-            getLogger().severe("Keeping the server running at this state");
-            getLogger().severe("will result it countless bugs and errors in the console!");
-            getLogger().severe("------------------------------------------------------");
-
-
-            try {
-                Thread.sleep(TimeUnit.SECONDS.toMillis(10L));
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            Bukkit.shutdown();
-
-            doLoad = false;
+            unsupportedShutdown("VarLight does not support /reload!");
             return;
         }
 
         PACKAGE_VERSION = Bukkit.getServer().getClass().getPackage().getName();
         PACKAGE_VERSION = PACKAGE_VERSION.substring(PACKAGE_VERSION.lastIndexOf('.') + 1);
 
-        if (! ADAPTERS.containsKey(PACKAGE_VERSION)) {
+        if (!ADAPTERS.containsKey(PACKAGE_VERSION)) {
             getLogger().severe("------------------------------------------------------");
             getLogger().severe(String.format("Unsupported Minecraft version: %s", PACKAGE_VERSION));
             getLogger().severe("------------------------------------------------------");
@@ -131,7 +154,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     @Override
     public void onEnable() {
-        if (! doLoad) {
+        if (!doLoad) {
             Bukkit.getPluginManager().disablePlugin(this);
             return;
         }
@@ -157,7 +180,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     }
 
     public void initAutosave() {
-        if (autosaveTask != null && ! autosaveTask.isCancelled()) {
+        if (autosaveTask != null && !autosaveTask.isCancelled()) {
             autosaveTask.cancel();
             autosaveTask = null;
         }
@@ -185,7 +208,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     @Override
     public void onDisable() {
-        if (! doLoad) {
+        if (!doLoad) {
             return;
         }
 
@@ -222,13 +245,13 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     public void onInteract(PlayerInteractEvent e) {
         Optional<LightSourcePersistor> optPersistor = LightSourcePersistor.getPersistor(this, e.getPlayer().getWorld());
 
-        if (e.isCancelled() || (e.getAction() != Action.RIGHT_CLICK_BLOCK && e.getAction() != Action.LEFT_CLICK_BLOCK) || nmsAdapter.hasCooldown(e.getPlayer(), Material.GLOWSTONE_DUST) || ! optPersistor.isPresent()) {
+        if (e.isCancelled() || (e.getAction() != Action.RIGHT_CLICK_BLOCK && e.getAction() != Action.LEFT_CLICK_BLOCK) || nmsAdapter.hasCooldown(e.getPlayer(), Material.GLOWSTONE_DUST) || !optPersistor.isPresent()) {
             return;
         }
 
         String requiredPermission = getConfig().getString("requiredPermission", null);
 
-        if (requiredPermission != null && ! e.getPlayer().hasPermission(requiredPermission)) {
+        if (requiredPermission != null && !e.getPlayer().hasPermission(requiredPermission)) {
             return;
         }
 
@@ -247,18 +270,18 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
                 mod = 1;
                 break;
             case LEFT_CLICK_BLOCK:
-                mod = - 1;
+                mod = -1;
                 break;
         }
 
         boolean creative = player.getGameMode() == GameMode.CREATIVE;
 
-        if (! nmsAdapter.isValidBlock(clickedBlock)) {
+        if (!nmsAdapter.isValidBlock(clickedBlock)) {
             displayMessage(player, LightUpdateResult.INVALID_BLOCK);
             return;
         }
 
-        if (! canModifyBlockLight(clickedBlock, mod)) {
+        if (!canModifyBlockLight(clickedBlock, mod)) {
             displayMessage(player, mod < 0 ? LightUpdateResult.ZERO_REACHED : LightUpdateResult.FIFTEEN_REACHED);
             return;
         }
@@ -280,7 +303,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         e.setCancelled(creative && e.getAction() == Action.LEFT_CLICK_BLOCK);
 
-        if (! creative && e.getAction() == Action.RIGHT_CLICK_BLOCK) {
+        if (!creative && e.getAction() == Action.RIGHT_CLICK_BLOCK) {
             heldItem.setAmount(heldItem.getAmount() - 1);
         }
 

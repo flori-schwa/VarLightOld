@@ -1,14 +1,14 @@
 <component name="ArtifactManager">
-  <artifact type="jar" name="VarLight:jar">
-    <output-path>$PROJECT_DIR$/out/artifacts/VarLight_jar</output-path>
-    <root id="archive" name="VarLight.jar">
+  <artifact type="jar" name="VarLight-Spigot:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/VarLight_Spigot_jar</output-path>
+    <root id="archive" name="VarLight-Spigot.jar">
       <element id="module-output" name="Core" />
       <element id="module-output" name="v1_13_R2" />
       <element id="module-output" name="v1_10_R1" />
       <element id="module-output" name="v1_11_R1" />
       <element id="module-output" name="v1_8_R3" />
       <element id="module-output" name="v1_9_R2" />
-      <element id="module-output" name="v1_14_R1" />
+      <element id="module-output" name="Spigot_v1_14_R1" />
       <element id="module-output" name="v1_12_R1" />
       <element id="extracted-dir" path="$MAVEN_REPOSITORY$/xyz/upperlevel/spigot/book/spigot-book-api/1.2/spigot-book-api-1.2.jar" path-in-jar="/" />
     </root>

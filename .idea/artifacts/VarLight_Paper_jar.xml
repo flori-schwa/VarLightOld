@@ -1,0 +1,16 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="VarLight-Paper:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/VarLight_Paper_jar</output-path>
+    <root id="archive" name="VarLight-Paper.jar">
+      <element id="module-output" name="Core" />
+      <element id="module-output" name="v1_13_R2" />
+      <element id="module-output" name="v1_12_R1" />
+      <element id="module-output" name="v1_11_R1" />
+      <element id="module-output" name="v1_10_R1" />
+      <element id="module-output" name="v1_9_R2" />
+      <element id="module-output" name="v1_8_R3" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/xyz/upperlevel/spigot/book/spigot-book-api/1.2/spigot-book-api-1.2.jar" path-in-jar="/" />
+      <element id="module-output" name="Paper_v1_14_R1" />
+    </root>
+  </artifact>
+</component>
