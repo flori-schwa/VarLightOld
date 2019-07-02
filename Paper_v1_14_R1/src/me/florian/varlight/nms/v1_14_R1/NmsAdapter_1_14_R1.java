@@ -125,6 +125,7 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
         this.plugin.setLightUpdater(new LightUpdaterBuiltIn(this.plugin) {
             @Override
             public void setLight(Location location, int lightLevel) {
+
                 WorldServer worldServer = NmsAdapter_1_14_R1.this.getNmsWorld(location.getWorld());
                 BlockPosition blockPosition = NmsAdapter_1_14_R1.toBlockPosition(location);
 
@@ -145,7 +146,7 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
                         return;
                     }
 
-                    update(worldServer, location, blockPosition, c, lightEngine);
+                    updateChunks(worldServer, location, blockPosition, c, lightEngine);
 
                     if (lightLevel > 0) {
                         lightEngineBlock.a(blockPosition, lightLevel);
@@ -155,15 +156,15 @@ public class NmsAdapter_1_14_R1 implements NmsAdapter, Listener {
                         return;
                     }
 
-                    update(worldServer, location, blockPosition, c, lightEngine);
+                    updateChunks(worldServer, location, blockPosition, c, lightEngine);
                 });
             }
 
-            private void update(WorldServer worldServer, Location location, BlockPosition blockPosition, net.minecraft.server.v1_14_R1.Chunk chunk, LightEngineThreaded lightEngineThreaded) {
+            private void updateChunks(WorldServer worldServer, Location location, BlockPosition blockPosition, net.minecraft.server.v1_14_R1.Chunk center, LightEngineThreaded lightEngineThreaded) {
                 lightEngineThreaded.a(blockPosition);
-                Future future = lightEngineThreaded.a(new WrappedIChunkAccessPaper(worldServer, chunk), true);
+                Future future = lightEngineThreaded.a(new WrappedIChunkAccessPaper(worldServer, center), true);
 
-                Runnable updateChunkTask = () -> ((VarLightPlugin) plugin).getLightUpdater()
+                Runnable updateChunkTask = () -> plugin.getLightUpdater()
                         .getChunksToUpdate(location)
                         .forEach(c -> queueChunkLightUpdate(c, location.getBlockY() / 16));
 

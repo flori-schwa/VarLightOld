@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
 public class VarLightPlugin extends JavaPlugin implements Listener {
 
     public static final NumericMajorMinorVersion V1_14_2 = new NumericMajorMinorVersion("1.14.2");
-    public static final boolean INDEV = false;
+    public static boolean DEBUG = false;
 
     private enum LightUpdateResult {
         INVALID_BLOCK,
@@ -160,6 +160,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         }
 
         configuration = new VarLightConfiguration(this);
+        DEBUG = configuration.isDebug();
         configuration.getVarLightEnabledWorlds().forEach(w -> LightSourcePersistor.createPersistor(this, w));
 
         try {
@@ -245,7 +246,15 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     public void onInteract(PlayerInteractEvent e) {
         Optional<LightSourcePersistor> optPersistor = LightSourcePersistor.getPersistor(this, e.getPlayer().getWorld());
 
-        if (e.isCancelled() || (e.getAction() != Action.RIGHT_CLICK_BLOCK && e.getAction() != Action.LEFT_CLICK_BLOCK) || nmsAdapter.hasCooldown(e.getPlayer(), Material.GLOWSTONE_DUST) || !optPersistor.isPresent()) {
+        if (e.isCancelled() || e.getAction() != Action.RIGHT_CLICK_BLOCK && e.getAction() != Action.LEFT_CLICK_BLOCK || nmsAdapter.hasCooldown(e.getPlayer(), Material.GLOWSTONE_DUST)) {
+            return;
+        }
+
+        if (!optPersistor.isPresent() && configuration.getVarLightEnabledWorldNames().contains(e.getPlayer().getWorld().getName())) {
+            optPersistor = Optional.of(LightSourcePersistor.createPersistor(this, e.getPlayer().getWorld()));
+        }
+
+        if (!optPersistor.isPresent()) {
             return;
         }
 
@@ -315,13 +324,13 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         switch (lightUpdateResult) {
 
             case CANCELLED: {
-                if (INDEV) {
+                if (DEBUG) {
                     nmsAdapter.sendActionBarMessage(player, "Cancelled");
                 }
             }
 
             case INVALID_BLOCK: {
-                if (INDEV) {
+                if (DEBUG) {
                     nmsAdapter.sendActionBarMessage(player, "Invalid Block.");
                 }
 

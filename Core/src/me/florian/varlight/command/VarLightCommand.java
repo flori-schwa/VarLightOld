@@ -26,7 +26,7 @@ public class VarLightCommand implements CommandExecutor {
     public VarLightCommand(VarLightPlugin plugin) {
         this.plugin = plugin;
 
-        commandReference = new String[] {
+        commandReference = new String[]{
                 "VarLight command help:",
                 "/varlight save: Save All Light sources in current world",
                 "/varlight save <world>: Save All Light sources in the specified world",
@@ -358,11 +358,11 @@ public class VarLightCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender commandSender, Command command, String s, String[] strings) {
-        if (! "varlight".equalsIgnoreCase(command.getName())) {
+        if (!"varlight".equalsIgnoreCase(command.getName())) {
             return true; // How would this happen?
         }
 
-        if (! execute(commandSender, new ArgumentIterator(strings))) {
+        if (!execute(commandSender, new ArgumentIterator(strings))) {
             printHelp(commandSender);
         }
 
@@ -374,14 +374,14 @@ public class VarLightCommand implements CommandExecutor {
             return false;
         }
 
-        if (! hasAnyVarLightPermission(commandSender)) {
+        if (!hasAnyVarLightPermission(commandSender)) {
             return true;
         }
 
         switch (args.next().toLowerCase()) {
             case "suggest": {
 
-                if (! (commandSender instanceof Player)) {
+                if (!(commandSender instanceof Player)) {
                     return true;
                 }
 
@@ -389,6 +389,12 @@ public class VarLightCommand implements CommandExecutor {
                 return true;
             }
 
+            case "debug":
+                if (commandSender.hasPermission("varlight.admin")) {
+                    VarLightPlugin.DEBUG = !VarLightPlugin.DEBUG;
+                    broadcastResult(commandSender, String.format("Updated Varlight debug state to: %s", VarLightPlugin.DEBUG), "varlight.admin");
+                }
+                return true;
             case "migrate":
                 return migrate(commandSender, args);
             case "save":
@@ -406,7 +412,7 @@ public class VarLightCommand implements CommandExecutor {
             case "blacklist":
                 return worldCommand(commandSender, VarLightConfiguration.WorldListType.BLACKLIST, args);
             case "book": {
-                if (! (commandSender instanceof Player)) {
+                if (!(commandSender instanceof Player)) {
                     return true;
                 }
 
@@ -426,7 +432,7 @@ public class VarLightCommand implements CommandExecutor {
     private boolean migrate(final CommandSender commandSender, final ArgumentIterator args) {
         final String node = "varlight.admin";
 
-        if (! checkPerm(commandSender, node)) {
+        if (!checkPerm(commandSender, node)) {
             return true;
         }
 
@@ -445,7 +451,7 @@ public class VarLightCommand implements CommandExecutor {
             broadcastResult(commandSender, String.format("Migrating \"%s\"", p.getWorld().getName()), node);
 
             p.getAllLightSources().filter(PersistentLightSource::needsMigration).forEach(lightSource -> {
-                if (! lightSource.getPosition().isChunkLoaded(lightSource.getWorld())) {
+                if (!lightSource.getPosition().isChunkLoaded(lightSource.getWorld())) {
                     if (lightSource.getPosition().loadChunk(lightSource.getWorld(), false)) {
                         lightSource.update();
                         migrated.i++;
@@ -470,12 +476,12 @@ public class VarLightCommand implements CommandExecutor {
     }
 
     private boolean save(CommandSender commandSender, ArgumentIterator args) {
-        if (! checkPerm(commandSender, "varlight.admin.save")) {
+        if (!checkPerm(commandSender, "varlight.admin.save")) {
             return true;
         }
 
-        if (! args.hasNext()) {
-            if (! (commandSender instanceof Player)) {
+        if (!args.hasNext()) {
+            if (!(commandSender instanceof Player)) {
                 sendPrefixedMessage(commandSender, "Only Players may use this command");
                 return true;
             }
@@ -505,7 +511,7 @@ public class VarLightCommand implements CommandExecutor {
         } else {
             Optional<LightSourcePersistor> optLightSourcePersistor = LightSourcePersistor.getPersistor(plugin, world);
 
-            if (! optLightSourcePersistor.isPresent()) {
+            if (!optLightSourcePersistor.isPresent()) {
                 sendPrefixedMessage(commandSender, String.format("No custom Light sources present in world \"%s\"", world.getName()));
             } else {
                 optLightSourcePersistor.get().save(commandSender);
@@ -516,7 +522,7 @@ public class VarLightCommand implements CommandExecutor {
     }
 
     private boolean autosave(CommandSender commandSender, ArgumentIterator args) {
-        if (! checkPerm(commandSender, "varlight.admin.save")) {
+        if (!checkPerm(commandSender, "varlight.admin.save")) {
             return true;
         }
 
@@ -547,7 +553,7 @@ public class VarLightCommand implements CommandExecutor {
     }
 
     private boolean getPerm(CommandSender commandSender, ArgumentIterator args) {
-        if (! checkPerm(commandSender, "varlight.admin.perm")) {
+        if (!checkPerm(commandSender, "varlight.admin.perm")) {
             return true;
         }
 
@@ -556,11 +562,11 @@ public class VarLightCommand implements CommandExecutor {
     }
 
     private boolean setPerm(CommandSender commandSender, ArgumentIterator args) {
-        if (! checkPerm(commandSender, "varlight.admin.perm")) {
+        if (!checkPerm(commandSender, "varlight.admin.perm")) {
             return true;
         }
 
-        if (! args.hasNext()) {
+        if (!args.hasNext()) {
             return false;
         }
 
@@ -571,7 +577,7 @@ public class VarLightCommand implements CommandExecutor {
     }
 
     private boolean unsetPerm(CommandSender commandSender, ArgumentIterator args) {
-        if (! checkPerm(commandSender, "varlight.admin.perm")) {
+        if (!checkPerm(commandSender, "varlight.admin.perm")) {
             return true;
         }
 
@@ -581,18 +587,18 @@ public class VarLightCommand implements CommandExecutor {
     }
 
     private boolean worldCommand(CommandSender commandSender, VarLightConfiguration.WorldListType worldListType, ArgumentIterator args) {
-        if (! checkPerm(commandSender, "varlight.admin.world")) {
+        if (!checkPerm(commandSender, "varlight.admin.world")) {
             return true;
         }
 
-        if (! args.hasNext()) {
+        if (!args.hasNext()) {
             return false;
         }
 
         String subCommand = args.next();
 
         if ("add".equalsIgnoreCase(subCommand)) {
-            if (! args.hasNext()) {
+            if (!args.hasNext()) {
                 return false;
             }
 
@@ -613,7 +619,7 @@ public class VarLightCommand implements CommandExecutor {
         }
 
         if ("remove".equalsIgnoreCase(subCommand)) {
-            if (! args.hasNext()) {
+            if (!args.hasNext()) {
                 return false;
             }
 
@@ -647,7 +653,7 @@ public class VarLightCommand implements CommandExecutor {
     }
 
     private boolean checkPerm(CommandSender commandSender, String node) {
-        if (! commandSender.hasPermission(node)) {
+        if (!commandSender.hasPermission(node)) {
             commandSender.sendMessage(ChatColor.RED + "You do not have permission to use this command");
             return false;
         }

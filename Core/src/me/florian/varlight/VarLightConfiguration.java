@@ -51,6 +51,10 @@ public class VarLightConfiguration {
         save();
     }
 
+    public boolean isDebug() {
+        return plugin.getConfig().getBoolean("debug", false);
+    }
+
     public int getAutosaveInterval() {
         return plugin.getConfig().getInt(CONFIG_KEY_AUTOSAVE, AUTOSAVE_DEFAULT);
     }
@@ -98,23 +102,28 @@ public class VarLightConfiguration {
         return true;
     }
 
-    public List<World> getWorlds(WorldListType type) {
+    public List<String> getWorldNames(WorldListType type) {
         Objects.requireNonNull(type);
+        return plugin.getConfig().getStringList(type.getConfigPath());
+    }
 
-        return plugin.getConfig().getStringList(type.getConfigPath()).stream().map(Bukkit::getWorld).filter(Objects::nonNull).collect(Collectors.toList());
+    public List<World> getWorlds(WorldListType type) {
+        return getWorldNames(type).stream().map(Bukkit::getWorld).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
+    public List<String> getVarLightEnabledWorldNames() {
+        List<String> worlds = getWorldNames(WorldListType.WHITELIST);
+
+        if (worlds.isEmpty()) {
+            worlds = Bukkit.getWorlds().stream().map(World::getName).collect(Collectors.toList());
+        }
+
+        getWorldNames(WorldListType.BLACKLIST).forEach(worlds::remove);
+        return worlds;
     }
 
     public List<World> getVarLightEnabledWorlds() {
-
-        List<World> worlds = getWorlds(WorldListType.WHITELIST);
-
-        if (worlds.isEmpty()) {
-            worlds = Bukkit.getWorlds();
-        }
-
-        getWorlds(WorldListType.BLACKLIST).forEach(worlds::remove);
-
-        return worlds;
+        return getVarLightEnabledWorldNames().stream().map(Bukkit::getWorld).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     public void save() {
