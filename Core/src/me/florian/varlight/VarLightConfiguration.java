@@ -1,6 +1,5 @@
 package me.florian.varlight;
 
-import com.google.common.base.Preconditions;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 
@@ -10,6 +9,7 @@ import java.util.stream.Collectors;
 
 public class VarLightConfiguration {
 
+    public static final String CONFIG_KEY_LOG_PERSIST = "autosave.logpersist";
     public static final String CONFIG_KEY_REQUIRED_PERMISSION = "requiredPermission";
     public static final String REQUIRED_PERMISSION_DEFAULT = null;
     public static final String CONFIG_KEY_AUTOSAVE = "autosave";
@@ -51,6 +51,10 @@ public class VarLightConfiguration {
         save();
     }
 
+    public boolean isLoggingPersist() {
+        return plugin.getConfig().getBoolean(CONFIG_KEY_LOG_PERSIST, true);
+    }
+
     public boolean isDebug() {
         return plugin.getConfig().getBoolean("debug", false);
     }
@@ -60,7 +64,6 @@ public class VarLightConfiguration {
     }
 
     public void setAutosaveInterval(int interval) {
-        Preconditions.checkArgument(interval >= 0, "interval must be >= 0");
         plugin.getConfig().set(CONFIG_KEY_AUTOSAVE, interval);
 
         save();

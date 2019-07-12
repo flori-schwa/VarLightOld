@@ -21,6 +21,7 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -60,6 +61,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     private VarLightConfiguration configuration;
     private BukkitTask autosaveTask;
     private boolean doLoad = true;
+    private PersistOnWorldSaveHandler persistOnWorldSaveHandler;
 
     static {
         ADAPTERS = new HashMap<>();
@@ -186,17 +188,23 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             autosaveTask = null;
         }
 
+        if (persistOnWorldSaveHandler != null) {
+            HandlerList.unregisterAll(persistOnWorldSaveHandler);
+            persistOnWorldSaveHandler = null;
+        }
+
         int saveInterval = configuration.getAutosaveInterval();
 
         if (saveInterval == 0) {
-
             getLogger().warning("Autosave is disabled! All Light sources will be lost if the server crashes and Light sources were not manually saved!");
-
             return;
         }
 
         if (saveInterval < 0) {
-            saveInterval = VarLightConfiguration.AUTOSAVE_DEFAULT;
+            persistOnWorldSaveHandler = new PersistOnWorldSaveHandler(this);
+
+            Bukkit.getPluginManager().registerEvents(persistOnWorldSaveHandler, this);
+            return;
         }
 
         long ticks = TimeUnit.MINUTES.toSeconds(saveInterval) * TICK_RATE;
@@ -215,7 +223,11 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         configuration.save();
         nmsAdapter.onDisable(lightUpdater instanceof LightUpdaterBuiltIn);
-        LightSourcePersistor.getAllPersistors(this).forEach(l -> l.save(Bukkit.getConsoleSender()));
+
+        // If PersistOnSave is enabled, PersistOnWorldSaveHandler.onWorldSave will automatically save the Light Sources
+        if (configuration.getAutosaveInterval() >= 0) {
+            LightSourcePersistor.getAllPersistors(this).forEach(l -> l.save(Bukkit.getConsoleSender()));
+        }
     }
 
     public VarLightConfiguration getConfiguration() {
