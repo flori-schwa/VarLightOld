@@ -535,18 +535,15 @@ public class VarLightCommand implements CommandExecutor {
             return true;
         }
 
-        if (newInterval < 0) {
-            sendPrefixedMessage(commandSender, "interval must be >= 0");
-            return true;
-        }
-
         plugin.getConfiguration().setAutosaveInterval(newInterval);
         plugin.initAutosave();
 
         if (newInterval > 0) {
             broadcastResult(commandSender, String.format("Updated Autosave interval to %d Minutes", newInterval), "varlight.admin.save");
-        } else {
+        } else if (newInterval == 0) {
             broadcastResult(commandSender, "Disabled Autosave", "varlight.admin.save");
+        } else {
+            broadcastResult(commandSender, "Enabled Persist On Save", "varlight.admin.save");
         }
 
         return true;
