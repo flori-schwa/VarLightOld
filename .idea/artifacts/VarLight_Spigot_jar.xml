@@ -10,7 +10,7 @@
       <element id="module-output" name="v1_9_R2" />
       <element id="module-output" name="Spigot_v1_14_R1" />
       <element id="module-output" name="v1_12_R1" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/xyz/upperlevel/spigot/book/spigot-book-api/1.2/spigot-book-api-1.2.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lib/spigot-book-api-1.3.jar" path-in-jar="/" />
     </root>
   </artifact>
 </component>
