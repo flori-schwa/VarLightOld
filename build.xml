@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <project name="VarLight" default="master">
+
+    <available file=".git" type="dir" property="git.present"/>
+
     <property name="build" location="build"/>
     <property name="dist" location="dist"/>
     <property name="core-src" location="Core/src"/>
@@ -37,7 +40,25 @@
         <mkdir dir="${dist}"/>
     </target>
 
-    <target name="build-core" depends="init">
+    <target name="git-rev" if="git.present">
+        <exec executable="git" outputproperty="git.rev" failifexecutionfails="false" errorproperty="">
+            <arg value="rev-parse"/>
+            <arg value="--short"/>
+            <arg value="HEAD"/>
+        </exec>
+
+        <condition property="plugin.version" value="${git.rev}" else="unknown">
+            <and>
+                <isset property="git.rev"/>
+
+                <not>
+                    <isset property="plugin.version" />
+                </not>
+            </and>
+        </condition>
+    </target>
+
+    <target name="build-core" depends="init, git-rev">
 
         <condition property="plugin.version.set">
             <isset property="plugin.version"/>
@@ -60,7 +81,7 @@
             </classpath>
         </javac>
 
-        <delete file="${core-build}/me/florian/varlight/nms/NmsAdapter.class" />
+        <delete file="${core-build}/me/florian/varlight/nms/NmsAdapter.class"/>
     </target>
 
     <target name="build-v1_8_R3" depends="build-core">
@@ -207,6 +228,7 @@
         </jar>
     </target>
 
-    <target name="master" depends="build-core, jar-v1_8_R3, jar-v1_9_R2, jar-v1_10_R1, jar-v1_11_R1, jar-v1_12_R1, jar-v1_13_R2">
+    <target name="master"
+            depends="build-core, jar-v1_8_R3, jar-v1_9_R2, jar-v1_10_R1, jar-v1_11_R1, jar-v1_12_R1, jar-v1_13_R2">
     </target>
 </project>
