@@ -56,7 +56,7 @@ public class PersistentLightSource {
     }
 
     public boolean needsMigration() {
-        return plugin.getNmsAdapter().getMinecraftVersion().newerOrEquals(VarLightPlugin.V1_14_2) && ! isMigrated();
+        return plugin.getNmsAdapter().getMinecraftVersion().newerOrEquals(VarLightPlugin.MC1_14_2) && ! isMigrated();
     }
 
     public boolean isMigrated() {
@@ -89,7 +89,7 @@ public class PersistentLightSource {
             return false;
         }
 
-        if (! plugin.getNmsAdapter().isValidBlock(block)) {
+        if (! plugin.getBlockValidator().isValidBlock(block)) {
             return false;
         }
 

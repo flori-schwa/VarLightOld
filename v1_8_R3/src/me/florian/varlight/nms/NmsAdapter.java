@@ -1,6 +1,5 @@
-package me.florian.varlight.nms.v1_8_R3;
+package me.florian.varlight.nms;
 
-import me.florian.varlight.nms.NmsAdapter;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.server.v1_8_R3.*;
@@ -21,18 +20,18 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public class NmsAdapter_1_8_R3 implements NmsAdapter {
+@ForMinecraft(version = "1.8.8")
+public class NmsAdapter implements INmsAdapter {
 
     private static final byte GAME_INFO = 2;
 
-    private Class playerChunkClass;
     private Field longHashMapPlayerChunk;
     private Method broadcastPacket;
 
 
-    public NmsAdapter_1_8_R3() {
+    public NmsAdapter() {
         try {
-            playerChunkClass = Class.forName("net.minecraft.server.v1_8_R3.PlayerChunkMap$PlayerChunk");
+            Class playerChunkClass = Class.forName("net.minecraft.server.v1_8_R3.PlayerChunkMap$PlayerChunk");
 
             longHashMapPlayerChunk = PlayerChunkMap.class.getDeclaredField("d");
             longHashMapPlayerChunk.setAccessible(true);
@@ -49,7 +48,7 @@ public class NmsAdapter_1_8_R3 implements NmsAdapter {
         return ((LongHashMap) longHashMapPlayerChunk.get(getNmsWorld(chunk.getWorld()).getPlayerChunkMap())).getEntry(encoded);
     }
 
-    private Class[] blacklistedDatas = new Class[] {
+    private Class[] blacklistedDatas = new Class[]{
             Redstone.class,
             DirectionalContainer.class,
             PistonBaseMaterial.class
@@ -65,7 +64,7 @@ public class NmsAdapter_1_8_R3 implements NmsAdapter {
 
     @Override
     public boolean isBlockTransparent(Block block) {
-        return ! getNmsWorld(block.getWorld()).getType(toBlockPosition(block.getLocation())).getBlock().getMaterial().blocksLight();
+        return !getNmsWorld(block.getWorld()).getType(toBlockPosition(block.getLocation())).getBlock().getMaterial().blocksLight();
     }
 
     @Override
@@ -95,7 +94,7 @@ public class NmsAdapter_1_8_R3 implements NmsAdapter {
 
     @Override
     public boolean isValidBlock(Block block) {
-        if (! block.getType().isBlock()) {
+        if (!block.getType().isBlock()) {
             return false;
         }
 
@@ -122,7 +121,7 @@ public class NmsAdapter_1_8_R3 implements NmsAdapter {
     public void sendActionBarMessage(Player player, String message) {
         TextComponent textComponent = new TextComponent(message);
         PacketPlayOutChat packetPlayOutChat = new PacketPlayOutChat(null, GAME_INFO);
-        packetPlayOutChat.components = new BaseComponent[] {textComponent};
+        packetPlayOutChat.components = new BaseComponent[]{textComponent};
 
         ((CraftPlayer) player).getHandle().playerConnection.sendPacket(packetPlayOutChat);
     }

@@ -1,70 +1,65 @@
 package me.florian.varlight.nms;
 
-import me.florian.varlight.VarLightPlugin;
-import me.florian.varlight.util.NumericMajorMinorVersion;
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.chat.ClickEvent;
-import net.md_5.bungee.api.chat.ComponentBuilder;
-import net.md_5.bungee.api.chat.HoverEvent;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
-public interface NmsAdapter {
+@ForMinecraft(version = "UNDEFINED")
+public class NmsAdapter implements INmsAdapter {
 
-    default void onLoad(VarLightPlugin plugin, boolean use) {
-
+    public NmsAdapter() {
+        throw new AbstractMethodError();
     }
 
-    default void onEnable(VarLightPlugin plugin, boolean use) {
-
+    @Override
+    public boolean isBlockTransparent(Block block) {
+        throw new AbstractMethodError();
     }
 
-    default void onDisable(boolean wasUsed) {
-
+    @Override
+    public void recalculateBlockLight(Location at) {
+        throw new AbstractMethodError();
     }
 
-    boolean isBlockTransparent(Block block);
-
-    void recalculateBlockLight(Location at);
-
-    void updateBlockLight(Location at, int lightLevel);
-
-    int getEmittingLightLevel(Block block);
-
-    void sendChunkUpdates(Chunk chunk, int mask);
-
-    default void sendChunkUpdates(Chunk chunk) {
-        sendChunkUpdates(chunk, (1 << 16) - 1);
+    @Override
+    public void updateBlockLight(Location at, int lightLevel) {
+        throw new AbstractMethodError();
     }
 
-    boolean isValidBlock(Block block);
-
-    void sendActionBarMessage(Player player, String message);
-
-    void setCooldown(Player player, Material material, int ticks);
-
-    boolean hasCooldown(Player player, Material material);
-
-    String getNumericMinecraftVersion();
-
-    default NumericMajorMinorVersion getMinecraftVersion() {
-        return new NumericMajorMinorVersion(getNumericMinecraftVersion());
+    @Override
+    public int getEmittingLightLevel(Block block) {
+        throw new AbstractMethodError();
     }
 
-    default void suggestCommand(Player player, String command) {
-        player.spigot().sendMessage(
-                new ComponentBuilder(String.format("Click to here to run command %s", command))
-                        .color(ChatColor.GRAY)
-                        .italic(true)
-                        .event(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, command))
+    @Override
+    public void sendChunkUpdates(Chunk chunk, int mask) {
+        throw new AbstractMethodError();
+    }
 
-                        .event(
-                                new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("You can thank MC-70317").color(ChatColor.GRAY).italic(true).create())
-                        )
-                        .create()
-        );
+    @Override
+    public boolean isValidBlock(Block block) {
+        throw new AbstractMethodError();
+    }
+
+    @Override
+    public void sendActionBarMessage(Player player, String message) {
+        throw new AbstractMethodError();
+    }
+
+    @Override
+    public void setCooldown(Player player, Material material, int ticks) {
+        throw new AbstractMethodError();
+    }
+
+    @Override
+    public boolean hasCooldown(Player player, Material material) {
+        throw new AbstractMethodError();
+    }
+
+    @Override
+    public String getNumericMinecraftVersion() {
+        throw new AbstractMethodError();
     }
 }

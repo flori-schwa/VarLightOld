@@ -1,28 +1,38 @@
-package me.florian.varlight.nms.v1_9_R2;
+package me.florian.varlight.nms;
 
-import me.florian.varlight.nms.NmsAdapter;
+
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
-import net.minecraft.server.v1_9_R2.*;
+import net.minecraft.server.v1_13_R2.*;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.v1_9_R2.CraftWorld;
+import org.bukkit.block.data.AnaloguePowerable;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Powerable;
+import org.bukkit.block.data.type.Piston;
+import org.bukkit.craftbukkit.v1_13_R2.CraftWorld;
 import org.bukkit.entity.Player;
-import org.bukkit.material.DirectionalContainer;
-import org.bukkit.material.MaterialData;
-import org.bukkit.material.PistonBaseMaterial;
-import org.bukkit.material.Redstone;
+import org.bukkit.material.Openable;
 
-public class NmsAdapter_1_9_R2 implements NmsAdapter {
+import java.lang.reflect.Field;
 
-    private Class[] blacklistedDatas = new Class[] {
-            Redstone.class,
-            DirectionalContainer.class,
-            PistonBaseMaterial.class
-    };
+@ForMinecraft(version = "1.13.2")
+public class NmsAdapter implements INmsAdapter {
+
+    private Field lightBlockingField;
+
+    public NmsAdapter() {
+        try {
+
+            lightBlockingField = net.minecraft.server.v1_13_R2.Block.class.getDeclaredField("n");
+            lightBlockingField.setAccessible(true);
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        }
+    }
 
     private WorldServer getNmsWorld(World world) {
         return ((CraftWorld) world).getHandle();
@@ -34,7 +44,12 @@ public class NmsAdapter_1_9_R2 implements NmsAdapter {
 
     @Override
     public boolean isBlockTransparent(Block block) {
-        return ! getNmsWorld(block.getWorld()).getType(toBlockPosition(block.getLocation())).getMaterial().blocksLight();
+        try {
+            return !lightBlockingField.getBoolean(getNmsWorld(block.getWorld()).getType(toBlockPosition(block.getLocation())).getBlock());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     @Override
@@ -49,7 +64,7 @@ public class NmsAdapter_1_9_R2 implements NmsAdapter {
 
     @Override
     public int getEmittingLightLevel(Block block) {
-        return getNmsWorld(block.getWorld()).getChunkAt(block.getChunk().getX(), block.getChunk().getZ()).getBlockData(toBlockPosition(block.getLocation())).d();
+        return ((CraftWorld) block.getWorld()).getHandle().getChunkAt(block.getChunk().getX(), block.getChunk().getZ()).getBlockData(block.getX(), block.getY(), block.getZ()).e();
     }
 
     @Override
@@ -77,7 +92,7 @@ public class NmsAdapter_1_9_R2 implements NmsAdapter {
 
     @Override
     public boolean isValidBlock(Block block) {
-        if (! block.getType().isBlock()) {
+        if (!block.getType().isBlock()) {
             return false;
         }
 
@@ -85,16 +100,18 @@ public class NmsAdapter_1_9_R2 implements NmsAdapter {
             return false;
         }
 
-        Class<? extends MaterialData> data = block.getType().getData();
+        BlockData blockData = block.getType().createBlockData();
 
-        for (Class blacklisted : blacklistedDatas) {
-            if (blacklisted.isAssignableFrom(data)) {
-                return false;
-            }
+        if (blockData instanceof Powerable || blockData instanceof AnaloguePowerable || blockData instanceof Openable || blockData instanceof Piston) {
+            return false;
         }
 
         if (block.getType() == Material.SLIME_BLOCK) {
             return false;
+        }
+
+        if (block.getType() == Material.BLUE_ICE) {
+            return true; // Packed ice is solid and occluding but blue ice isn't?
         }
 
         return block.getType().isSolid() && block.getType().isOccluding();
@@ -112,11 +129,11 @@ public class NmsAdapter_1_9_R2 implements NmsAdapter {
 
     @Override
     public void setCooldown(Player player, Material material, int ticks) {
-        // Ignore
+        player.setCooldown(material, ticks);
     }
 
     @Override
     public boolean hasCooldown(Player player, Material material) {
-        return false;
+        return player.hasCooldown(material);
     }
 }

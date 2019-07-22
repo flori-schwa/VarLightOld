@@ -1,6 +1,5 @@
-package me.florian.varlight.nms.v1_10_R1;
+package me.florian.varlight.nms;
 
-import me.florian.varlight.nms.NmsAdapter;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.server.v1_10_R1.*;
@@ -16,9 +15,10 @@ import org.bukkit.material.MaterialData;
 import org.bukkit.material.PistonBaseMaterial;
 import org.bukkit.material.Redstone;
 
-public class NmsAdapter_1_10_R1 implements NmsAdapter {
+@ForMinecraft(version = "1.10.2")
+public class NmsAdapter implements INmsAdapter {
 
-    private Class[] blacklistedDatas = new Class[] {
+    private Class[] blacklistedDatas = new Class[]{
             Redstone.class,
             DirectionalContainer.class,
             PistonBaseMaterial.class
@@ -34,7 +34,7 @@ public class NmsAdapter_1_10_R1 implements NmsAdapter {
 
     @Override
     public boolean isBlockTransparent(Block block) {
-        return ! getNmsWorld(block.getWorld()).getType(toBlockPosition(block.getLocation())).getMaterial().blocksLight();
+        return !getNmsWorld(block.getWorld()).getType(toBlockPosition(block.getLocation())).getMaterial().blocksLight();
     }
 
     @Override
@@ -77,7 +77,7 @@ public class NmsAdapter_1_10_R1 implements NmsAdapter {
 
     @Override
     public boolean isValidBlock(Block block) {
-        if (! block.getType().isBlock()) {
+        if (!block.getType().isBlock()) {
             return false;
         }
 

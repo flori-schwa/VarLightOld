@@ -1,17 +1,12 @@
 package me.florian.varlight;
 
+import me.florian.varlight.blocks.BlockValidator;
 import me.florian.varlight.command.VarLightCommand;
 import me.florian.varlight.event.LightUpdateEvent;
+import me.florian.varlight.nms.INmsAdapter;
 import me.florian.varlight.nms.NmsAdapter;
 import me.florian.varlight.nms.ReflectionHelper;
 import me.florian.varlight.nms.VarLightInitializationException;
-import me.florian.varlight.nms.v1_10_R1.NmsAdapter_1_10_R1;
-import me.florian.varlight.nms.v1_11_R1.NmsAdapter_1_11_R1;
-import me.florian.varlight.nms.v1_12_R1.NmsAdapter_1_12_R1;
-import me.florian.varlight.nms.v1_13_R2.NmsAdapter_1_13_R2;
-import me.florian.varlight.nms.v1_14_R1.NmsAdapter_1_14_R1;
-import me.florian.varlight.nms.v1_8_R3.NmsAdapter_1_8_R3;
-import me.florian.varlight.nms.v1_9_R2.NmsAdapter_1_9_R2;
 import me.florian.varlight.persistence.LightSourcePersistor;
 import me.florian.varlight.util.IntPosition;
 import me.florian.varlight.util.NumericMajorMinorVersion;
@@ -29,15 +24,13 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public class VarLightPlugin extends JavaPlugin implements Listener {
 
-    public static final NumericMajorMinorVersion V1_14_2 = new NumericMajorMinorVersion("1.14.2");
+    public static final NumericMajorMinorVersion
+            MC1_14_2 = new NumericMajorMinorVersion("1.14.2");
     public static boolean DEBUG = false;
 
     private enum LightUpdateResult {
@@ -49,31 +42,19 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     }
 
     public static final long TICK_RATE = 20L;
-    private static Map<String, Class<? extends NmsAdapter>> ADAPTERS;
     private static String PACKAGE_VERSION;
 
     public static String getPackageVersion() {
         return PACKAGE_VERSION;
     }
 
+    private BlockValidator blockValidator;
     private LightUpdater lightUpdater;
-    private NmsAdapter nmsAdapter;
+    private INmsAdapter nmsAdapter;
     private VarLightConfiguration configuration;
     private BukkitTask autosaveTask;
     private boolean doLoad = true;
     private PersistOnWorldSaveHandler persistOnWorldSaveHandler;
-
-    static {
-        ADAPTERS = new HashMap<>();
-
-        ADAPTERS.put("v1_14_R1", NmsAdapter_1_14_R1.class);
-        ADAPTERS.put("v1_13_R2", NmsAdapter_1_13_R2.class);
-        ADAPTERS.put("v1_12_R1", NmsAdapter_1_12_R1.class);
-        ADAPTERS.put("v1_11_R1", NmsAdapter_1_11_R1.class);
-        ADAPTERS.put("v1_10_R1", NmsAdapter_1_10_R1.class);
-        ADAPTERS.put("v1_9_R2", NmsAdapter_1_9_R2.class);
-        ADAPTERS.put("v1_8_R3", NmsAdapter_1_8_R3.class);
-    }
 
     private boolean isPaperImplementation() {
         try {
@@ -125,20 +106,10 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         PACKAGE_VERSION = Bukkit.getServer().getClass().getPackage().getName();
         PACKAGE_VERSION = PACKAGE_VERSION.substring(PACKAGE_VERSION.lastIndexOf('.') + 1);
 
-        if (!ADAPTERS.containsKey(PACKAGE_VERSION)) {
-            getLogger().severe("------------------------------------------------------");
-            getLogger().severe(String.format("Unsupported Minecraft version: %s", PACKAGE_VERSION));
-            getLogger().severe("------------------------------------------------------");
-
-            doLoad = false;
-            return;
-        }
-
         try {
-            nmsAdapter = ADAPTERS.get(PACKAGE_VERSION).getConstructor().newInstance();
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | VarLightInitializationException e) {
-            getLogger().throwing(getClass().getName(), "onLoad", e);
-            doLoad = false;
+            this.nmsAdapter = new NmsAdapter();
+        } catch (VarLightInitializationException e) {
+            unsupportedShutdown(e.getMessage());
             return;
         }
 
@@ -234,12 +205,16 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         return configuration;
     }
 
-    public NmsAdapter getNmsAdapter() {
+    public INmsAdapter getNmsAdapter() {
         return nmsAdapter;
     }
 
     public LightUpdater getLightUpdater() {
         return lightUpdater;
+    }
+
+    public BlockValidator getBlockValidator() {
+        return blockValidator;
     }
 
     public void setLightUpdater(LightUpdater lightUpdater) {
@@ -297,7 +272,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         boolean creative = player.getGameMode() == GameMode.CREATIVE;
 
-        if (!nmsAdapter.isValidBlock(clickedBlock)) {
+        if (!blockValidator.isValidBlock(clickedBlock)) {
             displayMessage(player, LightUpdateResult.INVALID_BLOCK);
             return;
         }

@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="VarLight">
+    <property name="build" location="build"/>
+    <property name="dist" location="dist"/>
+    <property name="core-src" location="Core/src"/>
+    <property name="core-build" location="${build}/Core"/>
+    <property name="core-res" location="Core/resources"/>
+    <property name="v1_8_R3-src" location="v1_8_R3/src"/>
+    <property name="v1_8_R3-build" location="${build}/v1_8_R3"/>
+    <property name="v1_9_R2-src" location="v1_9_R2/src"/>
+    <property name="v1_9_R2-build" location="${build}/v1_9_R2"/>
+    <property name="v1_10_R1-src" location="v1_10_R1/src"/>
+    <property name="v1_10_R1-build" location="${build}/v1_10_R1"/>
+    <property name="v1_11_R1-src" location="v1_11_R1/src"/>
+    <property name="v1_11_R1-build" location="${build}/v1_11_R1"/>
+    <property name="v1_12_R1-src" location="v1_12_R1/src"/>
+    <property name="v1_12_R1-build" location="${build}/v1_12_R1"/>
+    <property name="v1_13_R2-src" location="v1_13_R2/src"/>
+    <property name="v1_13_R2-build" location="${build}/v1_13_R2"/>
+
+    <property name="lib-dir" location="lib"/>
+
+    <target name="clean">
+        <delete dir="${build}"/>
+        <delete dir="${dist}"/>
+    </target>
+
+    <target name="init" depends="clean">
+        <mkdir dir="${build}"/>
+        <mkdir dir="${build}/core"/>
+        <mkdir dir="${build}/v1_8_R3"/>
+        <mkdir dir="${build}/v1_9_R2"/>
+        <mkdir dir="${build}/v1_10_R1"/>
+        <mkdir dir="${build}/v1_11_R1"/>
+        <mkdir dir="${build}/v1_12_R1"/>
+        <mkdir dir="${build}/v1_13_R2"/>
+        <mkdir dir="${build}/v1_14_R1"/>
+        <mkdir dir="${dist}"/>
+    </target>
+
+    <target name="build-core" depends="init">
+
+        <condition property="plugin.version.set">
+            <isset property="plugin.version"/>
+        </condition>
+
+        <fail message="plugin.version not set!" unless="plugin.version.set"/>
+
+        <copy todir="${core-build}">
+            <fileset dir="${core-res}"/>
+        </copy>
+
+        <replace file="${core-build}/plugin.yml" token="plugin.version" value="${plugin.version}"/>
+        <javac srcdir="${core-src}" destdir="${core-build}">
+            <classpath>
+                <fileset dir="${lib-dir}">
+                    <include name="**/spigot-1.13.2.jar"/>
+                    <include name="**/spigot-book-api-1.3.jar"/>
+                    <include name="**/lightapi-3.2.9.jar"/>
+                </fileset>
+            </classpath>
+        </javac>
+
+        <delete file="${core-build}/me/florian/varlight/nms/NmsAdapter.class" />
+    </target>
+
+    <target name="build-v1_8_R3" depends="build-core">
+        <copy todir="${v1_8_R3-build}">
+            <fileset dir="${core-build}"/>
+        </copy>
+
+        <javac srcdir="${v1_8_R3-src}" destdir="${v1_8_R3-build}">
+            <classpath>
+                <fileset dir="${lib-dir}">
+                    <include name="**/spigot-1.8.8.jar"/>
+                </fileset>
+
+                <fileset dir="${core-build}">
+                    <include name="**/*.class"/>
+                </fileset>
+            </classpath>
+        </javac>
+    </target>
+
+    <target name="build-v1_9_R2" depends="build-core">
+        <copy todir="${v1_9_R2-build}">
+            <fileset dir="${core-build}"/>
+        </copy>
+
+        <javac srcdir="${v1_9_R2-src}" destdir="${v1_9_R2-build}">
+            <classpath>
+                <fileset dir="${lib-dir}">
+                    <include name="**/spigot-1.9.4.jar"/>
+                </fileset>
+
+                <fileset dir="${core-build}">
+                    <include name="**/*.class"/>
+                </fileset>
+            </classpath>
+        </javac>
+    </target>
+
+    <target name="build-v1_10_R1" depends="build-core">
+        <copy todir="${v1_10_R1-build}">
+            <fileset dir="${core-build}"/>
+        </copy>
+
+        <javac srcdir="${v1_10_R1-src}" destdir="${v1_10_R1-build}">
+            <classpath>
+                <fileset dir="${lib-dir}">
+                    <include name="**/spigot-1.10.2.jar"/>
+                </fileset>
+
+                <fileset dir="${core-build}">
+                    <include name="**/*.class"/>
+                </fileset>
+            </classpath>
+        </javac>
+    </target>
+
+    <target name="build-v1_11_R1" depends="build-core">
+        <copy todir="${v1_11_R1-build}">
+            <fileset dir="${core-build}"/>
+        </copy>
+
+        <javac srcdir="${v1_11_R1-src}" destdir="${v1_11_R1-build}">
+            <classpath>
+                <fileset dir="${lib-dir}">
+                    <include name="**/spigot-1.11.2.jar"/>
+                </fileset>
+
+                <fileset dir="${core-build}">
+                    <include name="**/*.class"/>
+                </fileset>
+            </classpath>
+        </javac>
+    </target>
+
+    <target name="build-v1_12_R1" depends="build-core">
+        <copy todir="${v1_12_R1-build}">
+            <fileset dir="${core-build}"/>
+        </copy>
+
+        <javac srcdir="${v1_12_R1-src}" destdir="${v1_12_R1-build}">
+            <classpath>
+                <fileset dir="${lib-dir}">
+                    <include name="**/spigot-1.12.2.jar"/>
+                </fileset>
+
+                <fileset dir="${core-build}">
+                    <include name="**/*.class"/>
+                </fileset>
+            </classpath>
+        </javac>
+    </target>
+
+    <target name="build-v1_13_R2" depends="build-core">
+        <copy todir="${v1_13_R2-build}">
+            <fileset dir="${core-build}"/>
+        </copy>
+
+        <javac srcdir="${v1_13_R2-src}" destdir="${v1_13_R2-build}">
+            <classpath>
+                <fileset dir="${lib-dir}">
+                    <include name="**/spigot-1.13.2.jar"/>
+                </fileset>
+
+                <fileset dir="${core-build}">
+                    <include name="**/*.class"/>
+                </fileset>
+            </classpath>
+        </javac>
+    </target>
+
+    <target name="jar-v1_8_R3" depends="build-v1_8_R3">
+        <jar destfile="${dist}/Varlight-${plugin.version}-Spigot-MC-1.8.8.jar" basedir="${v1_8_R3-build}">
+            <zipgroupfileset dir="${lib-dir}" includes="spigot-book-api-1.3.jar"/>
+        </jar>
+    </target>
+
+    <target name="jar-v1_9_R2" depends="build-v1_9_R2">
+        <jar destfile="${dist}/Varlight-${plugin.version}-Spigot-MC-1.9.4.jar" basedir="${v1_9_R2-build}">
+            <zipgroupfileset dir="${lib-dir}" includes="spigot-book-api-1.3.jar"/>
+        </jar>
+    </target>
+
+    <target name="jar-v1_10_R1" depends="build-v1_10_R1">
+        <jar destfile="${dist}/Varlight-${plugin.version}-Spigot-MC-1.10.2.jar" basedir="${v1_10_R1-build}">
+            <zipgroupfileset dir="${lib-dir}" includes="spigot-book-api-1.3.jar"/>
+        </jar>
+    </target>
+
+    <target name="jar-v1_11_R1" depends="build-v1_11_R1">
+        <jar destfile="${dist}/Varlight-${plugin.version}-Spigot-MC-1.11.2.jar" basedir="${v1_11_R1-build}">
+            <zipgroupfileset dir="${lib-dir}" includes="spigot-book-api-1.3.jar"/>
+        </jar>
+    </target>
+
+    <target name="jar-v1_12_R1" depends="build-v1_12_R1">
+        <jar destfile="${dist}/Varlight-${plugin.version}-Spigot-MC-1.12.2.jar" basedir="${v1_12_R1-build}">
+            <zipgroupfileset dir="${lib-dir}" includes="spigot-book-api-1.3.jar"/>
+        </jar>
+    </target>
+
+    <target name="jar-v1_13_R2" depends="build-v1_13_R2">
+        <jar destfile="${dist}/Varlight-${plugin.version}-Spigot-MC-1.13.2.jar" basedir="${v1_13_R2-build}">
+            <zipgroupfileset dir="${lib-dir}" includes="spigot-book-api-1.3.jar"/>
+        </jar>
+    </target>
+
+    <target name="master" depends="build-core, jar-v1_8_R3, jar-v1_9_R2, jar-v1_10_R1, jar-v1_11_R1, jar-v1_12_R1, jar-v1_13_R2">
+    </target>
+</project>

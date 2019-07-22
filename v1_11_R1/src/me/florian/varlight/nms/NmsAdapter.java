@@ -1,39 +1,29 @@
-package me.florian.varlight.nms.v1_13_R2;
+package me.florian.varlight.nms;
 
-
-import me.florian.varlight.nms.NmsAdapter;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
-import net.minecraft.server.v1_13_R2.*;
+import net.minecraft.server.v1_11_R1.*;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.block.data.AnaloguePowerable;
-import org.bukkit.block.data.BlockData;
-import org.bukkit.block.data.Powerable;
-import org.bukkit.block.data.type.Piston;
-import org.bukkit.craftbukkit.v1_13_R2.CraftWorld;
+import org.bukkit.craftbukkit.v1_11_R1.CraftWorld;
 import org.bukkit.entity.Player;
-import org.bukkit.material.Openable;
+import org.bukkit.material.DirectionalContainer;
+import org.bukkit.material.MaterialData;
+import org.bukkit.material.PistonBaseMaterial;
+import org.bukkit.material.Redstone;
 
-import java.lang.reflect.Field;
+@ForMinecraft(version = "1.11.2")
+public class NmsAdapter implements INmsAdapter {
 
-public class NmsAdapter_1_13_R2 implements NmsAdapter {
+    private Class[] blacklistedDatas = new Class[]{
+            Redstone.class,
+            DirectionalContainer.class,
+            PistonBaseMaterial.class
+    };
 
-
-    private Field lightBlockingField;
-
-    public NmsAdapter_1_13_R2() {
-        try {
-
-            lightBlockingField = net.minecraft.server.v1_13_R2.Block.class.getDeclaredField("n");
-            lightBlockingField.setAccessible(true);
-        } catch (NoSuchFieldException e) {
-            e.printStackTrace();
-        }
-    }
 
     private WorldServer getNmsWorld(World world) {
         return ((CraftWorld) world).getHandle();
@@ -45,12 +35,7 @@ public class NmsAdapter_1_13_R2 implements NmsAdapter {
 
     @Override
     public boolean isBlockTransparent(Block block) {
-        try {
-            return ! lightBlockingField.getBoolean(getNmsWorld(block.getWorld()).getType(toBlockPosition(block.getLocation())).getBlock());
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
+        return !getNmsWorld(block.getWorld()).getType(toBlockPosition(block.getLocation())).getMaterial().blocksLight();
     }
 
     @Override
@@ -65,7 +50,7 @@ public class NmsAdapter_1_13_R2 implements NmsAdapter {
 
     @Override
     public int getEmittingLightLevel(Block block) {
-        return ((CraftWorld) block.getWorld()).getHandle().getChunkAt(block.getChunk().getX(), block.getChunk().getZ()).getBlockData(block.getX(), block.getY(), block.getZ()).e();
+        return getNmsWorld(block.getWorld()).getChunkAt(block.getChunk().getX(), block.getChunk().getZ()).getBlockData(toBlockPosition(block.getLocation())).d();
     }
 
     @Override
@@ -74,26 +59,12 @@ public class NmsAdapter_1_13_R2 implements NmsAdapter {
         PlayerChunkMap playerChunkMap = nmsWorld.getPlayerChunkMap();
         PlayerChunk playerChunk = playerChunkMap.getChunk(chunk.getX(), chunk.getZ());
 
-        for (int cy = 0; cy < 16; cy++) {
-            if ((mask & (1 << cy)) == 0) {
-                continue;
-            }
-
-            for (int y = 0; y < 16; y++) {
-                for (int z = 0; z < 16; z++) {
-                    for (int x = 0; x < 16; x++) {
-                        playerChunk.a(x, cy * 16 + y, z);
-                    }
-                }
-            }
-        }
-
-        playerChunk.d();
+        playerChunk.a(new PacketPlayOutMapChunk(playerChunk.chunk, mask));
     }
 
     @Override
     public boolean isValidBlock(Block block) {
-        if (! block.getType().isBlock()) {
+        if (!block.getType().isBlock()) {
             return false;
         }
 
@@ -101,18 +72,16 @@ public class NmsAdapter_1_13_R2 implements NmsAdapter {
             return false;
         }
 
-        BlockData blockData = block.getType().createBlockData();
+        Class<? extends MaterialData> data = block.getType().getData();
 
-        if (blockData instanceof Powerable || blockData instanceof AnaloguePowerable || blockData instanceof Openable || blockData instanceof Piston) {
-            return false;
+        for (Class blacklisted : blacklistedDatas) {
+            if (blacklisted.isAssignableFrom(data)) {
+                return false;
+            }
         }
 
         if (block.getType() == Material.SLIME_BLOCK) {
             return false;
-        }
-
-        if (block.getType() == Material.BLUE_ICE) {
-            return true; // Packed ice is solid and occluding but blue ice isn't?
         }
 
         return block.getType().isSolid() && block.getType().isOccluding();
