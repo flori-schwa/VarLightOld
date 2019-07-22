@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<project name="VarLight">
+<project name="VarLight" default="master">
     <property name="build" location="build"/>
     <property name="dist" location="dist"/>
     <property name="core-src" location="Core/src"/>
@@ -27,14 +27,13 @@
 
     <target name="init" depends="clean">
         <mkdir dir="${build}"/>
-        <mkdir dir="${build}/core"/>
-        <mkdir dir="${build}/v1_8_R3"/>
-        <mkdir dir="${build}/v1_9_R2"/>
-        <mkdir dir="${build}/v1_10_R1"/>
-        <mkdir dir="${build}/v1_11_R1"/>
-        <mkdir dir="${build}/v1_12_R1"/>
-        <mkdir dir="${build}/v1_13_R2"/>
-        <mkdir dir="${build}/v1_14_R1"/>
+        <mkdir dir="${core-build}"/>
+        <mkdir dir="${v1_8_R3-build}"/>
+        <mkdir dir="${v1_9_R2-build}"/>
+        <mkdir dir="${v1_10_R1-build}"/>
+        <mkdir dir="${v1_11_R1-build}"/>
+        <mkdir dir="${v1_12_R1-build}"/>
+        <mkdir dir="${v1_13_R2-build}"/>
         <mkdir dir="${dist}"/>
     </target>
 
