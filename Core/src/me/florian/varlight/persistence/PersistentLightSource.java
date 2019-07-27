@@ -48,7 +48,7 @@ public class PersistentLightSource {
 
     public int getEmittingLight() {
 
-        if (! isValid()) {
+        if (!isValid()) {
             return 0;
         }
 
@@ -56,7 +56,7 @@ public class PersistentLightSource {
     }
 
     public boolean needsMigration() {
-        return plugin.getNmsAdapter().getMinecraftVersion().newerOrEquals(VarLightPlugin.MC1_14_2) && ! isMigrated();
+        return plugin.getNmsAdapter().getMinecraftVersion().newerOrEquals(VarLightPlugin.MC1_14_2) && !isMigrated();
     }
 
     public boolean isMigrated() {
@@ -64,7 +64,7 @@ public class PersistentLightSource {
     }
 
     public void migrate() {
-        plugin.getLightUpdater().setLight(position.toLocation(world), emittingLight);
+        plugin.getNmsAdapter().updateBlockLight(position.toLocation(world), emittingLight);
         migrated = true;
     }
 
@@ -79,7 +79,7 @@ public class PersistentLightSource {
     }
 
     public boolean isValid() {
-        if (! world.isChunkLoaded(position.getChunkX(), position.getChunkZ())) {
+        if (!world.isChunkLoaded(position.getChunkX(), position.getChunkZ())) {
             return true; // Assume valid
         }
 
@@ -89,7 +89,7 @@ public class PersistentLightSource {
             return false;
         }
 
-        if (! plugin.getBlockValidator().isValidBlock(block)) {
+        if (!plugin.getNmsAdapter().isValidBlock(block)) {
             return false;
         }
 

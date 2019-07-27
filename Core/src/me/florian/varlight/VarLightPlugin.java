@@ -1,12 +1,8 @@
 package me.florian.varlight;
 
-import me.florian.varlight.blocks.BlockValidator;
 import me.florian.varlight.command.VarLightCommand;
 import me.florian.varlight.event.LightUpdateEvent;
-import me.florian.varlight.nms.INmsAdapter;
-import me.florian.varlight.nms.NmsAdapter;
-import me.florian.varlight.nms.ReflectionHelper;
-import me.florian.varlight.nms.VarLightInitializationException;
+import me.florian.varlight.nms.*;
 import me.florian.varlight.persistence.LightSourcePersistor;
 import me.florian.varlight.util.IntPosition;
 import me.florian.varlight.util.NumericMajorMinorVersion;
@@ -48,8 +44,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         return PACKAGE_VERSION;
     }
 
-    private BlockValidator blockValidator;
-    private LightUpdater lightUpdater;
     private INmsAdapter nmsAdapter;
     private VarLightConfiguration configuration;
     private BukkitTask autosaveTask;
@@ -106,23 +100,19 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         PACKAGE_VERSION = Bukkit.getServer().getClass().getPackage().getName();
         PACKAGE_VERSION = PACKAGE_VERSION.substring(PACKAGE_VERSION.lastIndexOf('.') + 1);
 
+        final String version = NmsAdapter.class.getAnnotation(ForMinecraft.class).version();
+
         try {
             this.nmsAdapter = new NmsAdapter();
-        } catch (VarLightInitializationException e) {
-            unsupportedShutdown(e.getMessage());
+        } catch (Exception e) { // Catch anything that goes wrong while initializing
+            e.printStackTrace();
+            unsupportedShutdown(String.format("Failed to initialize VarLight for Minecraft Version \"%s\": %s", version, e.getMessage()));
             return;
         }
 
-        if (Bukkit.getPluginManager().getPlugin("LightAPI") != null) {
-            getLogger().info("Using LightAPI");
-            lightUpdater = new LightUpdaterLightAPI();
-        } else {
-            getLogger().info("Using Built-in Methods");
-            lightUpdater = new LightUpdaterBuiltIn(this);
-        }
 
-        getLogger().info(String.format("Loading VarLight for Minecraft version %s", nmsAdapter.getMinecraftVersion().toString()));
-        nmsAdapter.onLoad(this, lightUpdater instanceof LightUpdaterBuiltIn);
+        getLogger().info(String.format("Loading VarLight for Minecraft version \"%s\"", version));
+        nmsAdapter.onLoad(this);
     }
 
     @Override
@@ -137,7 +127,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         configuration.getVarLightEnabledWorlds().forEach(w -> LightSourcePersistor.createPersistor(this, w));
 
         try {
-            nmsAdapter.onEnable(this, lightUpdater instanceof LightUpdaterBuiltIn);
+            nmsAdapter.onEnable(this);
         } catch (VarLightInitializationException e) {
             getLogger().throwing(getClass().getName(), "onEnable", e);
             Bukkit.getPluginManager().disablePlugin(this);
@@ -193,7 +183,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         }
 
         configuration.save();
-        nmsAdapter.onDisable(lightUpdater instanceof LightUpdaterBuiltIn);
+        nmsAdapter.onDisable();
 
         // If PersistOnSave is enabled, PersistOnWorldSaveHandler.onWorldSave will automatically save the Light Sources
         if (configuration.getAutosaveInterval() >= 0) {
@@ -207,18 +197,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     public INmsAdapter getNmsAdapter() {
         return nmsAdapter;
-    }
-
-    public LightUpdater getLightUpdater() {
-        return lightUpdater;
-    }
-
-    public BlockValidator getBlockValidator() {
-        return blockValidator;
-    }
-
-    public void setLightUpdater(LightUpdater lightUpdater) {
-        this.lightUpdater = lightUpdater;
     }
 
     private boolean isLightLevelInRange(int lightLevel) {
@@ -272,7 +250,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         boolean creative = player.getGameMode() == GameMode.CREATIVE;
 
-        if (!blockValidator.isValidBlock(clickedBlock)) {
+        if (!nmsAdapter.isValidBlock(clickedBlock)) {
             displayMessage(player, LightUpdateResult.INVALID_BLOCK);
             return;
         }
@@ -295,7 +273,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         optPersistor.get().getOrCreatePersistentLightSource(new IntPosition(clickedBlock.getLocation()))
                 .setEmittingLight(lightTo);
 
-        lightUpdater.setLight(clickedBlock.getLocation(), lightTo);
+        nmsAdapter.updateBlockLight(clickedBlock.getLocation(), lightTo);
 
         e.setCancelled(creative && e.getAction() == Action.LEFT_CLICK_BLOCK);
 

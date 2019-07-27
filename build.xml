@@ -20,6 +20,8 @@
     <property name="v1_12_R1-build" location="${build}/v1_12_R1"/>
     <property name="v1_13_R2-src" location="v1_13_R2/src"/>
     <property name="v1_13_R2-build" location="${build}/v1_13_R2"/>
+    <property name="pre_1_14_2_Spigot-src" location="pre_1_14_2_Spigot/src"/>
+    <property name="pre_1_14_2_Spigot-build" location="${build}/pre_1_14_2_Spigot"/>
 
     <property name="lib-dir" location="lib"/>
 
@@ -37,6 +39,7 @@
         <mkdir dir="${v1_11_R1-build}"/>
         <mkdir dir="${v1_12_R1-build}"/>
         <mkdir dir="${v1_13_R2-build}"/>
+        <mkdir dir="${pre_1_14_2_Spigot-build}"/>
         <mkdir dir="${dist}"/>
     </target>
 
@@ -52,7 +55,7 @@
                 <isset property="git.rev"/>
 
                 <not>
-                    <isset property="plugin.version" />
+                    <isset property="plugin.version"/>
                 </not>
             </and>
         </condition>
@@ -192,6 +195,24 @@
         </javac>
     </target>
 
+    <target name="build-pre_1_14_2_Spigot" depends="build-core">
+        <copy todir="${pre_1_14_2_Spigot-build}">
+            <fileset dir="${core-build}"/>
+        </copy>
+
+        <javac srcdir="${pre_1_14_2_Spigot-src}" destdir="${pre_1_14_2_Spigot-build}">
+            <classpath>
+                <fileset dir="${lib-dir}">
+                    <include name="**/spigot-1.14.jar"/>
+                </fileset>
+
+                <fileset dir="${core-build}">
+                    <include name="**/*.class"/>
+                </fileset>
+            </classpath>
+        </javac>
+    </target>
+
     <target name="jar-v1_8_R3" depends="build-v1_8_R3">
         <jar destfile="${dist}/Varlight-${plugin.version}-Spigot-MC-1.8.8.jar" basedir="${v1_8_R3-build}">
             <zipgroupfileset dir="${lib-dir}" includes="spigot-book-api-1.3.jar"/>
@@ -228,7 +249,13 @@
         </jar>
     </target>
 
+    <target name="jar-pre_1_14_2_Spigot" depends="build-pre_1_14_2_Spigot">
+        <jar destfile="${dist}/Varlight-${plugin.version}-Spigot-MC-1.14-1.14.1.jar" basedir="${pre_1_14_2_Spigot-build}">
+            <zipgroupfileset dir="${lib-dir}" includes="spigot-book-api-1.3.jar"/>
+        </jar>
+    </target>
+
     <target name="master"
-            depends="build-core, jar-v1_8_R3, jar-v1_9_R2, jar-v1_10_R1, jar-v1_11_R1, jar-v1_12_R1, jar-v1_13_R2">
+            depends="build-core, jar-v1_8_R3, jar-v1_9_R2, jar-v1_10_R1, jar-v1_11_R1, jar-v1_12_R1, jar-v1_13_R2, jar-pre_1_14_2_Spigot">
     </target>
 </project>

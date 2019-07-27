@@ -19,11 +19,6 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public void recalculateBlockLight(Location at) {
-        throw new AbstractMethodError();
-    }
-
-    @Override
     public void updateBlockLight(Location at, int lightLevel) {
         throw new AbstractMethodError();
     }

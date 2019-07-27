@@ -1,6 +1,7 @@
 package me.florian.varlight.nms;
 
 import me.florian.varlight.VarLightPlugin;
+import me.florian.varlight.util.IntPosition;
 import me.florian.varlight.util.NumericMajorMinorVersion;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.ClickEvent;
@@ -9,26 +10,28 @@ import net.md_5.bungee.api.chat.HoverEvent;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public interface INmsAdapter {
 
-    default void onLoad(VarLightPlugin plugin, boolean use) {
+    default void onLoad(VarLightPlugin plugin) {
 
     }
 
-    default void onEnable(VarLightPlugin plugin, boolean use) {
+    default void onEnable(VarLightPlugin plugin) {
 
     }
 
-    default void onDisable(boolean wasUsed) {
+    default void onDisable() {
 
     }
 
     boolean isBlockTransparent(Block block);
-
-    void recalculateBlockLight(Location at);
 
     void updateBlockLight(Location at, int lightLevel);
 
@@ -66,5 +69,48 @@ public interface INmsAdapter {
                         )
                         .create()
         );
+    }
+
+    default int getChunkBitMask(Location location) {
+        return getChunkBitMask(location.getBlockY() / 16);
+    }
+
+    default int getChunkBitMask(int sectionY) {
+        int mask = 1 << sectionY;
+
+        if (sectionY == 0) {
+            return mask | 2;
+        }
+
+        if (sectionY == 15) {
+            return mask | 0x4000;
+        }
+
+        return mask | (1 << (sectionY - 1)) | (1 << (sectionY + 1));
+    }
+
+    default List<Chunk> collectChunksToUpdate(Location location) {
+        return collectChunksToUpdate(new IntPosition(location), location.getWorld());
+    }
+
+    default List<Chunk> collectChunksToUpdate(IntPosition location, World world) {
+        int chunkX = location.getChunkX();
+        int chunkZ = location.getChunkZ();
+
+        List<Chunk> chunksToUpdate = new ArrayList<>();
+
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                int x = chunkX + dx;
+                int z = chunkZ + dz;
+
+                if (!world.isChunkLoaded(x, z)) {
+                    continue;
+                }
+
+                chunksToUpdate.add(world.getChunkAt(x, z));
+            }
+        }
+        return chunksToUpdate;
     }
 }

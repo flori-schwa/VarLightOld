@@ -1,6 +1,7 @@
 package me.florian.varlight.nms;
 
 
+import me.florian.varlight.util.IntPosition;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.server.v1_13_R2.*;
@@ -9,6 +10,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.AnaloguePowerable;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Powerable;
@@ -18,9 +20,19 @@ import org.bukkit.entity.Player;
 import org.bukkit.material.Openable;
 
 import java.lang.reflect.Field;
+import java.util.List;
 
 @ForMinecraft(version = "1.13.2")
 public class NmsAdapter implements INmsAdapter {
+
+    private static final BlockFace[] CHECK_FACES = new BlockFace[] {
+            BlockFace.NORTH,
+            BlockFace.EAST,
+            BlockFace.SOUTH,
+            BlockFace.WEST,
+            BlockFace.UP,
+            BlockFace.DOWN
+    };
 
     private Field lightBlockingField;
 
@@ -52,14 +64,40 @@ public class NmsAdapter implements INmsAdapter {
         }
     }
 
-    @Override
-    public void recalculateBlockLight(Location at) {
+    private void recalculateBlockLight(Location at) {
         getNmsWorld(at.getWorld()).c(EnumSkyBlock.BLOCK, toBlockPosition(at));
     }
 
     @Override
     public void updateBlockLight(Location at, int lightLevel) {
-        getNmsWorld(at.getWorld()).a(EnumSkyBlock.BLOCK, toBlockPosition(at), lightLevel);
+        Block block = at.getBlock();
+        World world = at.getWorld();
+
+        if (lightLevel > 0) {
+            getNmsWorld(world).a(EnumSkyBlock.BLOCK, toBlockPosition(at), lightLevel);
+
+            IntPosition intPosition = new IntPosition(block.getLocation());
+
+            for (BlockFace blockFace : CHECK_FACES) {
+                IntPosition relative = intPosition.getRelative(blockFace);
+
+                if (relative.outOfBounds()) {
+                    continue;
+                }
+
+                if (isBlockTransparent(block)) {
+                    recalculateBlockLight(relative.toLocation(world));
+                }
+            }
+        }
+
+        List<Chunk> chunksToUpdate = collectChunksToUpdate(at);
+
+        int mask = getChunkBitMask(at);
+
+        for (Chunk chunk : chunksToUpdate) {
+            sendChunkUpdates(chunk, mask);
+        }
     }
 
     @Override
