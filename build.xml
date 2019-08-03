@@ -101,6 +101,8 @@
             <fileset dir="${core-build}"/>
         </copy>
 
+        <replace file="${v1_8_R3-build}/plugin.yml" token="api.version" value="1.13"/>
+
         <javac srcdir="${v1_8_R3-src}" destdir="${v1_8_R3-build}">
             <classpath>
                 <fileset dir="${lib-dir}">
@@ -118,6 +120,8 @@
         <copy todir="${v1_9_R2-build}">
             <fileset dir="${core-build}"/>
         </copy>
+
+        <replace file="${v1_9_R2-build}/plugin.yml" token="api.version" value="1.13"/>
 
         <javac srcdir="${v1_9_R2-src}" destdir="${v1_9_R2-build}">
             <classpath>
@@ -137,6 +141,8 @@
             <fileset dir="${core-build}"/>
         </copy>
 
+        <replace file="${v1_10_R1-build}/plugin.yml" token="api.version" value="1.13"/>
+
         <javac srcdir="${v1_10_R1-src}" destdir="${v1_10_R1-build}">
             <classpath>
                 <fileset dir="${lib-dir}">
@@ -154,6 +160,8 @@
         <copy todir="${v1_11_R1-build}">
             <fileset dir="${core-build}"/>
         </copy>
+
+        <replace file="${v1_11_R1-build}/plugin.yml" token="api.version" value="1.13"/>
 
         <javac srcdir="${v1_11_R1-src}" destdir="${v1_11_R1-build}">
             <classpath>
@@ -173,6 +181,8 @@
             <fileset dir="${core-build}"/>
         </copy>
 
+        <replace file="${v1_12_R1-build}/plugin.yml" token="api.version" value="1.13"/>
+
         <javac srcdir="${v1_12_R1-src}" destdir="${v1_12_R1-build}">
             <classpath>
                 <fileset dir="${lib-dir}">
@@ -190,6 +200,8 @@
         <copy todir="${v1_13_R2-build}">
             <fileset dir="${core-build}"/>
         </copy>
+
+        <replace file="${v1_13_R2-build}/plugin.yml" token="api.version" value="1.13"/>
 
         <javac srcdir="${v1_13_R2-src}" destdir="${v1_13_R2-build}">
             <classpath>
@@ -209,6 +221,8 @@
             <fileset dir="${core-build}"/>
         </copy>
 
+        <replace file="${pre_1_14_2_Spigot-build}/plugin.yml" token="api.version" value="1.14"/>
+
         <javac srcdir="${pre_1_14_2_Spigot-src}" destdir="${pre_1_14_2_Spigot-build}">
             <classpath>
                 <fileset dir="${lib-dir}">
@@ -226,6 +240,8 @@
         <copy todir="${post_1_14_2_Spigot-build}">
             <fileset dir="${core-build}"/>
         </copy>
+
+        <replace file="${post_1_14_2_Spigot-build}/plugin.yml" token="api.version" value="1.14"/>
 
         <javac srcdir="${post_1_14_2_Spigot-src}" destdir="${post_1_14_2_Spigot-build}">
             <classpath>
@@ -245,6 +261,8 @@
             <fileset dir="${core-build}"/>
         </copy>
 
+        <replace file="${post_1_14_4_Spigot-build}/plugin.yml" token="api.version" value="1.14"/>
+
         <javac srcdir="${post_1_14_4_Spigot-src}" destdir="${post_1_14_4_Spigot-build}">
             <classpath>
                 <fileset dir="${lib-dir}">
@@ -262,6 +280,8 @@
         <copy todir="${post_1_14_4_Paper-build}">
             <fileset dir="${core-build}"/>
         </copy>
+
+        <replace file="${post_1_14_4_Paper-build}/plugin.yml" token="api.version" value="1.14"/>
 
         <javac srcdir="${post_1_14_4_Paper-src}" destdir="${post_1_14_4_Paper-build}">
             <classpath>

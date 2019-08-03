@@ -3,7 +3,7 @@ version: "plugin.version"
 author: Florian
 main: me.florian.varlight.VarLightPlugin
 description: Turn Normal Blocks into Light Sources!
-api-version: "1.13"
+api-version: "api.version"
 
 softdepend:
   - LightAPI
