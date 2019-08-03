@@ -278,63 +278,63 @@
     </target>
 
     <target name="jar-v1_8_R3" depends="build-v1_8_R3">
-        <jar destfile="${dist}/Varlight-${plugin.version}-Spigot-MC-1.8.8.jar" basedir="${v1_8_R3-build}">
+        <jar destfile="${dist}/VarLight-${plugin.version}-Spigot-MC-1.8.8.jar" basedir="${v1_8_R3-build}">
             <zipgroupfileset dir="${lib-dir}" includes="spigot-book-api-1.3.jar"/>
         </jar>
     </target>
 
     <target name="jar-v1_9_R2" depends="build-v1_9_R2">
-        <jar destfile="${dist}/Varlight-${plugin.version}-Spigot-MC-1.9.4.jar" basedir="${v1_9_R2-build}">
+        <jar destfile="${dist}/VarLight-${plugin.version}-Spigot-MC-1.9.4.jar" basedir="${v1_9_R2-build}">
             <zipgroupfileset dir="${lib-dir}" includes="spigot-book-api-1.3.jar"/>
         </jar>
     </target>
 
     <target name="jar-v1_10_R1" depends="build-v1_10_R1">
-        <jar destfile="${dist}/Varlight-${plugin.version}-Spigot-MC-1.10.2.jar" basedir="${v1_10_R1-build}">
+        <jar destfile="${dist}/VarLight-${plugin.version}-Spigot-MC-1.10.2.jar" basedir="${v1_10_R1-build}">
             <zipgroupfileset dir="${lib-dir}" includes="spigot-book-api-1.3.jar"/>
         </jar>
     </target>
 
     <target name="jar-v1_11_R1" depends="build-v1_11_R1">
-        <jar destfile="${dist}/Varlight-${plugin.version}-Spigot-MC-1.11.2.jar" basedir="${v1_11_R1-build}">
+        <jar destfile="${dist}/VarLight-${plugin.version}-Spigot-MC-1.11.2.jar" basedir="${v1_11_R1-build}">
             <zipgroupfileset dir="${lib-dir}" includes="spigot-book-api-1.3.jar"/>
         </jar>
     </target>
 
     <target name="jar-v1_12_R1" depends="build-v1_12_R1">
-        <jar destfile="${dist}/Varlight-${plugin.version}-Spigot-MC-1.12.2.jar" basedir="${v1_12_R1-build}">
+        <jar destfile="${dist}/VarLight-${plugin.version}-Spigot-MC-1.12.2.jar" basedir="${v1_12_R1-build}">
             <zipgroupfileset dir="${lib-dir}" includes="spigot-book-api-1.3.jar"/>
         </jar>
     </target>
 
     <target name="jar-v1_13_R2" depends="build-v1_13_R2">
-        <jar destfile="${dist}/Varlight-${plugin.version}-Spigot-MC-1.13.2.jar" basedir="${v1_13_R2-build}">
+        <jar destfile="${dist}/VarLight-${plugin.version}-Spigot-MC-1.13.2.jar" basedir="${v1_13_R2-build}">
             <zipgroupfileset dir="${lib-dir}" includes="spigot-book-api-1.3.jar"/>
         </jar>
     </target>
 
     <target name="jar-pre_1_14_2_Spigot" depends="build-pre_1_14_2_Spigot">
-        <jar destfile="${dist}/Varlight-${plugin.version}-Spigot-MC-1.14-1.14.1.jar"
+        <jar destfile="${dist}/VarLight-${plugin.version}-Spigot-MC-1.14-1.14.1.jar"
              basedir="${pre_1_14_2_Spigot-build}">
             <zipgroupfileset dir="${lib-dir}" includes="spigot-book-api-1.3.jar"/>
         </jar>
     </target>
 
     <target name="jar-post_1_14_2_Spigot" depends="build-post_1_14_2_Spigot">
-        <jar destfile="${dist}/Varlight-${plugin.version}-Spigot-MC-1.14.2-1.14.3.jar"
+        <jar destfile="${dist}/VarLight-${plugin.version}-Spigot-MC-1.14.2-1.14.3.jar"
              basedir="${post_1_14_2_Spigot-build}">
             <zipgroupfileset dir="${lib-dir}" includes="spigot-book-api-1.3.jar"/>
         </jar>
     </target>
 
     <target name="jar-post_1_14_4_Spigot" depends="build-post_1_14_4_Spigot">
-        <jar destfile="${dist}/Varlight-${plugin.version}-Spigot-MC-1.14.4.jar" basedir="${post_1_14_4_Spigot-build}">
+        <jar destfile="${dist}/VarLight-${plugin.version}-Spigot-MC-1.14.4.jar" basedir="${post_1_14_4_Spigot-build}">
             <zipgroupfileset dir="${lib-dir}" includes="spigot-book-api-1.3.jar"/>
         </jar>
     </target>
 
     <target name="jar-post_1_14_4_Paper" depends="build-post_1_14_4_Paper">
-        <jar destfile="${dist}/Varlight-${plugin.version}-Paper-MC-1.14.4.jar" basedir="${post_1_14_4_Paper-build}">
+        <jar destfile="${dist}/VarLight-${plugin.version}-Paper-MC-1.14.4.jar" basedir="${post_1_14_4_Paper-build}">
             <zipgroupfileset dir="${lib-dir}" includes="spigot-book-api-1.3.jar"/>
         </jar>
     </target>
