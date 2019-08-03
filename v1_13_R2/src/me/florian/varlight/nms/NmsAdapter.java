@@ -1,6 +1,7 @@
 package me.florian.varlight.nms;
 
 
+import me.florian.varlight.VarLightPlugin;
 import me.florian.varlight.util.IntPosition;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -25,7 +26,7 @@ import java.util.List;
 @ForMinecraft(version = "1.13.2")
 public class NmsAdapter implements INmsAdapter {
 
-    private static final BlockFace[] CHECK_FACES = new BlockFace[] {
+    private static final BlockFace[] CHECK_FACES = new BlockFace[]{
             BlockFace.NORTH,
             BlockFace.EAST,
             BlockFace.SOUTH,
@@ -36,9 +37,8 @@ public class NmsAdapter implements INmsAdapter {
 
     private Field lightBlockingField;
 
-    public NmsAdapter() {
+    public NmsAdapter(VarLightPlugin plugin) {
         try {
-
             lightBlockingField = net.minecraft.server.v1_13_R2.Block.class.getDeclaredField("n");
             lightBlockingField.setAccessible(true);
         } catch (NoSuchFieldException e) {

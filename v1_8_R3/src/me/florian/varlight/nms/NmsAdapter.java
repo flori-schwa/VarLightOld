@@ -1,5 +1,6 @@
 package me.florian.varlight.nms;
 
+import me.florian.varlight.VarLightPlugin;
 import me.florian.varlight.util.IntPosition;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -41,7 +42,7 @@ public class NmsAdapter implements INmsAdapter {
     private Method broadcastPacket;
 
 
-    public NmsAdapter() {
+    public NmsAdapter(VarLightPlugin plugin) {
         try {
             Class playerChunkClass = Class.forName("net.minecraft.server.v1_8_R3.PlayerChunkMap$PlayerChunk");
 

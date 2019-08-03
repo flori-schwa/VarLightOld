@@ -57,9 +57,15 @@ public class NmsAdapter implements INmsAdapter, Listener {
 
     private final Field fieldLightBlocking, fieldLightEngineChunkMap, fieldLightEngineLayerILightAccess;
 
-    private VarLightPlugin plugin;
+    private final VarLightPlugin plugin;
 
-    public NmsAdapter() {
+    public NmsAdapter(VarLightPlugin plugin) {
+        this.plugin = plugin;
+
+        if (plugin.isPaper()) {
+            throw new VarLightInitializationException("Paper only supported in Minecraft versions 1.8.8 - 1.13.2 & 1.14.4!");
+        }
+
         try {
             fieldLightBlocking = ReflectionHelper.Safe.getField(net.minecraft.server.v1_14_R1.Block.class, "v");
             fieldLightEngineChunkMap = ReflectionHelper.Safe.getField(PlayerChunkMap.class, "lightEngine");
@@ -70,14 +76,12 @@ public class NmsAdapter implements INmsAdapter, Listener {
     }
 
     @Override
-    public void onLoad(VarLightPlugin plugin) {
-        this.plugin = plugin;
-
+    public void onLoad() {
         injectCustomChunkStatus();
     }
 
     @Override
-    public void onEnable(VarLightPlugin plugin) {
+    public void onEnable() {
         Bukkit.getPluginManager().registerEvents(this, plugin);
 
         try {

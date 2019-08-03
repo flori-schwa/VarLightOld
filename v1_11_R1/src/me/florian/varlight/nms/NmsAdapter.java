@@ -1,5 +1,6 @@
 package me.florian.varlight.nms;
 
+import me.florian.varlight.VarLightPlugin;
 import me.florian.varlight.util.IntPosition;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -37,6 +38,9 @@ public class NmsAdapter implements INmsAdapter {
             PistonBaseMaterial.class
     };
 
+    public NmsAdapter(VarLightPlugin plugin) {
+
+    }
 
     private WorldServer getNmsWorld(World world) {
         return ((CraftWorld) world).getHandle();

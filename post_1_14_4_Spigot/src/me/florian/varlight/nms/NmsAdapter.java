@@ -41,7 +41,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.IntSupplier;
 
-@ForMinecraft(version = "Spigot 1.14 - 1.14.1")
+@ForMinecraft(version = "Spigot 1.14.4")
 public class NmsAdapter implements INmsAdapter, Listener {
 
     private static final String TAG_VARLIGHT_INJECTED = "varlight:injected";
@@ -63,7 +63,7 @@ public class NmsAdapter implements INmsAdapter, Listener {
         this.plugin = plugin;
 
         if (plugin.isPaper()) {
-            throw new VarLightInitializationException("Paper only supported in Minecraft versions 1.8.8 - 1.13.2 & 1.14.4!");
+            throw new VarLightInitializationException("You are using the Spigot implementation on a Paper Server!");
         }
 
         try {
@@ -259,20 +259,21 @@ public class NmsAdapter implements INmsAdapter, Listener {
     // region Chunk Status
     private void injectCustomChunkStatus() {
         try {
-            Class chunkStatusA = Class.forName("net.minecraft.server.v1_14_R1.ChunkStatus$a");
+            Class chunkStatusB = Class.forName("net.minecraft.server.v1_14_R1.ChunkStatus$b");
+            Class chunkStatusC = Class.forName("net.minecraft.server.v1_14_R1.ChunkStatus$c");
 
             Field light = ReflectionHelper.Safe.getField(ChunkStatus.class, "LIGHT");
             Field biMap = ReflectionHelper.Safe.getField(RegistryMaterials.class, "c");
             Field fieldO = ReflectionHelper.Safe.getField(ChunkStatus.class, "o");
-            Method register = ReflectionHelper.Safe.getMethod(ChunkStatus.class, "a", String.class, ChunkStatus.class, int.class, EnumSet.class, ChunkStatus.Type.class, chunkStatusA);
+            Method register = ReflectionHelper.Safe.getMethod(ChunkStatus.class, "a", String.class, ChunkStatus.class, int.class, EnumSet.class, ChunkStatus.Type.class, chunkStatusB, chunkStatusC);
 
             final IRegistry chunkStatus = IRegistry.CHUNK_STATUS;
 
-            Object aImplementation = Proxy.newProxyInstance(chunkStatusA.getClassLoader(), new Class[]{chunkStatusA},
+            Object bImplementation = Proxy.newProxyInstance(chunkStatusB.getClassLoader(), new Class[]{chunkStatusB},
                     (Object proxy, Method method, Object[] args) -> {
                         if (method.getName().equals("doWork")) {
-                            WorldServer worldServer = (WorldServer) args[1];
                             ChunkStatus status = (ChunkStatus) args[0];
+                            WorldServer worldServer = (WorldServer) args[1];
                             LightEngineThreaded lightEngineThreaded = (LightEngineThreaded) args[4];
                             IChunkAccess iChunkAccess = (IChunkAccess) args[7];
 
@@ -283,11 +284,26 @@ public class NmsAdapter implements INmsAdapter, Listener {
                     }
             );
 
+            Object cImplementation = Proxy.newProxyInstance(chunkStatusC.getClassLoader(), new Class[]{chunkStatusC},
+                    (Object proxy, Method method, Object[] args) -> {
+                        if (method.getName().equals("doWork")) {
+                            ChunkStatus status = (ChunkStatus) args[0];
+                            WorldServer worldServer = (WorldServer) args[1];
+                            LightEngineThreaded lightEngineThreaded = (LightEngineThreaded) args[3];
+                            IChunkAccess iChunkAccess = (IChunkAccess) args[5];
+
+                            return doWork(status, worldServer, iChunkAccess, lightEngineThreaded);
+                        }
+                        return null;
+                    }
+            );
+
             ((BiMap) ReflectionHelper.get(biMap, chunkStatus)).remove(new MinecraftKey("light"));
-            ChunkStatus customLight = (ChunkStatus) ReflectionHelper.Safe.invokeStatic(register, "light", ChunkStatus.FEATURES, 1, ReflectionHelper.Safe.getStatic(fieldO), ChunkStatus.Type.PROTOCHUNK, aImplementation);
+            ChunkStatus customLight = (ChunkStatus) ReflectionHelper.Safe.invokeStatic(register, "light", ChunkStatus.FEATURES, 1, ReflectionHelper.Safe.getStatic(fieldO), ChunkStatus.Type.PROTOCHUNK, bImplementation, cImplementation);
 
             ReflectionHelper.setStatic(light, customLight);
             plugin.getLogger().info("Injected Custom Light ChunkStatus");
+
         } catch (NoSuchFieldException | ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             throw new VarLightInitializationException(e);
         }
@@ -326,8 +342,8 @@ public class NmsAdapter implements INmsAdapter, Listener {
 
             @Nullable
             @Override
-            public IBlockAccess b(int chunkX, int chunkZ) {
-                IBlockAccess toWrap = worldServer.getChunkProvider().b(chunkX, chunkZ);
+            public IBlockAccess c(int chunkX, int chunkZ) {
+                IBlockAccess toWrap = worldServer.getChunkProvider().c(chunkX, chunkZ);
 
                 if (toWrap == null) {
                     return null;

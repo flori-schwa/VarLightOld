@@ -50,22 +50,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     private boolean doLoad = true;
     private PersistOnWorldSaveHandler persistOnWorldSaveHandler;
 
-    private boolean isPaperImplementation() {
-        try {
-            Class.forName("me.florian.varlight.nms.v1_14_R1.paper.WrappedIChunkAccessPaper");
-            Class.forName("me.florian.varlight.nms.v1_14_R1.paper.WrappedIBlockAccessPaper");
-
-            return true;
-
-        } catch (ClassNotFoundException e) {
-            return false;
-        }
-    }
-
-    private boolean isPaper() {
-        return Package.getPackage("com.destroystokyo.paper") != null;
-    }
-
     private void unsupportedShutdown(String message) {
         getLogger().severe("------------------------------------------------------");
         getLogger().severe(message);
@@ -82,16 +66,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     @Override
     public void onLoad() {
-        if (isPaper() && !isPaperImplementation()) {
-            unsupportedShutdown("You are running Paper but installed the Spigot Version of VarLight");
-            return;
-        }
-
-        if (!isPaper() && isPaperImplementation()) {
-            unsupportedShutdown("You are running Spigot but installed the Paper Version of VarLight");
-            return;
-        }
-
         if ((int) ReflectionHelper.get(Bukkit.getServer(), "reloadCount") > 0) {
             unsupportedShutdown("VarLight does not support /reload!");
             return;
@@ -100,19 +74,20 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         PACKAGE_VERSION = Bukkit.getServer().getClass().getPackage().getName();
         PACKAGE_VERSION = PACKAGE_VERSION.substring(PACKAGE_VERSION.lastIndexOf('.') + 1);
 
-        final String version = NmsAdapter.class.getAnnotation(ForMinecraft.class).version();
+        final String version;
 
         try {
-            this.nmsAdapter = new NmsAdapter();
-        } catch (Exception e) { // Catch anything that goes wrong while initializing
+            version = NmsAdapter.class.getAnnotation(ForMinecraft.class).version();
+            this.nmsAdapter = new NmsAdapter(this);
+        } catch (Throwable e) { // Catch anything that goes wrong while initializing
             e.printStackTrace();
-            unsupportedShutdown(String.format("Failed to initialize VarLight for Minecraft Version \"%s\": %s", version, e.getMessage()));
+            unsupportedShutdown(String.format("Failed to initialize VarLight for Minecraft Version \"%s\": %s", Bukkit.getVersion(), e.getMessage()));
             return;
         }
 
 
         getLogger().info(String.format("Loading VarLight for Minecraft version \"%s\"", version));
-        nmsAdapter.onLoad(this);
+        nmsAdapter.onLoad();
     }
 
     @Override
@@ -127,7 +102,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         configuration.getVarLightEnabledWorlds().forEach(w -> LightSourcePersistor.createPersistor(this, w));
 
         try {
-            nmsAdapter.onEnable(this);
+            nmsAdapter.onEnable();
         } catch (VarLightInitializationException e) {
             getLogger().throwing(getClass().getName(), "onEnable", e);
             Bukkit.getPluginManager().disablePlugin(this);
@@ -141,6 +116,10 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         Bukkit.getPluginManager().registerEvents(this, this);
 
         getCommand("varlight").setExecutor(new VarLightCommand(this));
+    }
+
+    public boolean isPaper() {
+        return Package.getPackage("com.destroystokyo.paper") != null;
     }
 
     public void initAutosave() {

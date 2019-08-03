@@ -19,11 +19,11 @@ import java.util.List;
 
 public interface INmsAdapter {
 
-    default void onLoad(VarLightPlugin plugin) {
+    default void onLoad() {
 
     }
 
-    default void onEnable(VarLightPlugin plugin) {
+    default void onEnable() {
 
     }
 

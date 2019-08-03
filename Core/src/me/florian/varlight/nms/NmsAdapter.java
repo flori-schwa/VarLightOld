@@ -1,5 +1,6 @@
 package me.florian.varlight.nms;
 
+import me.florian.varlight.VarLightPlugin;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -9,7 +10,7 @@ import org.bukkit.entity.Player;
 @ForMinecraft(version = "UNDEFINED")
 public class NmsAdapter implements INmsAdapter {
 
-    public NmsAdapter() {
+    public NmsAdapter(VarLightPlugin plugin) {
         throw new AbstractMethodError();
     }
 
