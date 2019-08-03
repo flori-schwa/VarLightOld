@@ -2,10 +2,13 @@ package me.florian.varlight.command;
 
 import me.florian.varlight.VarLightConfiguration;
 import me.florian.varlight.VarLightPlugin;
+import me.florian.varlight.event.LightUpdateEvent;
 import me.florian.varlight.persistence.LightSourcePersistor;
 import me.florian.varlight.persistence.PersistentLightSource;
+import me.florian.varlight.util.IntPosition;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -43,7 +46,9 @@ public class VarLightCommand implements CommandExecutor {
                 "",
                 "/varlight blacklist add <world>: Add the specified world to the blacklist. " + ChatColor.BOLD + "Effective after restart!",
                 "/varlight blacklist remove <world>: Remove the specified world to the blacklist. " + ChatColor.BOLD + "Effective after restart!",
-                "/varlight blacklist list: List all blacklisted worlds"
+                "/varlight blacklist list: List all blacklisted worlds",
+                "",
+                "/varlight create <world> <x> <y> <z> <lightlevel>: Update the light level at the given position"
         };
 
         // region Book definition
@@ -395,6 +400,8 @@ public class VarLightCommand implements CommandExecutor {
                     broadcastResult(commandSender, String.format("Updated Varlight debug state to: %s", VarLightPlugin.DEBUG), "varlight.admin");
                 }
                 return true;
+            case "create":
+                return create(commandSender, args);
             case "migrate":
                 return migrate(commandSender, args);
             case "save":
@@ -427,6 +434,78 @@ public class VarLightCommand implements CommandExecutor {
 
     private void suggestCommand(Player player, ArgumentIterator args) {
         plugin.getNmsAdapter().suggestCommand(player, args.join());
+    }
+
+    private boolean create(CommandSender commandSender, ArgumentIterator args) {
+        if (!commandSender.hasPermission("varlight.admin")) {
+            return true;
+        }
+
+        if (!args.hasParameters(5)) {
+            return false;
+        }
+
+        final World world = args.parseNext(Bukkit::getWorld);
+
+        if (world == null) {
+            sendPrefixedMessage(commandSender, String.format("Could not find a world with the name \"%s\"", args.previous()));
+            return true;
+        }
+
+        if (!LightSourcePersistor.hasPersistor(plugin, world)) {
+            sendPrefixedMessage(commandSender, "VarLight is not active in that world!");
+            return true;
+        }
+
+        final LightSourcePersistor lightSourcePersistor = LightSourcePersistor.getPersistor(plugin, world).get();
+
+        final int x, y, z, lightLevel;
+
+        try {
+            x = args.parseNext(Integer::parseInt);
+            y = args.parseNext(Integer::parseInt);
+            z = args.parseNext(Integer::parseInt);
+
+            lightLevel = args.parseNext(Integer::parseInt);
+        } catch (NumberFormatException e) {
+            sendPrefixedMessage(commandSender, String.format("Malformed input: %s", e.getMessage()));
+            return false;
+        }
+
+        if (lightLevel < 0 || lightLevel > 15) {
+            sendPrefixedMessage(commandSender, String.format("Light level out of range, allowed: 0 <= n <= 15, got: %d", lightLevel));
+            return false;
+        }
+
+        final Location toUpdate = new Location(world, x, y, z);
+        final int fromLight = LightSourcePersistor.getEmittingLightLevel(plugin, toUpdate);
+
+        if (!world.isChunkLoaded(toUpdate.getBlockX() >> 4, toUpdate.getBlockZ() >> 4)) {
+            sendPrefixedMessage(commandSender, "That part of the world is not loaded");
+            return true;
+        }
+
+        if (!plugin.getNmsAdapter().isValidBlock(world.getBlockAt(toUpdate))) {
+            sendPrefixedMessage(commandSender, String.format("%s cannot be used as a custom light source!", world.getBlockAt(toUpdate).getType().name()));
+            return true;
+        }
+
+        LightUpdateEvent lightUpdateEvent = new LightUpdateEvent(world.getBlockAt(toUpdate), fromLight, lightLevel);
+        Bukkit.getPluginManager().callEvent(lightUpdateEvent);
+
+        if (lightUpdateEvent.isCancelled()) {
+            sendPrefixedMessage(commandSender, "The Light update event was cancelled!");
+            return true;
+        }
+
+        lightSourcePersistor.getOrCreatePersistentLightSource(new IntPosition(toUpdate))
+                .setEmittingLight(lightUpdateEvent.getToLight());
+
+        plugin.getNmsAdapter().updateBlockLight(toUpdate, lightUpdateEvent.getToLight());
+        broadcastResult(commandSender, String.format("Updated Light level at [%d, %d, %d] in world \"%s\" from %d to %d",
+                toUpdate.getBlockX(), toUpdate.getBlockY(), toUpdate.getBlockZ(), world.getName(), lightUpdateEvent.getFromLight(), lightUpdateEvent.getToLight()), "varlight.admin");
+
+        return true;
     }
 
     private boolean migrate(final CommandSender commandSender, final ArgumentIterator args) {

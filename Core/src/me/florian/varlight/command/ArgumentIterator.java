@@ -33,6 +33,10 @@ public class ArgumentIterator implements Iterator<String> {
         return arguments[position++];
     }
 
+    public boolean hasParameters(int required) {
+        return (length - position) >= required;
+    }
+
     public String previous() {
         return arguments[position - 1];
     }

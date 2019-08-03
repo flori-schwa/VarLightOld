@@ -1,0 +1,26 @@
+# VARLIGHT PLUGIN CONFIGURATION
+# -------------------------------------------------------------------------------------------
+# "autosave" Controls how the plugin automatically saves custom light sources.
+# Custom light sources are saved in <world-folder>/varlight/
+# A value greater than zero will automatically save all custom light sources every N minutes.
+# Setting this value to 0 will disable automatic saving of custom light sources completely
+# and all custom light sources must be saved manually using the built-in command
+# A value less than zero will automatically save all custom light sources of a world as
+# soon as that world gets saved.
+# -------------------------------------------------------------------------------------------
+# "autosave-logpersist" Controls if information about the autosave should be printed
+# to the server console log
+# -------------------------------------------------------------------------------------------
+# "requiredPermission" controls the Permission node required to use the plugins functionality
+# -------------------------------------------------------------------------------------------
+# "whitelist" Controls in which worlds the plugin will function
+# -------------------------------------------------------------------------------------------
+# "blacklist" Controls in which worlds the plugin will not function
+# -------------------------------------------------------------------------------------------
+
+
+autosave: 5
+autosave-logpersist: 'true'
+requiredPermission: ''
+whitelist: []
+blacklist: []

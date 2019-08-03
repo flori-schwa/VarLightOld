@@ -186,6 +186,10 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         return isLightLevelInRange(block.getLightFromBlocks() + mod);
     }
 
+    private boolean isNullOrEmpty(String x) {
+        return x == null || x.isEmpty();
+    }
+
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
         Optional<LightSourcePersistor> optPersistor = LightSourcePersistor.getPersistor(this, e.getPlayer().getWorld());
@@ -202,9 +206,9 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-        String requiredPermission = getConfig().getString("requiredPermission", null);
+        String requiredPermission = configuration.getRequiredPermissionNode();
 
-        if (requiredPermission != null && !e.getPlayer().hasPermission(requiredPermission)) {
+        if (!isNullOrEmpty(requiredPermission) && !e.getPlayer().hasPermission(requiredPermission)) {
             return;
         }
 

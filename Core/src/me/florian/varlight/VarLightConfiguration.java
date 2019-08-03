@@ -9,9 +9,9 @@ import java.util.stream.Collectors;
 
 public class VarLightConfiguration {
 
-    public static final String CONFIG_KEY_LOG_PERSIST = "autosave.logpersist";
+    public static final String CONFIG_KEY_LOG_PERSIST = "autosave-logpersist";
     public static final String CONFIG_KEY_REQUIRED_PERMISSION = "requiredPermission";
-    public static final String REQUIRED_PERMISSION_DEFAULT = null;
+    public static final String REQUIRED_PERMISSION_DEFAULT = "";
     public static final String CONFIG_KEY_AUTOSAVE = "autosave";
     public static final int AUTOSAVE_DEFAULT = 5;
 
@@ -39,6 +39,8 @@ public class VarLightConfiguration {
 
     public VarLightConfiguration(VarLightPlugin plugin) {
         this.plugin = plugin;
+
+        plugin.saveDefaultConfig();
     }
 
     public String getRequiredPermissionNode() {
