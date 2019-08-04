@@ -48,7 +48,8 @@ public class VarLightCommand implements CommandExecutor {
                 "/varlight blacklist remove <world>: Remove the specified world to the blacklist. " + ChatColor.BOLD + "Effective after restart!",
                 "/varlight blacklist list: List all blacklisted worlds",
                 "",
-                "/varlight create <world> <x> <y> <z> <lightlevel>: Update the light level at the given position"
+                "/varlight create <world> <x> <y> <z> <lightlevel>: Update the light level at the given position",
+                "/varlight reload: Reloads the configuration"
         };
 
         // region Book definition
