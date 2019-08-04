@@ -354,13 +354,6 @@ public class VarLightCommand implements CommandExecutor {
         commandSender.sendMessage(commandReference);
     }
 
-    private boolean hasAnyVarLightPermission(CommandSender commandSender) {
-        return commandSender.hasPermission("varlight.admin") ||
-                commandSender.hasPermission("varlight.admin.save") ||
-                commandSender.hasPermission("varlight.admin.perm") ||
-                commandSender.hasPermission("varlight.admin.world");
-    }
-
     @Override
     public boolean onCommand(CommandSender commandSender, Command command, String s, String[] strings) {
         if (!"varlight".equalsIgnoreCase(command.getName())) {
@@ -379,13 +372,8 @@ public class VarLightCommand implements CommandExecutor {
             return false;
         }
 
-        if (!hasAnyVarLightPermission(commandSender)) {
-            return true;
-        }
-
         switch (args.next().toLowerCase()) {
             case "suggest": {
-
                 if (!(commandSender instanceof Player)) {
                     return true;
                 }
@@ -395,11 +383,13 @@ public class VarLightCommand implements CommandExecutor {
             }
 
             case "debug":
-                if (commandSender.hasPermission("varlight.admin")) {
+                if (checkPerm(commandSender, "varlight.admin")) {
                     VarLightPlugin.DEBUG = !VarLightPlugin.DEBUG;
                     broadcastResult(commandSender, String.format("Updated Varlight debug state to: %s", VarLightPlugin.DEBUG), "varlight.admin");
                 }
                 return true;
+            case "reload":
+                return reload(commandSender);
             case "create":
                 return create(commandSender, args);
             case "migrate":
@@ -432,12 +422,24 @@ public class VarLightCommand implements CommandExecutor {
         }
     }
 
+    // region Command implementations
+
     private void suggestCommand(Player player, ArgumentIterator args) {
         plugin.getNmsAdapter().suggestCommand(player, args.join());
     }
 
+    private boolean reload(CommandSender commandSender) {
+        if (!checkPerm(commandSender, "varlight.admin")) {
+            return true;
+        }
+
+        plugin.getConfiguration().reloadConfig();
+        broadcastResult(commandSender, "Configuration Reloaded", "varlight.admin");
+        return true;
+    }
+
     private boolean create(CommandSender commandSender, ArgumentIterator args) {
-        if (!commandSender.hasPermission("varlight.admin")) {
+        if (!checkPerm(commandSender, "varlight.admin")) {
             return true;
         }
 
@@ -727,6 +729,8 @@ public class VarLightCommand implements CommandExecutor {
 
         return false;
     }
+
+    // endregion
 
     private boolean checkPerm(CommandSender commandSender, String node) {
         if (!commandSender.hasPermission(node)) {

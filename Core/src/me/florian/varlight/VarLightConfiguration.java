@@ -134,4 +134,8 @@ public class VarLightConfiguration {
     public void save() {
         plugin.saveConfig();
     }
+
+    public void reloadConfig() {
+        plugin.reloadConfig();
+    }
 }
