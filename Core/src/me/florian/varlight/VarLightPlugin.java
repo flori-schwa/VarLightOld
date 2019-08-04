@@ -10,6 +10,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
@@ -115,7 +116,11 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         Bukkit.getPluginManager().registerEvents(this, this);
 
-        getCommand("varlight").setExecutor(new VarLightCommand(this));
+        final VarLightCommand handler = new VarLightCommand(this);
+        final PluginCommand varlightPluginCommand = getCommand("varlight");
+
+        varlightPluginCommand.setExecutor(handler);
+        varlightPluginCommand.setTabCompleter(handler);
     }
 
     public boolean isPaper() {

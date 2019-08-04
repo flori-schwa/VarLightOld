@@ -2,55 +2,68 @@ package me.florian.varlight.command;
 
 import me.florian.varlight.VarLightConfiguration;
 import me.florian.varlight.VarLightPlugin;
-import me.florian.varlight.event.LightUpdateEvent;
-import me.florian.varlight.persistence.LightSourcePersistor;
-import me.florian.varlight.persistence.PersistentLightSource;
-import me.florian.varlight.util.IntPosition;
-import org.bukkit.Bukkit;
+import me.florian.varlight.command.commands.*;
+import me.florian.varlight.command.exception.VarLightCommandException;
 import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import xyz.upperlevel.spigot.book.BookUtil;
 
-import java.util.Optional;
+import java.util.*;
 
-public class VarLightCommand implements CommandExecutor {
+public class VarLightCommand implements CommandExecutor, TabCompleter {
 
     private VarLightPlugin plugin;
-    private final String[] commandReference;
+
+    private final Map<String, VarLightSubCommand> subCommands = new HashMap<>();
     private final ItemStack book;
+
+    private final VarLightCommandHelp helpCommand;
 
     public VarLightCommand(VarLightPlugin plugin) {
         this.plugin = plugin;
 
-        commandReference = new String[]{
-                "VarLight command help:",
-                "/varlight save: Save All Light sources in current world",
-                "/varlight save <world>: Save All Light sources in the specified world",
-                "/varlight save all: Save All Light sources",
-                "/varlight autosave <interval>: Set the autosave interval",
-                "",
-                "/varlight getperm: Get the required permission node",
-                "/varlight setperm <permission>: Set the required permission node",
-                "/varlight unsetperm: Unset the required permission node",
-                "",
-                "/varlight whitelist add <world>: Add the specified world to the whitelist. " + ChatColor.BOLD + "Effective after restart!",
-                "/varlight whitelist remove <world>: Remove the specified world to the whitelist. " + ChatColor.BOLD + "Effective after restart!",
-                "/varlight whitelist list: List all whitelisted worlds",
-                "",
-                "/varlight blacklist add <world>: Add the specified world to the blacklist. " + ChatColor.BOLD + "Effective after restart!",
-                "/varlight blacklist remove <world>: Remove the specified world to the blacklist. " + ChatColor.BOLD + "Effective after restart!",
-                "/varlight blacklist list: List all blacklisted worlds",
-                "",
-                "/varlight create <world> <x> <y> <z> <lightlevel>: Update the light level at the given position",
-                "/varlight reload: Reloads the configuration"
-        };
+        registerCommand(new VarLightCommandSuggest(plugin));
+        registerCommand(new VarLightCommandDebug(plugin));
+
+        registerCommand(new VarLightCommandSave(plugin));
+        registerCommand(new VarLightCommandAutosave(plugin));
+
+        registerCommand(new VarLightCommandPermission(plugin));
+
+        registerCommand(new VarLightCommandCreate(plugin));
+        registerCommand(new VarLightCommandReload(plugin));
+        registerCommand(new VarLightCommandMigrate(plugin));
+
+        registerCommand(new VarLightCommandWorld("whitelist", VarLightConfiguration.WorldListType.WHITELIST, plugin));
+        registerCommand(new VarLightCommandWorld("blacklist", VarLightConfiguration.WorldListType.BLACKLIST, plugin));
+
+        registerCommand(new VarLightSubCommand() {
+            @Override
+            public String getName() {
+                return "book";
+            }
+
+            @Override
+            public void sendHelp(CommandSender sender) {
+                sender.sendMessage(" - /varlight book: Opens an interactive book with most commands");
+            }
+
+            @Override
+            public boolean execute(CommandSender sender, ArgumentIterator args) {
+                if (sender instanceof Player) {
+                    BookUtil.openPlayer(((Player) sender), book);
+                }
+
+                return true;
+            }
+        });
+
+        registerCommand(helpCommand = new VarLightCommandHelp(this));
 
         // region Book definition
 
@@ -171,10 +184,10 @@ public class VarLightCommand implements CommandExecutor {
                                 BookUtil.TextBuilder.of("Get permission")
                                         .style(ChatColor.UNDERLINE)
                                         .onHover(BookUtil.HoverAction.showText(BookUtil.TextBuilder.of("Click to run").color(ChatColor.RED).style(ChatColor.UNDERLINE).build()))
-                                        .onClick(BookUtil.ClickAction.runCommand("/varlight getperm")).build()
+                                        .onClick(BookUtil.ClickAction.runCommand("/varlight perm get")).build()
                         ).add(
                         BookUtil.TextBuilder.of(" ?").color(ChatColor.BLUE).onHover(BookUtil.HoverAction.showText(
-                                BookUtil.TextBuilder.of("/varlight getperm\n").color(ChatColor.WHITE).build(),
+                                BookUtil.TextBuilder.of("/varlight perm get\n").color(ChatColor.WHITE).build(),
                                 BookUtil.TextBuilder.of("Gets the current permission required to use varlight features\n\n").color(ChatColor.WHITE).build(),
                                 BookUtil.TextBuilder.of("Required permission: varlight.admin.perm").color(ChatColor.WHITE).style(ChatColor.ITALIC).build()))
                                 .build()
@@ -183,10 +196,10 @@ public class VarLightCommand implements CommandExecutor {
                                 BookUtil.TextBuilder.of("Set permission")
                                         .style(ChatColor.UNDERLINE)
                                         .onHover(BookUtil.HoverAction.showText(BookUtil.TextBuilder.of("Click to run").color(ChatColor.RED).style(ChatColor.UNDERLINE).build()))
-                                        .onClick(BookUtil.ClickAction.runCommand("/varlight suggest /varlight setperm <permission>")).build()
+                                        .onClick(BookUtil.ClickAction.runCommand("/varlight suggest /varlight perm set <permission>")).build()
                         ).add(
                         BookUtil.TextBuilder.of(" ?").color(ChatColor.BLUE).onHover(BookUtil.HoverAction.showText(
-                                BookUtil.TextBuilder.of("/varlight setperm <permission>\n").color(ChatColor.WHITE).build(),
+                                BookUtil.TextBuilder.of("/varlight perm set <permission>\n").color(ChatColor.WHITE).build(),
                                 BookUtil.TextBuilder.of("Sets the required permission to use varlight features\n\n").color(ChatColor.WHITE).build(),
                                 BookUtil.TextBuilder.of("Arguments\n").color(ChatColor.WHITE).build(),
                                 BookUtil.TextBuilder.of("    <permission>: The new permission required to use varlight features\n\n").color(ChatColor.WHITE).build(),
@@ -197,10 +210,10 @@ public class VarLightCommand implements CommandExecutor {
                                 BookUtil.TextBuilder.of("Unset permission")
                                         .style(ChatColor.UNDERLINE)
                                         .onHover(BookUtil.HoverAction.showText(BookUtil.TextBuilder.of("Click to run").color(ChatColor.RED).style(ChatColor.UNDERLINE).build()))
-                                        .onClick(BookUtil.ClickAction.runCommand("/varlight unsetperm")).build()
+                                        .onClick(BookUtil.ClickAction.runCommand("/varlight perm unset")).build()
                         ).add(
                         BookUtil.TextBuilder.of(" ?").color(ChatColor.BLUE).onHover(BookUtil.HoverAction.showText(
-                                BookUtil.TextBuilder.of("/varlight unsetperm\n").color(ChatColor.WHITE).build(),
+                                BookUtil.TextBuilder.of("/varlight perm unset\n").color(ChatColor.WHITE).build(),
                                 BookUtil.TextBuilder.of("Unsets the required permission to use VarLight features allowing everyone to use VarLight features\n\n").color(ChatColor.WHITE).build(),
                                 BookUtil.TextBuilder.of("Required permission: varlight.admin.perm").color(ChatColor.WHITE).style(ChatColor.ITALIC).build()))
                                 .build()
@@ -347,421 +360,47 @@ public class VarLightCommand implements CommandExecutor {
         // endregion
     }
 
-    private void showBook(Player player) {
-        BookUtil.openPlayer(player, book);
-    }
-
-    private void printHelp(CommandSender commandSender) {
-        commandSender.sendMessage(commandReference);
+    public void registerCommand(VarLightSubCommand subCommand) {
+        subCommands.put(subCommand.getName(), subCommand);
     }
 
     @Override
-    public boolean onCommand(CommandSender commandSender, Command command, String s, String[] strings) {
+    public boolean onCommand(CommandSender commandSender, Command command, String label, String[] args) {
         if (!"varlight".equalsIgnoreCase(command.getName())) {
             return true; // How would this happen?
         }
 
-        if (!execute(commandSender, new ArgumentIterator(strings))) {
-            printHelp(commandSender);
-        }
-
-        return true;
-    }
-
-    private boolean execute(CommandSender commandSender, ArgumentIterator args) {
         if (args.length == 0) {
-            return false;
-        }
-
-        switch (args.next().toLowerCase()) {
-            case "suggest": {
-                if (!(commandSender instanceof Player)) {
-                    return true;
-                }
-
-                suggestCommand((Player) commandSender, args);
-                return true;
-            }
-
-            case "debug":
-                if (checkPerm(commandSender, "varlight.admin")) {
-                    VarLightPlugin.DEBUG = !VarLightPlugin.DEBUG;
-                    broadcastResult(commandSender, String.format("Updated Varlight debug state to: %s", VarLightPlugin.DEBUG), "varlight.admin");
-                }
-                return true;
-            case "reload":
-                return reload(commandSender);
-            case "create":
-                return create(commandSender, args);
-            case "migrate":
-                return migrate(commandSender, args);
-            case "save":
-                return save(commandSender, args);
-            case "autosave":
-                return autosave(commandSender, args);
-            case "getperm":
-                return getPerm(commandSender, args);
-            case "setperm":
-                return setPerm(commandSender, args);
-            case "unsetperm":
-                return unsetPerm(commandSender, args);
-            case "whitelist":
-                return worldCommand(commandSender, VarLightConfiguration.WorldListType.WHITELIST, args);
-            case "blacklist":
-                return worldCommand(commandSender, VarLightConfiguration.WorldListType.BLACKLIST, args);
-            case "book": {
-                if (!(commandSender instanceof Player)) {
-                    return true;
-                }
-
-                showBook((Player) commandSender);
-                return true;
-            }
-            case "help":
-            default:
-                return false;
-        }
-    }
-
-    // region Command implementations
-
-    private void suggestCommand(Player player, ArgumentIterator args) {
-        plugin.getNmsAdapter().suggestCommand(player, args.join());
-    }
-
-    private boolean reload(CommandSender commandSender) {
-        if (!checkPerm(commandSender, "varlight.admin")) {
+            helpCommand.listAllSubCommands(commandSender);
             return true;
         }
 
-        plugin.getConfiguration().reloadConfig();
-        broadcastResult(commandSender, "Configuration Reloaded", "varlight.admin");
-        return true;
-    }
+        final ArgumentIterator arguments = new ArgumentIterator(args);
+        final VarLightSubCommand subCommand = arguments.parseNext(subCommands::get);
 
-    private boolean create(CommandSender commandSender, ArgumentIterator args) {
-        if (!checkPerm(commandSender, "varlight.admin")) {
+        if (subCommand == null) {
+            helpCommand.listAllSubCommands(commandSender);
             return true;
         }
-
-        if (!args.hasParameters(5)) {
-            return false;
-        }
-
-        final World world = args.parseNext(Bukkit::getWorld);
-
-        if (world == null) {
-            sendPrefixedMessage(commandSender, String.format("Could not find a world with the name \"%s\"", args.previous()));
-            return true;
-        }
-
-        if (!LightSourcePersistor.hasPersistor(plugin, world)) {
-            sendPrefixedMessage(commandSender, "VarLight is not active in that world!");
-            return true;
-        }
-
-        final LightSourcePersistor lightSourcePersistor = LightSourcePersistor.getPersistor(plugin, world).get();
-
-        final int x, y, z, lightLevel;
 
         try {
-            x = args.parseNext(Integer::parseInt);
-            y = args.parseNext(Integer::parseInt);
-            z = args.parseNext(Integer::parseInt);
-
-            lightLevel = args.parseNext(Integer::parseInt);
-        } catch (NumberFormatException e) {
-            sendPrefixedMessage(commandSender, String.format("Malformed input: %s", e.getMessage()));
-            return false;
-        }
-
-        if (lightLevel < 0 || lightLevel > 15) {
-            sendPrefixedMessage(commandSender, String.format("Light level out of range, allowed: 0 <= n <= 15, got: %d", lightLevel));
-            return false;
-        }
-
-        final Location toUpdate = new Location(world, x, y, z);
-        final int fromLight = LightSourcePersistor.getEmittingLightLevel(plugin, toUpdate);
-
-        if (!world.isChunkLoaded(toUpdate.getBlockX() >> 4, toUpdate.getBlockZ() >> 4)) {
-            sendPrefixedMessage(commandSender, "That part of the world is not loaded");
-            return true;
-        }
-
-        if (!plugin.getNmsAdapter().isValidBlock(world.getBlockAt(toUpdate))) {
-            sendPrefixedMessage(commandSender, String.format("%s cannot be used as a custom light source!", world.getBlockAt(toUpdate).getType().name()));
-            return true;
-        }
-
-        LightUpdateEvent lightUpdateEvent = new LightUpdateEvent(world.getBlockAt(toUpdate), fromLight, lightLevel);
-        Bukkit.getPluginManager().callEvent(lightUpdateEvent);
-
-        if (lightUpdateEvent.isCancelled()) {
-            sendPrefixedMessage(commandSender, "The Light update event was cancelled!");
-            return true;
-        }
-
-        lightSourcePersistor.getOrCreatePersistentLightSource(new IntPosition(toUpdate))
-                .setEmittingLight(lightUpdateEvent.getToLight());
-
-        plugin.getNmsAdapter().updateBlockLight(toUpdate, lightUpdateEvent.getToLight());
-        broadcastResult(commandSender, String.format("Updated Light level at [%d, %d, %d] in world \"%s\" from %d to %d",
-                toUpdate.getBlockX(), toUpdate.getBlockY(), toUpdate.getBlockZ(), world.getName(), lightUpdateEvent.getFromLight(), lightUpdateEvent.getToLight()), "varlight.admin");
-
-        return true;
-    }
-
-    private boolean migrate(final CommandSender commandSender, final ArgumentIterator args) {
-        final String node = "varlight.admin";
-
-        if (!checkPerm(commandSender, node)) {
-            return true;
-        }
-
-        class IntContainer {
-            int i = 0;
-        }
-
-        IntContainer totalMigrated = new IntContainer(), totalSkipped = new IntContainer();
-
-        broadcastResult(commandSender, "Starting migration...", node);
-
-        LightSourcePersistor.getAllPersistors(plugin).forEach((p) -> {
-
-            IntContainer migrated = new IntContainer(), skipped = new IntContainer();
-
-            broadcastResult(commandSender, String.format("Migrating \"%s\"", p.getWorld().getName()), node);
-
-            p.getAllLightSources().filter(PersistentLightSource::needsMigration).forEach(lightSource -> {
-                if (!lightSource.getPosition().isChunkLoaded(lightSource.getWorld())) {
-                    if (lightSource.getPosition().loadChunk(lightSource.getWorld(), false)) {
-                        lightSource.update();
-                        migrated.i++;
-                    } else {
-                        skipped.i++;
-                    }
-                } else {
-                    lightSource.update();
-                    migrated.i++;
-                }
-            });
-
-            broadcastResult(commandSender, String.format("Migrated Light sources in world \"%s\" (migrated: %d, skipped: %d)", p.getWorld().getName(), migrated.i, skipped.i), node);
-
-            totalMigrated.i += migrated.i;
-            totalSkipped.i += skipped.i;
-        });
-
-        broadcastResult(commandSender, String.format("All Light sources migrated (total migrated: %d, skipped: %d)", totalMigrated.i, totalSkipped.i), node);
-
-        return true;
-    }
-
-    private boolean save(CommandSender commandSender, ArgumentIterator args) {
-        if (!checkPerm(commandSender, "varlight.admin.save")) {
-            return true;
-        }
-
-        if (!args.hasNext()) {
-            if (!(commandSender instanceof Player)) {
-                sendPrefixedMessage(commandSender, "Only Players may use this command");
+            if (!subCommand.execute(commandSender, arguments)) {
+                subCommand.sendHelp(commandSender);
                 return true;
             }
-
-            Player player = (Player) commandSender;
-
-            Optional<LightSourcePersistor> optLightSourcePersistor = LightSourcePersistor.getPersistor(plugin, player.getWorld());
-
-            if (optLightSourcePersistor.isPresent()) {
-                optLightSourcePersistor.get().save(player);
-            } else {
-                sendPrefixedMessage(player, String.format("No custom Light sources present in world \"%s\"", player.getWorld().getName()));
-            }
-
-            return true;
-        }
-
-        if ("all".equalsIgnoreCase(args.peek())) {
-            LightSourcePersistor.getAllPersistors(plugin).forEach(persistor -> persistor.save(commandSender));
-            return true;
-        }
-
-        World world = args.parseNext(Bukkit::getWorld);
-
-        if (world == null) {
-            sendPrefixedMessage(commandSender, "Could not find a world with that name");
-        } else {
-            Optional<LightSourcePersistor> optLightSourcePersistor = LightSourcePersistor.getPersistor(plugin, world);
-
-            if (!optLightSourcePersistor.isPresent()) {
-                sendPrefixedMessage(commandSender, String.format("No custom Light sources present in world \"%s\"", world.getName()));
-            } else {
-                optLightSourcePersistor.get().save(commandSender);
-            }
+        } catch (VarLightCommandException e) {
+            VarLightSubCommand.sendPrefixedMessage(commandSender, e.getMessage());
         }
 
         return true;
     }
 
-    private boolean autosave(CommandSender commandSender, ArgumentIterator args) {
-        if (!checkPerm(commandSender, "varlight.admin.save")) {
-            return true;
-        }
-
-        int newInterval;
-
-        try {
-            newInterval = args.parseNext(Integer::parseInt);
-        } catch (NumberFormatException e) {
-            sendPrefixedMessage(commandSender, e.getClass().getSimpleName() + ": " + e.getMessage());
-            return true;
-        }
-
-        plugin.getConfiguration().setAutosaveInterval(newInterval);
-        plugin.initAutosave();
-
-        if (newInterval > 0) {
-            broadcastResult(commandSender, String.format("Updated Autosave interval to %d Minutes", newInterval), "varlight.admin.save");
-        } else if (newInterval == 0) {
-            broadcastResult(commandSender, "Disabled Autosave", "varlight.admin.save");
-        } else {
-            broadcastResult(commandSender, "Enabled Persist On Save", "varlight.admin.save");
-        }
-
-        return true;
+    @Override
+    public List<String> onTabComplete(CommandSender commandSender, Command command, String commandLabel, String[] args) {
+        return null; // TODO Implement
     }
 
-    private boolean getPerm(CommandSender commandSender, ArgumentIterator args) {
-        if (!checkPerm(commandSender, "varlight.admin.perm")) {
-            return true;
-        }
-
-        sendPrefixedMessage(commandSender, String.format("Current required permission node: \"%s\"", plugin.getConfiguration().getRequiredPermissionNode()));
-        return true;
+    public Map<String, VarLightSubCommand> getRegisteredCommands() {
+        return Collections.unmodifiableMap(subCommands);
     }
-
-    private boolean setPerm(CommandSender commandSender, ArgumentIterator args) {
-        if (!checkPerm(commandSender, "varlight.admin.perm")) {
-            return true;
-        }
-
-        if (!args.hasNext()) {
-            return false;
-        }
-
-        String permission = args.next();
-        plugin.getConfiguration().setRequiredPermissionNode(permission);
-        broadcastResult(commandSender, String.format("Required Permission Node updated to \"%s\"", permission), "varlight.admin.perm");
-        return true;
-    }
-
-    private boolean unsetPerm(CommandSender commandSender, ArgumentIterator args) {
-        if (!checkPerm(commandSender, "varlight.admin.perm")) {
-            return true;
-        }
-
-        plugin.getConfiguration().setRequiredPermissionNode(null);
-        broadcastResult(commandSender, "Unset Required Permission Node", "varlight.admin.perm");
-        return true;
-    }
-
-    private boolean worldCommand(CommandSender commandSender, VarLightConfiguration.WorldListType worldListType, ArgumentIterator args) {
-        if (!checkPerm(commandSender, "varlight.admin.world")) {
-            return true;
-        }
-
-        if (!args.hasNext()) {
-            return false;
-        }
-
-        String subCommand = args.next();
-
-        if ("add".equalsIgnoreCase(subCommand)) {
-            if (!args.hasNext()) {
-                return false;
-            }
-
-            World world = args.parseNext(Bukkit::getWorld);
-
-            if (world == null) {
-                sendPrefixedMessage(commandSender, String.format("Could not find world \"%s\"", args.previous()));
-                return true;
-            }
-
-            if (plugin.getConfiguration().addWorldToList(world, worldListType)) {
-                broadcastResult(commandSender, String.format("Added world \"%s\" to the VarLight %s", world.getName(), worldListType.getName()), "varlight.admin.world");
-            } else {
-                sendPrefixedMessage(commandSender, String.format("World \"%s\" is already on the VarLight %s", world.getName(), worldListType.getName()));
-            }
-
-            return true;
-        }
-
-        if ("remove".equalsIgnoreCase(subCommand)) {
-            if (!args.hasNext()) {
-                return false;
-            }
-
-            World world = args.parseNext(Bukkit::getWorld);
-
-            if (world == null) {
-                sendPrefixedMessage(commandSender, String.format("Could not find world \"%s\"", args.previous()));
-                return true;
-            }
-
-            if (plugin.getConfiguration().removeWorldFromList(world, worldListType)) {
-                broadcastResult(commandSender, String.format("Removed world \"%s\" from the VarLight %s", world.getName(), worldListType.getName()), "varlight.admin.world");
-            } else {
-                sendPrefixedMessage(commandSender, String.format("World \"%s\" is not on the VarLight %s", world.getName(), worldListType.getName()));
-            }
-
-            return true;
-        }
-
-        if ("list".equalsIgnoreCase(subCommand)) {
-            sendPrefixedMessage(commandSender, String.format("Worlds on the VarLight %s:", worldListType.getName()));
-
-            for (World world : plugin.getConfiguration().getWorlds(worldListType)) {
-                commandSender.sendMessage(String.format("   - \"%s\"", world.getName()));
-            }
-
-            return true;
-        }
-
-        return false;
-    }
-
-    // endregion
-
-    private boolean checkPerm(CommandSender commandSender, String node) {
-        if (!commandSender.hasPermission(node)) {
-            commandSender.sendMessage(ChatColor.RED + "You do not have permission to use this command");
-            return false;
-        }
-
-        return true;
-    }
-
-    private static void sendPrefixedMessage(CommandSender to, String message) {
-        to.sendMessage(getPrefixedMessage(message));
-    }
-
-    private static String getPrefixedMessage(String message) {
-        return String.format("[VarLight] %s", message);
-    }
-
-    private static void broadcastResult(CommandSender source, String message, String node) {
-        String msg = String.format("%s: %s", source.getName(), getPrefixedMessage(message));
-        String formatted = ChatColor.GRAY + "" + ChatColor.ITALIC + String.format("[%s]", msg);
-        source.sendMessage(getPrefixedMessage(message));
-
-        Bukkit.getPluginManager().getPermissionSubscriptions(node).stream().filter(p -> p != source && p instanceof CommandSender).forEach(p -> {
-            if (p instanceof ConsoleCommandSender) {
-                ((ConsoleCommandSender) p).sendMessage(msg);
-            } else {
-                ((CommandSender) p).sendMessage(formatted);
-            }
-        });
-    }
-
 }
