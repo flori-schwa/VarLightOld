@@ -161,7 +161,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-        configuration.save();
         nmsAdapter.onDisable();
 
         // If PersistOnSave is enabled, PersistOnWorldSaveHandler.onWorldSave will automatically save the Light Sources
