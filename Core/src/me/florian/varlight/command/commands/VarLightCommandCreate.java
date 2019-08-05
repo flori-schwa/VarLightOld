@@ -149,7 +149,7 @@ public class VarLightCommandCreate implements VarLightSubCommand {
                 String suggestion = builder.toString().trim();
 
                 if (suggestion.startsWith(args.get(arguments - 1))) {
-                    completions.add(builder.toString().trim());
+                    completions.add(suggestion);
                 }
             }
 
