@@ -126,7 +126,7 @@ public class VarLightCommandCreate implements VarLightSubCommand {
 
         if (arguments == 1) {
             for (World world : Bukkit.getWorlds()) {
-                if (LightSourcePersistor.hasPersistor(plugin, world)) {
+                if (LightSourcePersistor.hasPersistor(plugin, world) && world.getName().startsWith(args.get(0))) {
                     completions.add(world.getName());
                 }
             }
