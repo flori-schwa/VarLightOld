@@ -138,8 +138,6 @@ public class VarLightCommandCreate implements VarLightSubCommand {
 
             System.arraycopy(coords, arguments - 2, toSuggest, 0, toSuggest.length);
 
-            System.out.println(Arrays.toString(toSuggest));
-
             for (int i = 0; i < toSuggest.length; i++) {
                 StringBuilder builder = new StringBuilder();
 
