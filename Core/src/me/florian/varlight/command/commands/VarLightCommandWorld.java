@@ -26,10 +26,13 @@ public class VarLightCommandWorld implements VarLightSubCommand {
     }
 
     @Override
-    public void sendHelp(CommandSender sender) {
-        sender.sendMessage(String.format("/varlight %s add <world>: Add the specified world to the %s. \" + ChatColor.BOLD + \"Effective after restart!\"", label, worldListType.getName()));
-        sender.sendMessage(String.format("/varlight %s remove <world>: Removes the specified world from the %s. \" + ChatColor.BOLD + \"Effective after restart!\"", label, worldListType.getName()));
-        sender.sendMessage(String.format("/varlight %s list: Lists all worlds on the %s", label, worldListType.getName()));
+    public String getSyntax() {
+        return " add/remove/list [world]";
+    }
+
+    @Override
+    public String getDescription() {
+        return String.format("Add/Remove worlds from the %s or list all worlds on the %s", worldListType.getName(), worldListType.getName());
     }
 
     @Override

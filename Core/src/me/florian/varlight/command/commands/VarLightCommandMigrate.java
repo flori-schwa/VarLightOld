@@ -22,8 +22,13 @@ public class VarLightCommandMigrate implements VarLightSubCommand {
     }
 
     @Override
-    public void sendHelp(CommandSender sender) {
-        sender.sendMessage("/varlight migrate: Migrates all light sources after upgrading your server to 1.14.2+");
+    public String getSyntax() {
+        return "";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Migrates all light sources after upgrading your server to 1.14.2+";
     }
 
     @Override

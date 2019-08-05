@@ -8,9 +8,16 @@ import me.florian.varlight.event.LightUpdateEvent;
 import me.florian.varlight.persistence.LightSourcePersistor;
 import me.florian.varlight.util.IntPosition;
 import org.bukkit.Bukkit;
+import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class VarLightCommandCreate implements VarLightSubCommand {
 
@@ -27,8 +34,13 @@ public class VarLightCommandCreate implements VarLightSubCommand {
 
 
     @Override
-    public void sendHelp(CommandSender sender) {
-        sender.sendMessage("/varlight create <world> <x> <y> <z> <lightlevel>: Update the light level at the given position");
+    public String getSyntax() {
+        return " <world> <x> <y> <z> <light level>";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Update the light level at the given position";
     }
 
     @Override
@@ -99,5 +111,63 @@ public class VarLightCommandCreate implements VarLightSubCommand {
                 toUpdate.getBlockX(), toUpdate.getBlockY(), toUpdate.getBlockZ(), world.getName(), lightUpdateEvent.getFromLight(), lightUpdateEvent.getToLight()), "varlight.admin");
 
         return true;
+    }
+
+    @Override
+    public List<String> tabComplete(CommandSender sender, ArgumentIterator args) {
+        if (!(sender instanceof Player)) {
+            return new ArrayList<>();
+        }
+
+        List<String> completions = new ArrayList<>();
+
+        final Player player = (Player) sender;
+        final int arguments = args.length;
+
+        if (arguments == 1) {
+            for (World world : Bukkit.getWorlds()) {
+                if (LightSourcePersistor.hasPersistor(plugin, world)) {
+                    completions.add(world.getName());
+                }
+            }
+
+            return completions;
+        } else if (arguments <= 4) {
+            final int[] coords = getCoordinatesLookingAt(player);
+            final int[] toSuggest = new int[3 - (arguments - 2)];
+
+            System.arraycopy(coords, arguments - 2, toSuggest, 0, toSuggest.length);
+
+            System.out.println(Arrays.toString(toSuggest));
+
+            for (int i = 0; i < toSuggest.length; i++) {
+                StringBuilder builder = new StringBuilder();
+
+                for (int j = 0; j <= i; j++) {
+                    builder.append(toSuggest[j]);
+                    builder.append(" ");
+                }
+
+                String suggestion = builder.toString().trim();
+
+                if (suggestion.startsWith(args.get(arguments - 1))) {
+                    completions.add(builder.toString().trim());
+                }
+            }
+
+            return completions;
+        } else {
+            return completions;
+        }
+    }
+
+    private int[] getCoordinatesLookingAt(Player player) {
+        Block targetBlock = player.getTargetBlockExact(10, FluidCollisionMode.NEVER);
+
+        return new int[]{
+                targetBlock.getX(),
+                targetBlock.getY(),
+                targetBlock.getZ()
+        };
     }
 }

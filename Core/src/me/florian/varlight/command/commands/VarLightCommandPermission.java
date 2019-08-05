@@ -19,10 +19,13 @@ public class VarLightCommandPermission implements VarLightSubCommand {
     }
 
     @Override
-    public void sendHelp(CommandSender sender) {
-        sender.sendMessage("/varlight perm get: Gets the current required permission node to use the plugins functionality");
-        sender.sendMessage("/varlight perm set <new perm>: Sets the required permission node to use the plugins functionality");
-        sender.sendMessage("/varlight perm unset: Removes the required permission node to use the plugins functionality");
+    public String getSyntax() {
+        return " get/set/unset [new permission]";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Gets/Sets/Unsets the permission node that is required to use the plugin's functionality";
     }
 
     @Override

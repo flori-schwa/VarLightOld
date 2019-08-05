@@ -20,8 +20,13 @@ public class VarLightCommandAutosave implements VarLightSubCommand {
     }
 
     @Override
-    public void sendHelp(CommandSender sender) {
-        sender.sendMessage("/varlight autosave <new interval>: Sets the new autosave interval (0: disable, negative: save on world save)");
+    public String getSyntax() {
+        return " <new interval>";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Sets the new autosave interval (0: disable, negative: save on world save)";
     }
 
     @Override

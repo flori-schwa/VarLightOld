@@ -25,10 +25,13 @@ public class VarLightCommandSave implements VarLightSubCommand {
     }
 
     @Override
-    public void sendHelp(CommandSender sender) {
-        sender.sendMessage("/varlight save: Save All Light sources in current world");
-        sender.sendMessage("/varlight save <world>: Save All Light sources in the specified world");
-        sender.sendMessage("/varlight save all: Save All Light sources");
+    public String getSyntax() {
+        return " [all/<world>]";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Save all custom light sources in the current world, the specified world or all worlds";
     }
 
     @Override

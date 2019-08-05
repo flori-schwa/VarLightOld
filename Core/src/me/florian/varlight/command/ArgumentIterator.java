@@ -1,5 +1,6 @@
 package me.florian.varlight.command;
 
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -26,6 +27,10 @@ public class ArgumentIterator implements Iterator<String> {
 
     public String peek() {
         return arguments[position];
+    }
+
+    public String get(int index) {
+        return arguments[index];
     }
 
     @Override
@@ -65,5 +70,14 @@ public class ArgumentIterator implements Iterator<String> {
 
     public String jumpTo(int position) {
         return arguments[this.position = position];
+    }
+
+    @Override
+    public String toString() {
+        return "ArgumentIterator{" +
+                "length=" + length +
+                ", arguments=" + Arrays.toString(arguments) +
+                ", position=" + position +
+                '}';
     }
 }

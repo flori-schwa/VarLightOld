@@ -6,14 +6,48 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 
+import java.util.List;
+
 public interface VarLightSubCommand {
 
     String getName();
 
+    /**
+     * @return The remaining syntax after "/varlight [subcommand]"
+     */
+    default String getSyntax() {
+        return null;
+    }
+
+    /**
+     * @return A short description to be rendered after "/varlight [subcommand] [syntax]:"
+     */
+    default String getDescription() {
+        return null;
+    }
+
+    default String getCommandHelp() {
+        if (getSyntax() == null || getDescription() == null) {
+            return null;
+        }
+
+        StringBuilder builder = new StringBuilder();
+
+        builder.append(ChatColor.GOLD);
+        builder.append("/varlight ");
+        builder.append(getName());
+        builder.append(getSyntax());
+        builder.append(": ");
+        builder.append(ChatColor.RESET);
+        builder.append(getDescription());
+
+        return builder.toString();
+    }
+
     boolean execute(CommandSender sender, ArgumentIterator args);
 
-    default void sendHelp(CommandSender sender) {
-
+    default List<String> tabComplete(CommandSender sender, ArgumentIterator args) {
+        return null;
     }
 
     static void assertPermission(CommandSender commandSender, String node) {

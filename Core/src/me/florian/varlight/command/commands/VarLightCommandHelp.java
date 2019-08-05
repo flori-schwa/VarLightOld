@@ -3,7 +3,9 @@ package me.florian.varlight.command.commands;
 import me.florian.varlight.command.ArgumentIterator;
 import me.florian.varlight.command.VarLightCommand;
 import me.florian.varlight.command.VarLightSubCommand;
+import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.util.ChatPaginator;
 
 public class VarLightCommandHelp implements VarLightSubCommand {
 
@@ -19,35 +21,77 @@ public class VarLightCommandHelp implements VarLightSubCommand {
     }
 
     @Override
-    public void sendHelp(CommandSender sender) {
-        sender.sendMessage("/varlight help: List all varlight commands");
-        sender.sendMessage("/varlight help <command>: show more info on /varlight <command>");
+    public String getSyntax() {
+        return " [command / page]";
+    }
+
+    @Override
+    public String getDescription() {
+        return "List available VarLight commands or look up a certain command";
     }
 
     @Override
     public boolean execute(CommandSender sender, ArgumentIterator args) {
 
         if (args.hasNext()) {
-            VarLightSubCommand subCommand = baseCommand.getRegisteredCommands().get(args.next());
+
+            final String argument = args.next();
+            int page = -1;
+
+            try {
+                page = Integer.parseInt(argument);
+            } catch (NumberFormatException e) {
+                // Ignore
+            }
+
+            if (page >= 1) {
+                showHelp(sender, page);
+                return true;
+            }
+
+            VarLightSubCommand subCommand = baseCommand.getRegisteredCommands().get(argument);
 
             if (subCommand == null) {
                 VarLightSubCommand.sendPrefixedMessage(sender, String.format("The subcommand \"/varlight %s\" does not exist", args.previous()));
                 return true;
             }
 
-            subCommand.sendHelp(sender);
+            sender.sendMessage(subCommand.getCommandHelp());
             return true;
         }
 
-        listAllSubCommands(sender);
+        showHelp(sender);
         return true;
     }
 
-    public void listAllSubCommands(CommandSender sender) {
-        VarLightSubCommand.sendPrefixedMessage(sender, "VarLight command help:");
+    public void showHelp(CommandSender sender) {
+        showHelp(sender, 1);
+    }
 
-        for (VarLightSubCommand subCommand : baseCommand.getRegisteredCommands().values()) {
-            subCommand.sendHelp(sender);
+    public void showHelp(CommandSender sender, int page) {
+        ChatPaginator.ChatPage chatPage = ChatPaginator.paginate(getFullHelpRaw(), page);
+
+        sender.sendMessage(ChatColor.GRAY + "-----------------------------------");
+        sender.sendMessage(String.format("%sVarLight command help: %s[Page %d / %d]", ChatColor.GOLD, ChatColor.RESET, chatPage.getPageNumber(), chatPage.getTotalPages()));
+
+        for (String line : chatPage.getLines()) {
+            sender.sendMessage(line);
         }
     }
+
+    public String getFullHelpRaw() {
+        StringBuilder builder = new StringBuilder();
+
+        for (VarLightSubCommand subCommand : baseCommand.getRegisteredCommands().values()) {
+            String help = subCommand.getCommandHelp();
+
+            if (help != null) {
+                builder.append(help).append("\n");
+            }
+        }
+
+        return builder.toString().trim();
+    }
+
+
 }

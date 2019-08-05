@@ -19,8 +19,13 @@ public class VarLightCommandReload implements VarLightSubCommand {
     }
 
     @Override
-    public void sendHelp(CommandSender sender) {
-        sender.sendMessage("/varlight reload: Reload the configuration file");
+    public String getSyntax() {
+        return "";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Reload the configuration file";
     }
 
     @Override

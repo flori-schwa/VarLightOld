@@ -49,8 +49,13 @@ public class VarLightCommand implements CommandExecutor, TabCompleter {
             }
 
             @Override
-            public void sendHelp(CommandSender sender) {
-                sender.sendMessage(" - /varlight book: Opens an interactive book with most commands");
+            public String getSyntax() {
+                return "";
+            }
+
+            @Override
+            public String getDescription() {
+                return "Opens the interactive command book";
             }
 
             @Override
@@ -371,7 +376,7 @@ public class VarLightCommand implements CommandExecutor, TabCompleter {
         }
 
         if (args.length == 0) {
-            helpCommand.listAllSubCommands(commandSender);
+            helpCommand.showHelp(commandSender);
             return true;
         }
 
@@ -379,13 +384,13 @@ public class VarLightCommand implements CommandExecutor, TabCompleter {
         final VarLightSubCommand subCommand = arguments.parseNext(subCommands::get);
 
         if (subCommand == null) {
-            helpCommand.listAllSubCommands(commandSender);
+            helpCommand.showHelp(commandSender);
             return true;
         }
 
         try {
             if (!subCommand.execute(commandSender, arguments)) {
-                subCommand.sendHelp(commandSender);
+                commandSender.sendMessage(subCommand.getCommandHelp());
                 return true;
             }
         } catch (VarLightCommandException e) {
@@ -397,7 +402,32 @@ public class VarLightCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public List<String> onTabComplete(CommandSender commandSender, Command command, String commandLabel, String[] args) {
-        return null; // TODO Implement
+        if (!"varlight".equalsIgnoreCase(command.getName())) {
+            return null; // wot
+        }
+
+        if (args.length == 1) {
+            List<String> list = new ArrayList<>();
+
+            for (String label : getRegisteredCommands().keySet()) {
+                if (label.startsWith(args[0])) {
+                    list.add(label);
+                }
+            }
+
+            return list;
+        } else {
+            final VarLightSubCommand subCommand = subCommands.get(args[0]);
+
+            if (subCommand == null) {
+                return null;
+            }
+
+            String[] newArgs = new String[args.length - 1];
+            System.arraycopy(args, 1, newArgs, 0, newArgs.length);
+
+            return subCommand.tabComplete(commandSender, new ArgumentIterator(newArgs));
+        }
     }
 
     public Map<String, VarLightSubCommand> getRegisteredCommands() {
