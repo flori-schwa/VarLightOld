@@ -31,6 +31,10 @@ public interface INmsAdapter {
 
     }
 
+    default void onWorldEnable(World world) {
+
+    }
+
     boolean isBlockTransparent(Block block);
 
     void updateBlockLight(Location at, int lightLevel);

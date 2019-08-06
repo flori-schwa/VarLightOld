@@ -5,6 +5,9 @@ main: me.florian.varlight.VarLightPlugin
 description: Turn Normal Blocks into Light Sources!
 api-version: "api.version"
 
+softdepend:
+  - "Multiverse-Core"
+
 permissions:
   varlight.admin:
     description: "Provides access to the varlight admin commands"
@@ -20,3 +23,5 @@ commands:
   varlight:
     description: "VarLight admin command"
     permission: "varlight.admin"
+    aliases:
+      - vl

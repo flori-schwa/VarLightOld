@@ -28,7 +28,6 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockEvent;
 import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.metadata.FixedMetadataValue;
 
 import javax.annotation.Nullable;
@@ -83,11 +82,12 @@ public class NmsAdapter implements INmsAdapter, Listener {
     @Override
     public void onEnable() {
         Bukkit.getPluginManager().registerEvents(this, plugin);
+    }
 
+    @Override
+    public void onWorldEnable(World world) {
         try {
-            for (World world : Bukkit.getWorlds()) {
-                injectCustomIBlockAccess(world);
-            }
+            injectCustomIBlockAccess(world);
         } catch (IllegalAccessException e) {
             throw new VarLightInitializationException(e);
         }
@@ -384,15 +384,6 @@ public class NmsAdapter implements INmsAdapter, Listener {
     // endregion
 
     // region Events
-
-    @EventHandler(priority = EventPriority.MONITOR)
-    public void onWorldLoad(WorldLoadEvent e) {
-        try {
-            injectCustomIBlockAccess(e.getWorld());
-        } catch (IllegalAccessException ex) {
-            throw new VarLightInitializationException(ex);
-        }
-    }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent e) {

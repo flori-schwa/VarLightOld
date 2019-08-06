@@ -9,6 +9,7 @@ import me.florian.varlight.util.NumericMajorMinorVersion;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
@@ -100,7 +101,8 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         configuration = new VarLightConfiguration(this);
         DEBUG = configuration.isDebug();
-        configuration.getVarLightEnabledWorlds().forEach(w -> LightSourcePersistor.createPersistor(this, w));
+
+        configuration.getVarLightEnabledWorlds().forEach(this::enableInWorld);
 
         try {
             nmsAdapter.onEnable();
@@ -174,6 +176,11 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         }
     }
 
+    public void enableInWorld(World world) {
+        LightSourcePersistor.createPersistor(this, world);
+        nmsAdapter.onWorldEnable(world);
+    }
+
     public VarLightConfiguration getConfiguration() {
         return configuration;
     }
@@ -203,7 +210,9 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         }
 
         if (!optPersistor.isPresent() && configuration.getVarLightEnabledWorldNames().contains(e.getPlayer().getWorld().getName())) {
-            optPersistor = Optional.of(LightSourcePersistor.createPersistor(this, e.getPlayer().getWorld()));
+            enableInWorld(e.getPlayer().getWorld());
+
+            optPersistor = LightSourcePersistor.getPersistor(this, e.getPlayer().getWorld());
         }
 
         if (!optPersistor.isPresent()) {
