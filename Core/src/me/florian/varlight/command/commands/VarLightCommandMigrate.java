@@ -2,13 +2,14 @@ package me.florian.varlight.command.commands;
 
 import me.florian.varlight.VarLightPlugin;
 import me.florian.varlight.command.ArgumentIterator;
+import me.florian.varlight.command.VarLightCommand;
 import me.florian.varlight.command.VarLightSubCommand;
 import me.florian.varlight.command.exception.VarLightCommandException;
 import me.florian.varlight.persistence.LightSourcePersistor;
 import me.florian.varlight.persistence.PersistentLightSource;
 import org.bukkit.command.CommandSender;
 
-public class VarLightCommandMigrate implements VarLightSubCommand {
+public class VarLightCommandMigrate extends VarLightSubCommand {
 
     private final VarLightPlugin plugin;
 
@@ -35,7 +36,7 @@ public class VarLightCommandMigrate implements VarLightSubCommand {
     public boolean execute(CommandSender sender, ArgumentIterator args) {
         final String node = "varlight.admin";
 
-        VarLightSubCommand.assertPermission(sender, node);
+        VarLightCommand.assertPermission(sender, node);
 
         if (!plugin.getNmsAdapter().getMinecraftVersion().newerOrEquals(VarLightPlugin.MC1_14_2)) {
             throw new VarLightCommandException("You may only migrate AFTER Minecraft 1.14.2!");
@@ -47,13 +48,13 @@ public class VarLightCommandMigrate implements VarLightSubCommand {
 
         IntContainer totalMigrated = new IntContainer(), totalSkipped = new IntContainer();
 
-        VarLightSubCommand.broadcastResult(sender, "Starting migration...", node);
+        VarLightCommand.broadcastResult(sender, "Starting migration...", node);
 
         LightSourcePersistor.getAllPersistors(plugin).forEach((p) -> {
 
             IntContainer migrated = new IntContainer(), skipped = new IntContainer();
 
-            VarLightSubCommand.broadcastResult(sender, String.format("Migrating \"%s\"", p.getWorld().getName()), node);
+            VarLightCommand.broadcastResult(sender, String.format("Migrating \"%s\"", p.getWorld().getName()), node);
 
             p.getAllLightSources().filter(PersistentLightSource::needsMigration).forEach(lightSource -> {
                 if (!lightSource.getPosition().isChunkLoaded(lightSource.getWorld())) {
@@ -69,13 +70,13 @@ public class VarLightCommandMigrate implements VarLightSubCommand {
                 }
             });
 
-            VarLightSubCommand.broadcastResult(sender, String.format("Migrated Light sources in world \"%s\" (migrated: %d, skipped: %d)", p.getWorld().getName(), migrated.i, skipped.i), node);
+            VarLightCommand.broadcastResult(sender, String.format("Migrated Light sources in world \"%s\" (migrated: %d, skipped: %d)", p.getWorld().getName(), migrated.i, skipped.i), node);
 
             totalMigrated.i += migrated.i;
             totalSkipped.i += skipped.i;
         });
 
-        VarLightSubCommand.broadcastResult(sender, String.format("All Light sources migrated (total migrated: %d, skipped: %d)", totalMigrated.i, totalSkipped.i), node);
+        VarLightCommand.broadcastResult(sender, String.format("All Light sources migrated (total migrated: %d, skipped: %d)", totalMigrated.i, totalSkipped.i), node);
 
         return true;
     }

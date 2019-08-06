@@ -2,10 +2,14 @@ package me.florian.varlight.command.commands;
 
 import me.florian.varlight.VarLightPlugin;
 import me.florian.varlight.command.ArgumentIterator;
+import me.florian.varlight.command.VarLightCommand;
 import me.florian.varlight.command.VarLightSubCommand;
 import org.bukkit.command.CommandSender;
 
-public class VarLightCommandPermission implements VarLightSubCommand {
+import java.util.ArrayList;
+import java.util.List;
+
+public class VarLightCommandPermission extends VarLightSubCommand {
 
     private final VarLightPlugin plugin;
 
@@ -30,7 +34,7 @@ public class VarLightCommandPermission implements VarLightSubCommand {
 
     @Override
     public boolean execute(CommandSender sender, ArgumentIterator args) {
-        VarLightSubCommand.assertPermission(sender, "varlight.admin.perm");
+        VarLightCommand.assertPermission(sender, "varlight.admin.perm");
 
         if (!args.hasNext()) {
             return false;
@@ -38,7 +42,7 @@ public class VarLightCommandPermission implements VarLightSubCommand {
 
         switch (args.next().toLowerCase()) {
             case "get": {
-                VarLightSubCommand.sendPrefixedMessage(sender, String.format("The current required permission node is \"%s\".", plugin.getConfiguration().getRequiredPermissionNode()));
+                VarLightCommand.sendPrefixedMessage(sender, String.format("The current required permission node is \"%s\".", plugin.getConfiguration().getRequiredPermissionNode()));
                 return true;
             }
 
@@ -52,13 +56,13 @@ public class VarLightCommandPermission implements VarLightSubCommand {
 
                 plugin.getConfiguration().setRequiredPermissionNode(newNode);
 
-                VarLightSubCommand.broadcastResult(sender, String.format("The required permission node has been updated from \"%s\" to \"%s\".", oldNode, newNode), "varlight.admin.perm");
+                VarLightCommand.broadcastResult(sender, String.format("The required permission node has been updated from \"%s\" to \"%s\".", oldNode, newNode), "varlight.admin.perm");
                 return true;
             }
 
             case "unset": {
                 plugin.getConfiguration().setRequiredPermissionNode("");
-                VarLightSubCommand.broadcastResult(sender, "The required permission node has been un-set.", "varlight.admin.perm");
+                VarLightCommand.broadcastResult(sender, "The required permission node has been un-set.", "varlight.admin.perm");
                 return true;
             }
 
@@ -66,5 +70,16 @@ public class VarLightCommandPermission implements VarLightSubCommand {
                 return false;
             }
         }
+    }
+
+    @Override
+    public List<String> tabComplete(CommandSender sender, ArgumentIterator args) {
+        final int arguments = args.length;
+
+        if (arguments != 1) {
+            return new ArrayList<>();
+        }
+
+        return VarLightCommand.suggestChoice(args.get(0), "get", "set", "unset");
     }
 }

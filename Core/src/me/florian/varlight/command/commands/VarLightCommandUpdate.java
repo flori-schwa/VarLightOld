@@ -2,34 +2,32 @@ package me.florian.varlight.command.commands;
 
 import me.florian.varlight.VarLightPlugin;
 import me.florian.varlight.command.ArgumentIterator;
+import me.florian.varlight.command.VarLightCommand;
 import me.florian.varlight.command.VarLightSubCommand;
 import me.florian.varlight.command.exception.VarLightCommandException;
 import me.florian.varlight.event.LightUpdateEvent;
 import me.florian.varlight.persistence.LightSourcePersistor;
 import me.florian.varlight.util.IntPosition;
 import org.bukkit.Bukkit;
-import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-public class VarLightCommandCreate implements VarLightSubCommand {
+public class VarLightCommandUpdate extends VarLightSubCommand {
 
     private final VarLightPlugin plugin;
 
-    public VarLightCommandCreate(VarLightPlugin plugin) {
+    public VarLightCommandUpdate(VarLightPlugin plugin) {
         this.plugin = plugin;
     }
 
     @Override
     public String getName() {
-        return "create";
+        return "update";
     }
 
 
@@ -45,7 +43,7 @@ public class VarLightCommandCreate implements VarLightSubCommand {
 
     @Override
     public boolean execute(CommandSender sender, ArgumentIterator args) {
-        VarLightSubCommand.assertPermission(sender, "varlight.admin");
+        VarLightCommand.assertPermission(sender, "varlight.admin");
 
         if (!args.hasParameters(5)) {
             return false;
@@ -54,12 +52,12 @@ public class VarLightCommandCreate implements VarLightSubCommand {
         final World world = args.parseNext(Bukkit::getWorld);
 
         if (world == null) {
-            VarLightSubCommand.sendPrefixedMessage(sender, String.format("Could not find a world with the name \"%s\"", args.previous()));
+            VarLightCommand.sendPrefixedMessage(sender, String.format("Could not find a world with the name \"%s\"", args.previous()));
             return true;
         }
 
         if (!LightSourcePersistor.hasPersistor(plugin, world)) {
-            VarLightSubCommand.sendPrefixedMessage(sender, "VarLight is not active in that world!");
+            VarLightCommand.sendPrefixedMessage(sender, "VarLight is not active in that world!");
             return true;
         }
 
@@ -78,7 +76,7 @@ public class VarLightCommandCreate implements VarLightSubCommand {
         }
 
         if (lightLevel < 0 || lightLevel > 15) {
-            VarLightSubCommand.sendPrefixedMessage(sender, String.format("Light level out of range, allowed: 0 <= n <= 15, got: %d", lightLevel));
+            VarLightCommand.sendPrefixedMessage(sender, String.format("Light level out of range, allowed: 0 <= n <= 15, got: %d", lightLevel));
             return false;
         }
 
@@ -86,12 +84,12 @@ public class VarLightCommandCreate implements VarLightSubCommand {
         final int fromLight = LightSourcePersistor.getEmittingLightLevel(plugin, toUpdate);
 
         if (!world.isChunkLoaded(toUpdate.getBlockX() >> 4, toUpdate.getBlockZ() >> 4)) {
-            VarLightSubCommand.sendPrefixedMessage(sender, "That part of the world is not loaded");
+            VarLightCommand.sendPrefixedMessage(sender, "That part of the world is not loaded");
             return true;
         }
 
         if (!plugin.getNmsAdapter().isValidBlock(world.getBlockAt(toUpdate))) {
-            VarLightSubCommand.sendPrefixedMessage(sender, String.format("%s cannot be used as a custom light source!", world.getBlockAt(toUpdate).getType().name()));
+            VarLightCommand.sendPrefixedMessage(sender, String.format("%s cannot be used as a custom light source!", world.getBlockAt(toUpdate).getType().name()));
             return true;
         }
 
@@ -99,7 +97,7 @@ public class VarLightCommandCreate implements VarLightSubCommand {
         Bukkit.getPluginManager().callEvent(lightUpdateEvent);
 
         if (lightUpdateEvent.isCancelled()) {
-            VarLightSubCommand.sendPrefixedMessage(sender, "The Light update event was cancelled!");
+            VarLightCommand.sendPrefixedMessage(sender, "The Light update event was cancelled!");
             return true;
         }
 
@@ -107,7 +105,7 @@ public class VarLightCommandCreate implements VarLightSubCommand {
                 .setEmittingLight(lightUpdateEvent.getToLight());
 
         plugin.getNmsAdapter().updateBlockLight(toUpdate, lightUpdateEvent.getToLight());
-        VarLightSubCommand.broadcastResult(sender, String.format("Updated Light level at [%d, %d, %d] in world \"%s\" from %d to %d",
+        VarLightCommand.broadcastResult(sender, String.format("Updated Light level at [%d, %d, %d] in world \"%s\" from %d to %d",
                 toUpdate.getBlockX(), toUpdate.getBlockY(), toUpdate.getBlockZ(), world.getName(), lightUpdateEvent.getFromLight(), lightUpdateEvent.getToLight()), "varlight.admin");
 
         return true;
@@ -119,53 +117,15 @@ public class VarLightCommandCreate implements VarLightSubCommand {
             return new ArrayList<>();
         }
 
-        List<String> completions = new ArrayList<>();
-
         final Player player = (Player) sender;
         final int arguments = args.length;
 
         if (arguments == 1) {
-            for (World world : Bukkit.getWorlds()) {
-                if (LightSourcePersistor.hasPersistor(plugin, world) && world.getName().startsWith(args.get(0))) {
-                    completions.add(world.getName());
-                }
-            }
-
-            return completions;
+            return VarLightCommand.suggestChoice(args.get(0), Bukkit.getWorlds().stream().filter(w -> LightSourcePersistor.hasPersistor(plugin, w)).map(World::getName).toArray(String[]::new));
         } else if (arguments <= 4) {
-            final int[] coords = getCoordinatesLookingAt(player);
-            final int[] toSuggest = new int[3 - (arguments - 2)];
-
-            System.arraycopy(coords, arguments - 2, toSuggest, 0, toSuggest.length);
-
-            for (int i = 0; i < toSuggest.length; i++) {
-                StringBuilder builder = new StringBuilder();
-
-                for (int j = 0; j <= i; j++) {
-                    builder.append(toSuggest[j]);
-                    builder.append(" ");
-                }
-
-                String suggestion = builder.toString().trim();
-
-                if (suggestion.startsWith(args.get(arguments - 1))) {
-                    completions.add(suggestion);
-                }
-            }
-
-            return completions;
+            return VarLightCommand.suggestBlockPosition(player, args.get(arguments - 1), arguments - 2);
         } else {
-            return completions;
+            return new ArrayList<>();
         }
-    }
-
-    private int[] getCoordinatesLookingAt(Player player) {
-        Block targetBlock = player.getTargetBlockExact(10, FluidCollisionMode.NEVER);
-
-        return new int[]{
-                targetBlock.getX(),
-                targetBlock.getY(),
-                targetBlock.getZ()
-        };
     }
 }

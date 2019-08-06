@@ -4,11 +4,11 @@ import me.florian.varlight.VarLightConfiguration;
 import me.florian.varlight.VarLightPlugin;
 import me.florian.varlight.command.commands.*;
 import me.florian.varlight.command.exception.VarLightCommandException;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabCompleter;
+import org.bukkit.FluidCollisionMode;
+import org.bukkit.block.Block;
+import org.bukkit.command.*;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import xyz.upperlevel.spigot.book.BookUtil;
@@ -35,7 +35,7 @@ public class VarLightCommand implements CommandExecutor, TabCompleter {
 
         registerCommand(new VarLightCommandPermission(plugin));
 
-        registerCommand(new VarLightCommandCreate(plugin));
+        registerCommand(new VarLightCommandUpdate(plugin));
         registerCommand(new VarLightCommandReload(plugin));
         registerCommand(new VarLightCommandMigrate(plugin));
 
@@ -394,7 +394,7 @@ public class VarLightCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
         } catch (VarLightCommandException e) {
-            VarLightSubCommand.sendPrefixedMessage(commandSender, e.getMessage());
+            sendPrefixedMessage(commandSender, e.getMessage());
         }
 
         return true;
@@ -432,5 +432,82 @@ public class VarLightCommand implements CommandExecutor, TabCompleter {
 
     public Map<String, VarLightSubCommand> getRegisteredCommands() {
         return Collections.unmodifiableMap(subCommands);
+    }
+
+    public static void assertPermission(CommandSender commandSender, String node) {
+        if (!commandSender.hasPermission(node)) {
+            throw new VarLightCommandException(ChatColor.RED + "You do not have permission to use this command");
+        }
+    }
+
+    public static void sendPrefixedMessage(CommandSender to, String message) {
+        to.sendMessage(getPrefixedMessage(message));
+    }
+
+    public static String getPrefixedMessage(String message) {
+        return String.format("[VarLight] %s", message);
+    }
+
+    public static void broadcastResult(CommandSender source, String message, String node) {
+        String msg = String.format("%s: %s", source.getName(), getPrefixedMessage(message));
+        String formatted = ChatColor.GRAY + "" + ChatColor.ITALIC + String.format("[%s]", msg);
+        source.sendMessage(getPrefixedMessage(message));
+
+        Bukkit.getPluginManager().getPermissionSubscriptions(node).stream().filter(p -> p != source && p instanceof CommandSender).forEach(p -> {
+            if (p instanceof ConsoleCommandSender) {
+                ((ConsoleCommandSender) p).sendMessage(msg);
+            } else {
+                ((CommandSender) p).sendMessage(formatted);
+            }
+        });
+    }
+
+    public static List<String> suggestBlockPosition(Player player, String currentArg, int completedCoords) {
+
+        final List<String> suggestions = new ArrayList<>();
+
+        final int[] coords = getCoordinatesLookingAt(player);
+        final int[] toSuggest = new int[3 - completedCoords];
+
+        System.arraycopy(coords, completedCoords, toSuggest, 0, toSuggest.length);
+
+        for (int i = 0; i < toSuggest.length; i++) {
+            StringBuilder builder = new StringBuilder();
+
+            for (int j = 0; j <= i; j++) {
+                builder.append(toSuggest[j]);
+                builder.append(" ");
+            }
+
+            String suggestion = builder.toString().trim();
+
+            if (suggestion.startsWith(currentArg)) {
+                suggestions.add(suggestion);
+            }
+        }
+
+        return suggestions;
+    }
+
+    private static int[] getCoordinatesLookingAt(Player player) {
+        Block targetBlock = player.getTargetBlockExact(10, FluidCollisionMode.NEVER);
+
+        return new int[]{
+                targetBlock.getX(),
+                targetBlock.getY(),
+                targetBlock.getZ()
+        };
+    }
+
+    public static List<String> suggestChoice(String currentArg, String... choices) {
+        final List<String> suggestions = new ArrayList<>();
+
+        for (String choice : choices) {
+            if (choice.startsWith(currentArg)) {
+                suggestions.add(choice);
+            }
+        }
+
+        return suggestions;
     }
 }

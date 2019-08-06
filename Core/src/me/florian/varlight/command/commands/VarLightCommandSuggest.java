@@ -6,7 +6,7 @@ import me.florian.varlight.command.VarLightSubCommand;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-public class VarLightCommandSuggest implements VarLightSubCommand {
+public class VarLightCommandSuggest extends VarLightSubCommand {
 
     private final VarLightPlugin plugin;
 

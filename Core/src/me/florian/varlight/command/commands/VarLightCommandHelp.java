@@ -7,7 +7,10 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.util.ChatPaginator;
 
-public class VarLightCommandHelp implements VarLightSubCommand {
+import java.util.ArrayList;
+import java.util.List;
+
+public class VarLightCommandHelp extends VarLightSubCommand {
 
     private final VarLightCommand baseCommand;
 
@@ -52,7 +55,7 @@ public class VarLightCommandHelp implements VarLightSubCommand {
             VarLightSubCommand subCommand = baseCommand.getRegisteredCommands().get(argument);
 
             if (subCommand == null) {
-                VarLightSubCommand.sendPrefixedMessage(sender, String.format("The subcommand \"/varlight %s\" does not exist", args.previous()));
+                VarLightCommand.sendPrefixedMessage(sender, String.format("The subcommand \"/varlight %s\" does not exist", args.previous()));
                 return true;
             }
 
@@ -93,5 +96,14 @@ public class VarLightCommandHelp implements VarLightSubCommand {
         return builder.toString().trim();
     }
 
+    @Override
+    public List<String> tabComplete(CommandSender sender, ArgumentIterator args) {
+        final int arguments = args.length;
 
+        if (arguments != 1) {
+            return new ArrayList<>();
+        }
+
+        return VarLightCommand.suggestChoice(args.get(0), baseCommand.getRegisteredCommands().keySet().toArray(new String[0]));
+    }
 }

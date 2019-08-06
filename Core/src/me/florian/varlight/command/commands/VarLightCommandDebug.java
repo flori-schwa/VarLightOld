@@ -2,10 +2,11 @@ package me.florian.varlight.command.commands;
 
 import me.florian.varlight.VarLightPlugin;
 import me.florian.varlight.command.ArgumentIterator;
+import me.florian.varlight.command.VarLightCommand;
 import me.florian.varlight.command.VarLightSubCommand;
 import org.bukkit.command.CommandSender;
 
-public class VarLightCommandDebug implements VarLightSubCommand {
+public class VarLightCommandDebug extends VarLightSubCommand {
 
     private final VarLightPlugin plugin;
 
@@ -20,10 +21,10 @@ public class VarLightCommandDebug implements VarLightSubCommand {
 
     @Override
     public boolean execute(CommandSender sender, ArgumentIterator args) {
-        VarLightSubCommand.assertPermission(sender, "varlight.admin");
+        VarLightCommand.assertPermission(sender, "varlight.admin");
 
         VarLightPlugin.DEBUG = !VarLightPlugin.DEBUG;
-        VarLightSubCommand.broadcastResult(sender, String.format("Updated Varlight debug state to: %s", VarLightPlugin.DEBUG), "varlight.admin");
+        VarLightCommand.broadcastResult(sender, String.format("Updated Varlight debug state to: %s", VarLightPlugin.DEBUG), "varlight.admin");
 
         return true;
     }

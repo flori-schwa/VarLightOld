@@ -2,10 +2,11 @@ package me.florian.varlight.command.commands;
 
 import me.florian.varlight.VarLightPlugin;
 import me.florian.varlight.command.ArgumentIterator;
+import me.florian.varlight.command.VarLightCommand;
 import me.florian.varlight.command.VarLightSubCommand;
 import org.bukkit.command.CommandSender;
 
-public class VarLightCommandReload implements VarLightSubCommand {
+public class VarLightCommandReload extends VarLightSubCommand {
 
     private final VarLightPlugin plugin;
 
@@ -30,10 +31,10 @@ public class VarLightCommandReload implements VarLightSubCommand {
 
     @Override
     public boolean execute(CommandSender sender, ArgumentIterator args) {
-        VarLightSubCommand.assertPermission(sender, "varlight.admin");
+        VarLightCommand.assertPermission(sender, "varlight.admin");
 
         plugin.reloadConfig();
-        VarLightSubCommand.broadcastResult(sender, "Configuration Reloaded", "varlight.admin");
+        VarLightCommand.broadcastResult(sender, "Configuration Reloaded", "varlight.admin");
         return true;
     }
 }

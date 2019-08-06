@@ -2,11 +2,12 @@ package me.florian.varlight.command.commands;
 
 import me.florian.varlight.VarLightPlugin;
 import me.florian.varlight.command.ArgumentIterator;
+import me.florian.varlight.command.VarLightCommand;
 import me.florian.varlight.command.VarLightSubCommand;
 import me.florian.varlight.command.exception.VarLightCommandException;
 import org.bukkit.command.CommandSender;
 
-public class VarLightCommandAutosave implements VarLightSubCommand {
+public class VarLightCommandAutosave extends VarLightSubCommand {
 
     private final VarLightPlugin plugin;
 
@@ -31,7 +32,7 @@ public class VarLightCommandAutosave implements VarLightSubCommand {
 
     @Override
     public boolean execute(CommandSender sender, ArgumentIterator args) {
-        VarLightSubCommand.assertPermission(sender, "varlight.admin.save");
+        VarLightCommand.assertPermission(sender, "varlight.admin.save");
 
         if (!args.hasNext()) {
             return false;
@@ -49,11 +50,11 @@ public class VarLightCommandAutosave implements VarLightSubCommand {
         plugin.initAutosave();
 
         if (newInterval > 0) {
-            VarLightSubCommand.broadcastResult(sender, String.format("Updated Autosave interval to %d Minutes", newInterval), "varlight.admin.save");
+            VarLightCommand.broadcastResult(sender, String.format("Updated Autosave interval to %d Minutes", newInterval), "varlight.admin.save");
         } else if (newInterval == 0) {
-            VarLightSubCommand.broadcastResult(sender, "Disabled Autosave", "varlight.admin.save");
+            VarLightCommand.broadcastResult(sender, "Disabled Autosave", "varlight.admin.save");
         } else {
-            VarLightSubCommand.broadcastResult(sender, "Enabled Persist On Save", "varlight.admin.save");
+            VarLightCommand.broadcastResult(sender, "Enabled Persist On Save", "varlight.admin.save");
         }
 
         return true;
