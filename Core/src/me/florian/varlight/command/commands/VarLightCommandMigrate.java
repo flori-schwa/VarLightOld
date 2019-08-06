@@ -9,6 +9,9 @@ import me.florian.varlight.persistence.LightSourcePersistor;
 import me.florian.varlight.persistence.PersistentLightSource;
 import org.bukkit.command.CommandSender;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class VarLightCommandMigrate extends VarLightSubCommand {
 
     private final VarLightPlugin plugin;
@@ -79,5 +82,10 @@ public class VarLightCommandMigrate extends VarLightSubCommand {
         VarLightCommand.broadcastResult(sender, String.format("All Light sources migrated (total migrated: %d, skipped: %d)", totalMigrated.i, totalSkipped.i), node);
 
         return true;
+    }
+
+    @Override
+    public List<String> tabComplete(CommandSender sender, ArgumentIterator args) {
+        return new ArrayList<>();
     }
 }

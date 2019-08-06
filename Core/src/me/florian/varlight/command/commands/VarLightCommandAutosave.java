@@ -7,6 +7,9 @@ import me.florian.varlight.command.VarLightSubCommand;
 import me.florian.varlight.command.exception.VarLightCommandException;
 import org.bukkit.command.CommandSender;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class VarLightCommandAutosave extends VarLightSubCommand {
 
     private final VarLightPlugin plugin;
@@ -58,5 +61,10 @@ public class VarLightCommandAutosave extends VarLightSubCommand {
         }
 
         return true;
+    }
+
+    @Override
+    public List<String> tabComplete(CommandSender sender, ArgumentIterator args) {
+        return new ArrayList<>();
     }
 }

@@ -467,6 +467,11 @@ public class VarLightCommand implements CommandExecutor, TabCompleter {
         final List<String> suggestions = new ArrayList<>();
 
         final int[] coords = getCoordinatesLookingAt(player);
+
+        if (coords.length == 0) {
+            return suggestions;
+        }
+
         final int[] toSuggest = new int[3 - completedCoords];
 
         System.arraycopy(coords, completedCoords, toSuggest, 0, toSuggest.length);
@@ -491,6 +496,10 @@ public class VarLightCommand implements CommandExecutor, TabCompleter {
 
     private static int[] getCoordinatesLookingAt(Player player) {
         Block targetBlock = player.getTargetBlockExact(10, FluidCollisionMode.NEVER);
+
+        if (targetBlock == null) {
+            return new int[0];
+        }
 
         return new int[]{
                 targetBlock.getX(),

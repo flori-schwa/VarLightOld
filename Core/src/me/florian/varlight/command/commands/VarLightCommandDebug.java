@@ -6,6 +6,9 @@ import me.florian.varlight.command.VarLightCommand;
 import me.florian.varlight.command.VarLightSubCommand;
 import org.bukkit.command.CommandSender;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class VarLightCommandDebug extends VarLightSubCommand {
 
     private final VarLightPlugin plugin;
@@ -27,5 +30,10 @@ public class VarLightCommandDebug extends VarLightSubCommand {
         VarLightCommand.broadcastResult(sender, String.format("Updated Varlight debug state to: %s", VarLightPlugin.DEBUG), "varlight.admin");
 
         return true;
+    }
+
+    @Override
+    public List<String> tabComplete(CommandSender sender, ArgumentIterator args) {
+        return new ArrayList<>();
     }
 }

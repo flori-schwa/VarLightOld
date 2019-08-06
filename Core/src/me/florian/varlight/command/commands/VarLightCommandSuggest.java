@@ -6,6 +6,9 @@ import me.florian.varlight.command.VarLightSubCommand;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class VarLightCommandSuggest extends VarLightSubCommand {
 
     private final VarLightPlugin plugin;
@@ -27,5 +30,10 @@ public class VarLightCommandSuggest extends VarLightSubCommand {
 
         plugin.getNmsAdapter().suggestCommand((Player) sender, args.join());
         return true;
+    }
+
+    @Override
+    public List<String> tabComplete(CommandSender sender, ArgumentIterator args) {
+        return new ArrayList<>();
     }
 }
