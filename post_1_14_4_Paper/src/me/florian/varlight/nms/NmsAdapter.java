@@ -37,6 +37,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.IntSupplier;
@@ -203,6 +204,11 @@ public class NmsAdapter implements INmsAdapter, Listener {
         }
 
         return lightSource.getEmittingLight();
+    }
+
+    @Override
+    public Block getTargetBlockExact(Player player, int maxDistance) {
+        return player.getTargetBlockExact(maxDistance, FluidCollisionMode.NEVER);
     }
 
     // region Util Methods

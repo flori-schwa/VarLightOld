@@ -55,6 +55,8 @@ public interface INmsAdapter {
 
     boolean hasCooldown(Player player, Material material);
 
+    Block getTargetBlockExact(Player player, int maxDistance);
+
     String getNumericMinecraftVersion();
 
     default NumericMajorMinorVersion getMinecraftVersion() {

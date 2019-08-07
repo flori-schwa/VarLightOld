@@ -2,6 +2,7 @@ package me.florian.varlight.command.commands;
 
 import me.florian.varlight.VarLightPlugin;
 import me.florian.varlight.command.ArgumentIterator;
+import me.florian.varlight.command.CommandSuggestions;
 import me.florian.varlight.command.VarLightCommand;
 import me.florian.varlight.command.VarLightSubCommand;
 import org.bukkit.command.CommandSender;
@@ -73,13 +74,11 @@ public class VarLightCommandPermission extends VarLightSubCommand {
     }
 
     @Override
-    public List<String> tabComplete(CommandSender sender, ArgumentIterator args) {
-        final int arguments = args.length;
-
-        if (arguments != 1) {
-            return new ArrayList<>();
+    public void tabComplete(CommandSuggestions commandSuggestions) {
+        if (commandSuggestions.getArgumentCount() != 1) {
+            return;
         }
 
-        return VarLightCommand.suggestChoice(args.get(0), "get", "set", "unset");
+        commandSuggestions.suggestChoices("get", "set", "unset");
     }
 }

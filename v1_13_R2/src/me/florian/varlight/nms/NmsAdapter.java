@@ -6,8 +6,8 @@ import me.florian.varlight.util.IntPosition;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.server.v1_13_R2.*;
+import org.bukkit.*;
 import org.bukkit.Chunk;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -173,5 +173,10 @@ public class NmsAdapter implements INmsAdapter {
     @Override
     public boolean hasCooldown(Player player, Material material) {
         return player.hasCooldown(material);
+    }
+
+    @Override
+    public Block getTargetBlockExact(Player player, int maxDistance) {
+        return player.getTargetBlockExact(maxDistance, FluidCollisionMode.NEVER);
     }
 }

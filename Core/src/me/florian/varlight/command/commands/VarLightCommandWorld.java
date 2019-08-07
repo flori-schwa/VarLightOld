@@ -3,6 +3,7 @@ package me.florian.varlight.command.commands;
 import me.florian.varlight.VarLightConfiguration;
 import me.florian.varlight.VarLightPlugin;
 import me.florian.varlight.command.ArgumentIterator;
+import me.florian.varlight.command.CommandSuggestions;
 import me.florian.varlight.command.VarLightCommand;
 import me.florian.varlight.command.VarLightSubCommand;
 import org.bukkit.Bukkit;
@@ -11,6 +12,7 @@ import org.bukkit.command.CommandSender;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class VarLightCommandWorld extends VarLightSubCommand {
 
@@ -108,34 +110,33 @@ public class VarLightCommandWorld extends VarLightSubCommand {
     }
 
     @Override
-    public List<String> tabComplete(CommandSender sender, ArgumentIterator args) {
-        final int arguments = args.length;
-
-        switch (arguments) {
+    public void tabComplete(CommandSuggestions commandSuggestions) {
+        switch (commandSuggestions.getArgumentCount()) {
             case 1: {
-                return VarLightCommand.suggestChoice(args.get(0), "add", "remove", "list");
+                commandSuggestions.suggestChoices("add", "remove", "list");
+                return;
             }
+
             case 2: {
-                switch (args.get(0).toLowerCase()) {
+                switch (commandSuggestions.getArgs()[0].toLowerCase()) {
                     case "add": {
-                        return VarLightCommand.suggestChoice(args.get(1),
+                        commandSuggestions.suggestChoices(
                                 Bukkit.getWorlds().stream()
                                         .filter(w -> !plugin.getConfiguration().getWorlds(worldListType).contains(w))
-                                        .map(World::getName).toArray(String[]::new));
+                                        .map(World::getName).collect(Collectors.toSet())
+                        );
+
+                        return;
                     }
 
                     case "remove": {
-                        return VarLightCommand.suggestChoice(args.get(1),
-                                plugin.getConfiguration().getWorlds(worldListType).stream().map(World::getName).toArray(String[]::new));
-                    }
-
-                    default: {
-                        return new ArrayList<>();
+                        commandSuggestions.suggestChoices(plugin.getConfiguration().getWorlds(worldListType).stream()
+                                .map(World::getName)
+                                .collect(Collectors.toSet())
+                        );
                     }
                 }
             }
         }
-
-        return new ArrayList<>();
     }
 }

@@ -3,8 +3,6 @@ package me.florian.varlight.command;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 
-import java.util.List;
-
 public abstract class VarLightSubCommand {
 
     public abstract String getName();
@@ -43,8 +41,8 @@ public abstract class VarLightSubCommand {
 
     public abstract boolean execute(CommandSender sender, ArgumentIterator args);
 
-    public List<String> tabComplete(CommandSender sender, ArgumentIterator args) {
-        return null;
+    public void tabComplete(CommandSuggestions commandSuggestions) {
+
     }
 
 }

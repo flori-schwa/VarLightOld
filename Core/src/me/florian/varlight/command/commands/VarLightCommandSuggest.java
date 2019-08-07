@@ -31,9 +31,4 @@ public class VarLightCommandSuggest extends VarLightSubCommand {
         plugin.getNmsAdapter().suggestCommand((Player) sender, args.join());
         return true;
     }
-
-    @Override
-    public List<String> tabComplete(CommandSender sender, ArgumentIterator args) {
-        return new ArrayList<>();
-    }
 }

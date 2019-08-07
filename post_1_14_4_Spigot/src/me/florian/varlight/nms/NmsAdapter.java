@@ -204,6 +204,11 @@ public class NmsAdapter implements INmsAdapter, Listener {
         return lightSource.getEmittingLight();
     }
 
+    @Override
+    public Block getTargetBlockExact(Player player, int maxDistance) {
+        return player.getTargetBlockExact(maxDistance, FluidCollisionMode.NEVER);
+    }
+
     // region Util Methods
 
     private WorldServer getNmsWorld(World world) {

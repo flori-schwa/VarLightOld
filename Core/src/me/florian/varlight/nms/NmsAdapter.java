@@ -58,4 +58,9 @@ public class NmsAdapter implements INmsAdapter {
     public String getNumericMinecraftVersion() {
         throw new AbstractMethodError();
     }
+
+    @Override
+    public Block getTargetBlockExact(Player player, int maxDistance) {
+        throw new AbstractMethodError();
+    }
 }

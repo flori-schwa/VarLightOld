@@ -83,9 +83,4 @@ public class VarLightCommandMigrate extends VarLightSubCommand {
 
         return true;
     }
-
-    @Override
-    public List<String> tabComplete(CommandSender sender, ArgumentIterator args) {
-        return new ArrayList<>();
-    }
 }

@@ -426,7 +426,10 @@ public class VarLightCommand implements CommandExecutor, TabCompleter {
             String[] newArgs = new String[args.length - 1];
             System.arraycopy(args, 1, newArgs, 0, newArgs.length);
 
-            return subCommand.tabComplete(commandSender, new ArgumentIterator(newArgs));
+            CommandSuggestions commandSuggestions = new CommandSuggestions(plugin, commandSender, newArgs);
+            subCommand.tabComplete(commandSuggestions);
+
+            return commandSuggestions.getSuggestions();
         }
     }
 
@@ -462,61 +465,7 @@ public class VarLightCommand implements CommandExecutor, TabCompleter {
         });
     }
 
-    public static List<String> suggestBlockPosition(Player player, String currentArg, int completedCoords) {
-
-        final List<String> suggestions = new ArrayList<>();
-
-        final int[] coords = getCoordinatesLookingAt(player);
-
-        if (coords.length == 0) {
-            return suggestions;
-        }
-
-        final int[] toSuggest = new int[3 - completedCoords];
-
-        System.arraycopy(coords, completedCoords, toSuggest, 0, toSuggest.length);
-
-        for (int i = 0; i < toSuggest.length; i++) {
-            StringBuilder builder = new StringBuilder();
-
-            for (int j = 0; j <= i; j++) {
-                builder.append(toSuggest[j]);
-                builder.append(" ");
-            }
-
-            String suggestion = builder.toString().trim();
-
-            if (suggestion.startsWith(currentArg)) {
-                suggestions.add(suggestion);
-            }
-        }
-
-        return suggestions;
-    }
-
-    private static int[] getCoordinatesLookingAt(Player player) {
-        Block targetBlock = player.getTargetBlockExact(10, FluidCollisionMode.NEVER);
-
-        if (targetBlock == null) {
-            return new int[0];
-        }
-
-        return new int[]{
-                targetBlock.getX(),
-                targetBlock.getY(),
-                targetBlock.getZ()
-        };
-    }
-
-    public static List<String> suggestChoice(String currentArg, String... choices) {
-        final List<String> suggestions = new ArrayList<>();
-
-        for (String choice : choices) {
-            if (choice.startsWith(currentArg)) {
-                suggestions.add(choice);
-            }
-        }
-
-        return suggestions;
+    public VarLightPlugin getPlugin() {
+        return plugin;
     }
 }

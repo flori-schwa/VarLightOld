@@ -2,6 +2,7 @@ package me.florian.varlight.command.commands;
 
 import me.florian.varlight.VarLightPlugin;
 import me.florian.varlight.command.ArgumentIterator;
+import me.florian.varlight.command.CommandSuggestions;
 import me.florian.varlight.command.VarLightCommand;
 import me.florian.varlight.command.VarLightSubCommand;
 import me.florian.varlight.command.exception.VarLightCommandException;
@@ -16,6 +17,7 @@ import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class VarLightCommandUpdate extends VarLightSubCommand {
 
@@ -112,20 +114,15 @@ public class VarLightCommandUpdate extends VarLightSubCommand {
     }
 
     @Override
-    public List<String> tabComplete(CommandSender sender, ArgumentIterator args) {
-        if (!(sender instanceof Player)) {
-            return new ArrayList<>();
-        }
-
-        final Player player = (Player) sender;
-        final int arguments = args.length;
-
-        if (arguments == 1) {
-            return VarLightCommand.suggestChoice(args.get(0), Bukkit.getWorlds().stream().filter(w -> LightSourcePersistor.hasPersistor(plugin, w)).map(World::getName).toArray(String[]::new));
-        } else if (arguments <= 4) {
-            return VarLightCommand.suggestBlockPosition(player, args.get(arguments - 1), arguments - 2);
-        } else {
-            return new ArrayList<>();
+    public void tabComplete(CommandSuggestions commandSuggestions) {
+        if (commandSuggestions.getArgumentCount() == 1) {
+            commandSuggestions.suggestChoices(Bukkit.getWorlds().stream()
+                    .filter(w -> LightSourcePersistor.hasPersistor(plugin, w))
+                    .map(World::getName)
+                    .collect(Collectors.toSet())
+            );
+        } else if (commandSuggestions.getArgumentCount() <= 4) {
+            commandSuggestions.suggestBlockPosition(commandSuggestions.getArgumentCount() - 2);
         }
     }
 }

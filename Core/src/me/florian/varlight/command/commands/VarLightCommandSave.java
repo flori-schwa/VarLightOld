@@ -2,6 +2,7 @@ package me.florian.varlight.command.commands;
 
 import me.florian.varlight.VarLightPlugin;
 import me.florian.varlight.command.ArgumentIterator;
+import me.florian.varlight.command.CommandSuggestions;
 import me.florian.varlight.command.VarLightCommand;
 import me.florian.varlight.command.VarLightSubCommand;
 import me.florian.varlight.persistence.LightSourcePersistor;
@@ -10,9 +11,8 @@ import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class VarLightCommandSave extends VarLightSubCommand {
 
@@ -83,21 +83,17 @@ public class VarLightCommandSave extends VarLightSubCommand {
     }
 
     @Override
-    public List<String> tabComplete(CommandSender sender, ArgumentIterator args) {
-        final int arguments = args.length;
-        final List<String> suggestions = new ArrayList<>();
-
-        if (arguments != 1) {
-            return suggestions;
+    public void tabComplete(CommandSuggestions commandSuggestions) {
+        if (commandSuggestions.getArgumentCount() != 1) {
+            return;
         }
 
-        if ("all".startsWith(args.get(0))) {
-            suggestions.add("all");
-        }
-
-        suggestions.addAll(VarLightCommand.suggestChoice(args.get(0), Bukkit.getWorlds().stream()
-                .filter(w -> LightSourcePersistor.hasPersistor(plugin, w)).map(World::getName).toArray(String[]::new)));
-
-        return suggestions;
+        commandSuggestions
+                .addSuggestion("all")
+                .suggestChoices(Bukkit.getWorlds().stream()
+                        .filter(w -> LightSourcePersistor.hasPersistor(plugin, w))
+                        .map(World::getName)
+                        .collect(Collectors.toSet())
+                );
     }
 }

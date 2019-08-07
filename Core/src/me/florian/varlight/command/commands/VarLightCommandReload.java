@@ -40,9 +40,4 @@ public class VarLightCommandReload extends VarLightSubCommand {
         VarLightCommand.broadcastResult(sender, "Configuration Reloaded", "varlight.admin");
         return true;
     }
-
-    @Override
-    public List<String> tabComplete(CommandSender sender, ArgumentIterator args) {
-        return new ArrayList<>();
-    }
 }

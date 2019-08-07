@@ -18,12 +18,13 @@ import org.bukkit.material.MaterialData;
 import org.bukkit.material.PistonBaseMaterial;
 import org.bukkit.material.Redstone;
 
+import java.util.HashSet;
 import java.util.List;
 
 @ForMinecraft(version = "1.9.4")
 public class NmsAdapter implements INmsAdapter {
 
-    private static final BlockFace[] CHECK_FACES = new BlockFace[] {
+    private static final BlockFace[] CHECK_FACES = new BlockFace[]{
             BlockFace.NORTH,
             BlockFace.EAST,
             BlockFace.SOUTH,
@@ -162,5 +163,10 @@ public class NmsAdapter implements INmsAdapter {
     @Override
     public boolean hasCooldown(Player player, Material material) {
         return false;
+    }
+
+    @Override
+    public Block getTargetBlockExact(Player player, int maxDistance) {
+        return player.getTargetBlock(new HashSet<Material>(), maxDistance);
     }
 }
