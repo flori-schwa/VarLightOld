@@ -15,9 +15,8 @@ import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class VarLightCommandUpdate extends VarLightSubCommand {
 
@@ -31,11 +30,10 @@ public class VarLightCommandUpdate extends VarLightSubCommand {
     public String getName() {
         return "update";
     }
-
-
+    
     @Override
     public String getSyntax() {
-        return " <world> <x> <y> <z> <light level>";
+        return " <x> <y> <z> <light level> [world (only if using console)]";
     }
 
     @Override
@@ -47,23 +45,9 @@ public class VarLightCommandUpdate extends VarLightSubCommand {
     public boolean execute(CommandSender sender, ArgumentIterator args) {
         VarLightCommand.assertPermission(sender, "varlight.admin");
 
-        if (!args.hasParameters(5)) {
+        if (!args.hasParameters(4)) {
             return false;
         }
-
-        final World world = args.parseNext(Bukkit::getWorld);
-
-        if (world == null) {
-            VarLightCommand.sendPrefixedMessage(sender, String.format("Could not find a world with the name \"%s\"", args.previous()));
-            return true;
-        }
-
-        if (!LightSourcePersistor.hasPersistor(plugin, world)) {
-            VarLightCommand.sendPrefixedMessage(sender, "VarLight is not active in that world!");
-            return true;
-        }
-
-        final LightSourcePersistor lightSourcePersistor = LightSourcePersistor.getPersistor(plugin, world).get();
 
         final int x, y, z, lightLevel;
 
@@ -81,6 +65,30 @@ public class VarLightCommandUpdate extends VarLightSubCommand {
             VarLightCommand.sendPrefixedMessage(sender, String.format("Light level out of range, allowed: 0 <= n <= 15, got: %d", lightLevel));
             return false;
         }
+
+        World world;
+
+        if (sender instanceof Player && !args.hasNext()) {
+            world = ((Player) sender).getWorld();
+        } else {
+            if (!args.hasNext()) {
+                return false;
+            }
+
+            world = args.parseNext(Bukkit::getWorld);
+        }
+
+        if (world == null) {
+            VarLightCommand.sendPrefixedMessage(sender, String.format("Could not find a world with the name \"%s\"", args.previous()));
+            return true;
+        }
+
+        if (!LightSourcePersistor.hasPersistor(plugin, world)) {
+            VarLightCommand.sendPrefixedMessage(sender, "VarLight is not active in that world!");
+            return true;
+        }
+
+        final LightSourcePersistor lightSourcePersistor = LightSourcePersistor.getPersistor(plugin, world).get();
 
         final Location toUpdate = new Location(world, x, y, z);
         final int fromLight = LightSourcePersistor.getEmittingLightLevel(plugin, toUpdate);
@@ -114,15 +122,17 @@ public class VarLightCommandUpdate extends VarLightSubCommand {
     }
 
     @Override
-    public void tabComplete(CommandSuggestions commandSuggestions) {
-        if (commandSuggestions.getArgumentCount() == 1) {
-            commandSuggestions.suggestChoices(Bukkit.getWorlds().stream()
+    public void tabComplete(CommandSuggestions suggestions) {
+        if (suggestions.getArgumentCount() <= 3) {
+            suggestions.suggestBlockPosition(suggestions.getArgumentCount() - 1);
+        } else if (suggestions.getArgumentCount() == 4) {
+            suggestions.suggestChoices(IntStream.range(0, 16).mapToObj(String::valueOf).toArray(String[]::new));
+        } else if (suggestions.getArgumentCount() == 5) {
+            suggestions.suggestChoices(Bukkit.getWorlds().stream()
                     .filter(w -> LightSourcePersistor.hasPersistor(plugin, w))
                     .map(World::getName)
                     .collect(Collectors.toSet())
             );
-        } else if (commandSuggestions.getArgumentCount() <= 4) {
-            commandSuggestions.suggestBlockPosition(commandSuggestions.getArgumentCount() - 2);
         }
     }
 }
