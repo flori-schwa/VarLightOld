@@ -30,7 +30,7 @@ public class VarLightCommandUpdate extends VarLightSubCommand {
     public String getName() {
         return "update";
     }
-    
+
     @Override
     public String getSyntax() {
         return " <x> <y> <z> <light level> [world (only if using console)]";

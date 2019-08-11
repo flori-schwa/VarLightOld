@@ -77,7 +77,7 @@ public class NmsAdapter implements INmsAdapter {
                     continue;
                 }
 
-                if (isBlockTransparent(block)) {
+                if (isBlockTransparent(relative.toBlock(world))) {
                     recalculateBlockLight(relative.toLocation(world));
                 }
             }
