@@ -19,6 +19,7 @@
 # -------------------------------------------------------------------------------------------
 
 
+item: "GLOWSTONE_DUST"
 autosave: 5
 autosave-logpersist: 'true'
 requiredPermission: ''

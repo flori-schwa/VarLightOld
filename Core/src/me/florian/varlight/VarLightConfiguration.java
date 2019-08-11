@@ -1,6 +1,7 @@
 package me.florian.varlight;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.World;
 
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.stream.Collectors;
 
 public class VarLightConfiguration {
 
+    public static final String CONFIG_KEY_VARLIGHT_ITEM = "item";
     public static final String CONFIG_KEY_LOG_PERSIST = "autosave-logpersist";
     public static final String CONFIG_KEY_REQUIRED_PERMISSION = "requiredPermission";
     public static final String REQUIRED_PERMISSION_DEFAULT = "";
@@ -51,6 +53,26 @@ public class VarLightConfiguration {
         plugin.getConfig().set(CONFIG_KEY_REQUIRED_PERMISSION, permissionNode);
 
         save();
+    }
+
+    public Material getLightUpdateItem() {
+        Material material = Material.GLOWSTONE_DUST;
+        String configMaterial = plugin.getConfig().getString("item", "GLOWSTONE_DUST").toUpperCase();
+
+        try {
+            material = Material.valueOf(configMaterial);
+        } catch (IllegalArgumentException e) {
+            plugin.getLogger().warning(String.format("Could not find a Material with the given name \"%s\", defaulting to \"%s\"", configMaterial, material.name()));
+            return material;
+        }
+
+        if (material.isBlock() || !material.isItem()) {
+            plugin.getLogger().warning(String.format("\"%s\" cannot be used as the Light update item. Defaulting to \"%s\"", material.name(), Material.GLOWSTONE_DUST.name()));
+
+            return Material.GLOWSTONE_DUST;
+        }
+
+        return material;
     }
 
     public boolean isLoggingPersist() {

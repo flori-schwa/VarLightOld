@@ -52,6 +52,8 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     private boolean doLoad = true;
     private PersistOnWorldSaveHandler persistOnWorldSaveHandler;
 
+    private Material lightUpdateItem;
+
     private void unsupportedShutdown(String message) {
         getLogger().severe("------------------------------------------------------");
         getLogger().severe(message);
@@ -113,7 +115,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-
+        loadLightUpdateItem();
         initAutosave();
 
         Bukkit.getPluginManager().registerEvents(this, this);
@@ -176,6 +178,11 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         }
     }
 
+    public void loadLightUpdateItem() {
+        this.lightUpdateItem = configuration.getLightUpdateItem();
+        getLogger().info(String.format("Using \"%s\" as the Light update item.", lightUpdateItem.name()));
+    }
+
     public void enableInWorld(World world) {
         LightSourcePersistor.createPersistor(this, world);
         nmsAdapter.onWorldEnable(world);
@@ -205,7 +212,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     public void onInteract(PlayerInteractEvent e) {
         Optional<LightSourcePersistor> optPersistor = LightSourcePersistor.getPersistor(this, e.getPlayer().getWorld());
 
-        if (e.isCancelled() || e.getAction() != Action.RIGHT_CLICK_BLOCK && e.getAction() != Action.LEFT_CLICK_BLOCK || nmsAdapter.hasCooldown(e.getPlayer(), Material.GLOWSTONE_DUST)) {
+        if (e.isCancelled() || e.getAction() != Action.RIGHT_CLICK_BLOCK && e.getAction() != Action.LEFT_CLICK_BLOCK || nmsAdapter.hasCooldown(e.getPlayer(), lightUpdateItem)) {
             return;
         }
 
@@ -229,7 +236,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         Player player = e.getPlayer();
         ItemStack heldItem = e.getItem();
 
-        if (heldItem == null || heldItem.getType() != Material.GLOWSTONE_DUST) {
+        if (heldItem == null || heldItem.getType() != lightUpdateItem) {
             return;
         }
 
@@ -244,7 +251,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
                 break;
         }
 
-        boolean creative = player.getGameMode() == GameMode.CREATIVE;
+        final boolean creative = player.getGameMode() == GameMode.CREATIVE;
 
         if (!nmsAdapter.isValidBlock(clickedBlock)) {
             displayMessage(player, LightUpdateResult.INVALID_BLOCK);
@@ -277,7 +284,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             heldItem.setAmount(heldItem.getAmount() - 1);
         }
 
-        nmsAdapter.setCooldown(player, Material.GLOWSTONE_DUST, 5);
+        nmsAdapter.setCooldown(player, lightUpdateItem, 5);
         displayMessage(player, LightUpdateResult.UPDATED);
     }
 

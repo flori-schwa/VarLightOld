@@ -6,9 +6,6 @@ import me.florian.varlight.command.VarLightCommand;
 import me.florian.varlight.command.VarLightSubCommand;
 import org.bukkit.command.CommandSender;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class VarLightCommandReload extends VarLightSubCommand {
 
     private final VarLightPlugin plugin;
@@ -37,6 +34,8 @@ public class VarLightCommandReload extends VarLightSubCommand {
         VarLightCommand.assertPermission(sender, "varlight.admin");
 
         plugin.reloadConfig();
+        plugin.loadLightUpdateItem();
+
         VarLightCommand.broadcastResult(sender, "Configuration Reloaded", "varlight.admin");
         return true;
     }

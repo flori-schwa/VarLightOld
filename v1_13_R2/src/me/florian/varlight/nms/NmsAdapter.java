@@ -73,6 +73,8 @@ public class NmsAdapter implements INmsAdapter {
         Block block = at.getBlock();
         World world = at.getWorld();
 
+        recalculateBlockLight(at);
+
         if (lightLevel > 0) {
             getNmsWorld(world).a(EnumSkyBlock.BLOCK, toBlockPosition(at), lightLevel);
 
