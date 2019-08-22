@@ -6,8 +6,6 @@ import me.florian.varlight.command.commands.*;
 import me.florian.varlight.command.exception.VarLightCommandException;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.FluidCollisionMode;
-import org.bukkit.block.Block;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -41,6 +39,8 @@ public class VarLightCommand implements CommandExecutor, TabCompleter {
 
         registerCommand(new VarLightCommandWorld("whitelist", VarLightConfiguration.WorldListType.WHITELIST, plugin));
         registerCommand(new VarLightCommandWorld("blacklist", VarLightConfiguration.WorldListType.BLACKLIST, plugin));
+
+        registerCommand(new VarLightCommandStepSize(plugin));
 
         registerCommand(new VarLightSubCommand() {
             @Override

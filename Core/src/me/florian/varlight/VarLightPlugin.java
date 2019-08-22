@@ -18,11 +18,15 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public class VarLightPlugin extends JavaPlugin implements Listener {
@@ -51,6 +55,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     private BukkitTask autosaveTask;
     private boolean doLoad = true;
     private PersistOnWorldSaveHandler persistOnWorldSaveHandler;
+    private Map<UUID, Integer> stepSizes = new HashMap<>();
 
     private Material lightUpdateItem;
 
@@ -183,6 +188,10 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         getLogger().info(String.format("Using \"%s\" as the Light update item.", lightUpdateItem.name()));
     }
 
+    public Material getLightUpdateItem() {
+        return lightUpdateItem;
+    }
+
     public void enableInWorld(World world) {
         LightSourcePersistor.createPersistor(this, world);
         nmsAdapter.onWorldEnable(world);
@@ -206,6 +215,14 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     private boolean isNullOrEmpty(String x) {
         return x == null || x.isEmpty();
+    }
+
+    public void setStepSize(Player player, int stepSize) {
+        if (stepSize < 1 || stepSize > 15) {
+            throw new IllegalArgumentException("The Step size must be 1 <= n <= 15");
+        }
+
+        this.stepSizes.put(player.getUniqueId(), stepSize);
     }
 
     @EventHandler
@@ -251,6 +268,10 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
                 break;
         }
 
+        if (player.getGameMode() == GameMode.CREATIVE) {
+            mod *= stepSizes.getOrDefault(player.getUniqueId(), 1);
+        }
+
         final boolean creative = player.getGameMode() == GameMode.CREATIVE;
 
         if (!nmsAdapter.isValidBlock(clickedBlock)) {
@@ -286,6 +307,11 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         nmsAdapter.setCooldown(player, lightUpdateItem, 5);
         displayMessage(player, LightUpdateResult.UPDATED);
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent e) {
+        stepSizes.remove(e.getPlayer().getUniqueId());
     }
 
     private void displayMessage(Player player, LightUpdateResult lightUpdateResult) {
