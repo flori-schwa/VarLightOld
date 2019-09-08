@@ -1,12 +1,13 @@
 name: VarLight
 version: "plugin.version"
-author: Florian
-main: me.florian.varlight.VarLightPlugin
+author: shawlaf
+main: me.shawlaf.varlight.VarLightPlugin
 description: Turn Normal Blocks into Light Sources!
 api-version: "api.version"
 
 softdepend:
   - "Multiverse-Core"
+  - "LightAPI"
 
 permissions:
   varlight.admin:
