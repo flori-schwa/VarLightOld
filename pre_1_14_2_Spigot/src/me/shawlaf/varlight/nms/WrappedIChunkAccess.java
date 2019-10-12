@@ -12,9 +12,9 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class WrappedIChunkAccess implements IChunkAccess {
-    private NmsAdapter nmsAdapter;
-    private IChunkAccess wrapped;
-    private WorldServer worldServer;
+    private final NmsAdapter nmsAdapter;
+    private final IChunkAccess wrapped;
+    private final WorldServer worldServer;
 
     public WrappedIChunkAccess(NmsAdapter nmsAdapter, WorldServer worldServer, IChunkAccess wrapped) {
         this.nmsAdapter = nmsAdapter;
@@ -111,13 +111,13 @@ public class WrappedIChunkAccess implements IChunkAccess {
     }
 
     @Override
-    public void setNeedsSaving(boolean b) {
-        wrapped.setNeedsSaving(b);
+    public boolean isNeedsSaving() {
+        return wrapped.isNeedsSaving();
     }
 
     @Override
-    public boolean isNeedsSaving() {
-        return wrapped.isNeedsSaving();
+    public void setNeedsSaving(boolean b) {
+        wrapped.setNeedsSaving(b);
     }
 
     @Override

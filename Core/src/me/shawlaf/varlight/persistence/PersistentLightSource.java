@@ -13,14 +13,12 @@ import java.util.Objects;
 
 public class PersistentLightSource {
 
-    private transient World world;
-    private transient VarLightPlugin plugin;
-
     private final IntPosition position;
     private final Material type;
-    private int emittingLight;
-
     boolean migrated = false;
+    private transient World world;
+    private transient VarLightPlugin plugin;
+    private int emittingLight;
 
     PersistentLightSource(VarLightPlugin plugin, World world, IntPosition position, int emittingLight) {
         Objects.requireNonNull(plugin);
@@ -32,6 +30,10 @@ public class PersistentLightSource {
         this.position = position;
         this.type = position.toLocation(world).getBlock().getType();
         this.emittingLight = (emittingLight & 0xF);
+    }
+
+    static PersistentLightSource read(Gson gson, JsonReader jsonReader) {
+        return gson.fromJson(jsonReader, PersistentLightSource.class);
     }
 
     public World getWorld() {
@@ -55,6 +57,10 @@ public class PersistentLightSource {
         return emittingLight & 0xF;
     }
 
+    public void setEmittingLight(int lightLevel) {
+        this.emittingLight = (lightLevel & 0xF);
+    }
+
     public boolean needsMigration() {
         return plugin.getNmsAdapter().getMinecraftVersion().newerOrEquals(VarLightPlugin.MC1_14_2) && !isMigrated();
     }
@@ -74,10 +80,6 @@ public class PersistentLightSource {
         }
     }
 
-    public void setEmittingLight(int lightLevel) {
-        this.emittingLight = (lightLevel & 0xF);
-    }
-
     public boolean isValid() {
         if (!world.isChunkLoaded(position.getChunkX(), position.getChunkZ())) {
             return true; // Assume valid
@@ -89,7 +91,7 @@ public class PersistentLightSource {
             return false;
         }
 
-        if (!plugin.getNmsAdapter().isValidBlock(block)) {
+        if (plugin.getNmsAdapter().isIllegalBlock(block)) {
             return false;
         }
 
@@ -99,10 +101,6 @@ public class PersistentLightSource {
     void initialize(World world, VarLightPlugin plugin) {
         this.world = world;
         this.plugin = plugin;
-    }
-
-    static PersistentLightSource read(Gson gson, JsonReader jsonReader) {
-        return gson.fromJson(jsonReader, PersistentLightSource.class);
     }
 
     void write(Gson gson, JsonWriter jsonWriter) {

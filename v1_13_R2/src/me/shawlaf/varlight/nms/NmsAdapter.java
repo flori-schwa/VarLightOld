@@ -19,9 +19,11 @@ import org.bukkit.block.data.type.Piston;
 import org.bukkit.craftbukkit.v1_13_R2.CraftWorld;
 import org.bukkit.entity.Player;
 import org.bukkit.material.Openable;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Objects;
 
 @ForMinecraft(version = "1.13.2")
 public class NmsAdapter implements INmsAdapter {
@@ -55,7 +57,7 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public boolean isBlockTransparent(Block block) {
+    public boolean isBlockTransparent(@NotNull Block block) {
         try {
             return !lightBlockingField.getBoolean(getNmsWorld(block.getWorld()).getType(toBlockPosition(block.getLocation())).getBlock());
         } catch (Exception e) {
@@ -69,7 +71,7 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public void updateBlockLight(Location at, int lightLevel) {
+    public void updateBlockLight(@NotNull Location at, int lightLevel) {
         Block block = at.getBlock();
         World world = at.getWorld();
 
@@ -103,15 +105,17 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public int getEmittingLightLevel(Block block) {
+    public int getEmittingLightLevel(@NotNull Block block) {
         return ((CraftWorld) block.getWorld()).getHandle().getChunkAt(block.getChunk().getX(), block.getChunk().getZ()).getBlockData(block.getX(), block.getY(), block.getZ()).e();
     }
 
     @Override
-    public void sendChunkUpdates(Chunk chunk, int mask) {
+    public void sendChunkUpdates(@NotNull Chunk chunk, int mask) {
         WorldServer nmsWorld = getNmsWorld(chunk.getWorld());
         PlayerChunkMap playerChunkMap = nmsWorld.getPlayerChunkMap();
         PlayerChunk playerChunk = playerChunkMap.getChunk(chunk.getX(), chunk.getZ());
+
+        Objects.requireNonNull(playerChunk);
 
         for (int cy = 0; cy < 16; cy++) {
             if ((mask & (1 << cy)) == 0) {
@@ -131,32 +135,34 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public boolean isValidBlock(Block block) {
+    public boolean isIllegalBlock(@NotNull Block block) {
         if (!block.getType().isBlock()) {
-            return false;
+            return true;
         }
 
         if (getEmittingLightLevel(block) > 0) {
-            return false;
+            return true;
         }
 
         BlockData blockData = block.getType().createBlockData();
 
         if (blockData instanceof Powerable || blockData instanceof AnaloguePowerable || blockData instanceof Openable || blockData instanceof Piston) {
-            return false;
+            return true;
         }
 
         if (block.getType() == Material.SLIME_BLOCK) {
-            return false;
+            return true;
         }
 
         if (block.getType() == Material.BLUE_ICE) {
-            return true; // Packed ice is solid and occluding but blue ice isn't?
+            return false; // Packed ice is solid and occluding but blue ice isn't?
         }
 
-        return block.getType().isSolid() && block.getType().isOccluding();
+        return !block.getType().isSolid() || !block.getType().isOccluding();
     }
 
+    @SuppressWarnings("deprecation")
+    @NotNull
     @Override
     public String getNumericMinecraftVersion() {
         return MinecraftServer.getServer().getVersion();

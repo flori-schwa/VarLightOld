@@ -15,12 +15,10 @@ import java.util.*;
 
 public class VarLightCommand implements CommandExecutor, TabCompleter {
 
-    private VarLightPlugin plugin;
-
     private final Map<String, VarLightSubCommand> subCommands = new HashMap<>();
     private final ItemStack book;
-
     private final VarLightCommandHelp helpCommand;
+    private final VarLightPlugin plugin;
 
     public VarLightCommand(VarLightPlugin plugin) {
         this.plugin = plugin;
@@ -365,6 +363,34 @@ public class VarLightCommand implements CommandExecutor, TabCompleter {
         // endregion
     }
 
+    public static void assertPermission(CommandSender commandSender, String node) {
+        if (!commandSender.hasPermission(node)) {
+            throw new VarLightCommandException(ChatColor.RED + "You do not have permission to use this command");
+        }
+    }
+
+    public static void sendPrefixedMessage(CommandSender to, String message) {
+        to.sendMessage(getPrefixedMessage(message));
+    }
+
+    public static String getPrefixedMessage(String message) {
+        return String.format("[VarLight] %s", message);
+    }
+
+    public static void broadcastResult(CommandSender source, String message, String node) {
+        String msg = String.format("%s: %s", source.getName(), getPrefixedMessage(message));
+        String formatted = ChatColor.GRAY + "" + ChatColor.ITALIC + String.format("[%s]", msg);
+        source.sendMessage(getPrefixedMessage(message));
+
+        Bukkit.getPluginManager().getPermissionSubscriptions(node).stream().filter(p -> p != source && p instanceof CommandSender).forEach(p -> {
+            if (p instanceof ConsoleCommandSender) {
+                ((ConsoleCommandSender) p).sendMessage(msg);
+            } else {
+                ((CommandSender) p).sendMessage(formatted);
+            }
+        });
+    }
+
     public void registerCommand(VarLightSubCommand subCommand) {
         subCommands.put(subCommand.getName(), subCommand);
     }
@@ -435,34 +461,6 @@ public class VarLightCommand implements CommandExecutor, TabCompleter {
 
     public Map<String, VarLightSubCommand> getRegisteredCommands() {
         return Collections.unmodifiableMap(subCommands);
-    }
-
-    public static void assertPermission(CommandSender commandSender, String node) {
-        if (!commandSender.hasPermission(node)) {
-            throw new VarLightCommandException(ChatColor.RED + "You do not have permission to use this command");
-        }
-    }
-
-    public static void sendPrefixedMessage(CommandSender to, String message) {
-        to.sendMessage(getPrefixedMessage(message));
-    }
-
-    public static String getPrefixedMessage(String message) {
-        return String.format("[VarLight] %s", message);
-    }
-
-    public static void broadcastResult(CommandSender source, String message, String node) {
-        String msg = String.format("%s: %s", source.getName(), getPrefixedMessage(message));
-        String formatted = ChatColor.GRAY + "" + ChatColor.ITALIC + String.format("[%s]", msg);
-        source.sendMessage(getPrefixedMessage(message));
-
-        Bukkit.getPluginManager().getPermissionSubscriptions(node).stream().filter(p -> p != source && p instanceof CommandSender).forEach(p -> {
-            if (p instanceof ConsoleCommandSender) {
-                ((ConsoleCommandSender) p).sendMessage(msg);
-            } else {
-                ((CommandSender) p).sendMessage(formatted);
-            }
-        });
     }
 
     public VarLightPlugin getPlugin() {

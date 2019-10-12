@@ -12,9 +12,12 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public interface INmsAdapter {
 
@@ -30,7 +33,7 @@ public interface INmsAdapter {
 
     }
 
-    default void onWorldEnable(World world) {
+    default void onWorldEnable(@NotNull World world) {
 
     }
 
@@ -38,19 +41,19 @@ public interface INmsAdapter {
         return true;
     }
 
-    boolean isBlockTransparent(Block block);
+    boolean isBlockTransparent(@NotNull Block block);
 
-    void updateBlockLight(Location at, int lightLevel);
+    void updateBlockLight(@NotNull Location at, int lightLevel);
 
-    int getEmittingLightLevel(Block block);
+    int getEmittingLightLevel(@NotNull Block block);
 
-    void sendChunkUpdates(Chunk chunk, int mask);
+    void sendChunkUpdates(@NotNull Chunk chunk, int mask);
 
-    default void sendChunkUpdates(Chunk chunk) {
+    default void sendChunkUpdates(@NotNull Chunk chunk) {
         sendChunkUpdates(chunk, (1 << 16) - 1);
     }
 
-    boolean isValidBlock(Block block);
+    boolean isIllegalBlock(@NotNull Block block);
 
     void sendActionBarMessage(Player player, String message);
 
@@ -58,10 +61,13 @@ public interface INmsAdapter {
 
     boolean hasCooldown(Player player, Material material);
 
+    @Nullable
     Block getTargetBlockExact(Player player, int maxDistance);
 
+    @NotNull
     String getNumericMinecraftVersion();
 
+    @NotNull
     default NumericMajorMinorVersion getMinecraftVersion() {
         return new NumericMajorMinorVersion(getNumericMinecraftVersion());
     }
@@ -80,7 +86,9 @@ public interface INmsAdapter {
         );
     }
 
-    default int getChunkBitMask(Location location) {
+    default int getChunkBitMask(@NotNull Location location) {
+        Objects.requireNonNull(location);
+
         return getChunkBitMask(location.getBlockY() / 16);
     }
 
@@ -98,11 +106,18 @@ public interface INmsAdapter {
         return mask | (1 << (sectionY - 1)) | (1 << (sectionY + 1));
     }
 
-    default List<Chunk> collectChunksToUpdate(Location location) {
+    @NotNull
+    default List<Chunk> collectChunksToUpdate(@NotNull Location location) {
+        Objects.requireNonNull(location);
+
         return collectChunksToUpdate(new IntPosition(location), location.getWorld());
     }
 
-    default List<Chunk> collectChunksToUpdate(IntPosition location, World world) {
+    @NotNull
+    default List<Chunk> collectChunksToUpdate(@NotNull IntPosition location, @NotNull World world) {
+        Objects.requireNonNull(location);
+        Objects.requireNonNull(world);
+
         int chunkX = location.getChunkX();
         int chunkZ = location.getChunkZ();
 

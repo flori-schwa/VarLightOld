@@ -18,6 +18,7 @@ import org.bukkit.material.DirectionalContainer;
 import org.bukkit.material.MaterialData;
 import org.bukkit.material.PistonBaseMaterial;
 import org.bukkit.material.Redstone;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -28,7 +29,7 @@ import java.util.List;
 @ForMinecraft(version = "1.8.8")
 public class NmsAdapter implements INmsAdapter {
 
-    private static final BlockFace[] CHECK_FACES = new BlockFace[] {
+    private static final BlockFace[] CHECK_FACES = new BlockFace[]{
             BlockFace.NORTH,
             BlockFace.EAST,
             BlockFace.SOUTH,
@@ -38,11 +39,15 @@ public class NmsAdapter implements INmsAdapter {
     };
 
     private static final byte GAME_INFO = 2;
-
+    private final Class[] blacklistedDatas = new Class[]{
+            Redstone.class,
+            DirectionalContainer.class,
+            PistonBaseMaterial.class
+    };
     private Field longHashMapPlayerChunk;
     private Method broadcastPacket;
 
-
+    @SuppressWarnings("unchecked")
     public NmsAdapter(VarLightPlugin plugin) {
         try {
             Class playerChunkClass = Class.forName("net.minecraft.server.v1_8_R3.PlayerChunkMap$PlayerChunk");
@@ -62,12 +67,6 @@ public class NmsAdapter implements INmsAdapter {
         return ((LongHashMap) longHashMapPlayerChunk.get(getNmsWorld(chunk.getWorld()).getPlayerChunkMap())).getEntry(encoded);
     }
 
-    private Class[] blacklistedDatas = new Class[]{
-            Redstone.class,
-            DirectionalContainer.class,
-            PistonBaseMaterial.class
-    };
-
     private WorldServer getNmsWorld(World world) {
         return ((CraftWorld) world).getHandle();
     }
@@ -77,7 +76,7 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public boolean isBlockTransparent(Block block) {
+    public boolean isBlockTransparent(@NotNull Block block) {
         return !getNmsWorld(block.getWorld()).getType(toBlockPosition(block.getLocation())).getBlock().getMaterial().blocksLight();
     }
 
@@ -86,7 +85,7 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public void updateBlockLight(Location at, int lightLevel) {
+    public void updateBlockLight(@NotNull Location at, int lightLevel) {
         Block block = at.getBlock();
         World world = at.getWorld();
 
@@ -120,12 +119,12 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public int getEmittingLightLevel(Block block) {
+    public int getEmittingLightLevel(@NotNull Block block) {
         return getNmsWorld(block.getWorld()).getType(toBlockPosition(block.getLocation())).getBlock().r(); // TODO VERIFY
     }
 
     @Override
-    public void sendChunkUpdates(Chunk chunk, int mask) {
+    public void sendChunkUpdates(@NotNull Chunk chunk, int mask) {
         try {
             WorldServer nmsWorld = getNmsWorld(chunk.getWorld());
             broadcastPacket.invoke(getPlayerChunk(chunk), new PacketPlayOutMapChunk(nmsWorld.getChunkAt(chunk.getX(), chunk.getZ()), false, mask));
@@ -134,29 +133,30 @@ public class NmsAdapter implements INmsAdapter {
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public boolean isValidBlock(Block block) {
+    public boolean isIllegalBlock(@NotNull Block block) {
         if (!block.getType().isBlock()) {
-            return false;
+            return true;
         }
 
         if (getEmittingLightLevel(block) > 0) {
-            return false;
+            return true;
         }
 
         Class<? extends MaterialData> data = block.getType().getData();
 
         for (Class blacklisted : blacklistedDatas) {
             if (blacklisted.isAssignableFrom(data)) {
-                return false;
+                return true;
             }
         }
 
         if (block.getType() == Material.SLIME_BLOCK) {
-            return false;
+            return true;
         }
 
-        return block.getType().isSolid() && block.getType().isOccluding();
+        return !block.getType().isSolid() || !block.getType().isOccluding();
     }
 
     @Override
@@ -168,6 +168,7 @@ public class NmsAdapter implements INmsAdapter {
         ((CraftPlayer) player).getHandle().playerConnection.sendPacket(packetPlayOutChat);
     }
 
+    @NotNull
     @Override
     public String getNumericMinecraftVersion() {
         return MinecraftServer.getServer().getVersion();

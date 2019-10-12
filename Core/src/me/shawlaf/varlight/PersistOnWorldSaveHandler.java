@@ -16,8 +16,11 @@ public class PersistOnWorldSaveHandler implements Listener {
 
     @EventHandler
     public void onWorldSave(WorldSaveEvent e) {
-        LightSourcePersistor.getPersistor(plugin, e.getWorld())
-                .ifPresent(p -> p.save(Bukkit.getConsoleSender()));
+        LightSourcePersistor persistor = LightSourcePersistor.getPersistor(plugin, e.getWorld());
+
+        if (persistor != null) {
+            persistor.save(Bukkit.getConsoleSender());
+        }
     }
 
 }

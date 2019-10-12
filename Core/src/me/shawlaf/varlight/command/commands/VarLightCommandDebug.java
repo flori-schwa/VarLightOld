@@ -8,10 +8,7 @@ import org.bukkit.command.CommandSender;
 
 public class VarLightCommandDebug extends VarLightSubCommand {
 
-    private final VarLightPlugin plugin;
-
     public VarLightCommandDebug(VarLightPlugin plugin) {
-        this.plugin = plugin;
     }
 
     @Override

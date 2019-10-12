@@ -4,9 +4,9 @@ import net.minecraft.server.v1_14_R1.*;
 
 public class WrappedIBlockAccess implements IBlockAccess {
 
-    private NmsAdapter nmsAdapter;
-    private WorldServer wrappedWorld;
-    private IBlockAccess wrappedBlockAccess;
+    private final NmsAdapter nmsAdapter;
+    private final WorldServer wrappedWorld;
+    private final IBlockAccess wrappedBlockAccess;
 
     public WrappedIBlockAccess(NmsAdapter nmsAdapter, WorldServer wrappedWorld, IBlockAccess wrappedBlockAccess) {
         this.nmsAdapter = nmsAdapter;

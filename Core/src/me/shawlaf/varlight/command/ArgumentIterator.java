@@ -8,7 +8,7 @@ import java.util.stream.Stream;
 
 public class ArgumentIterator implements Iterator<String> {
     public final int length;
-    private String[] arguments;
+    private final String[] arguments;
     private int position = 0;
 
     public ArgumentIterator(String[] args) {

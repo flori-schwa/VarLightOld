@@ -25,7 +25,6 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -33,31 +32,20 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     public static final NumericMajorMinorVersion
             MC1_14_2 = new NumericMajorMinorVersion("1.14.2");
-    public static boolean DEBUG = false;
-
-    private enum LightUpdateResult {
-        INVALID_BLOCK,
-        ZERO_REACHED,
-        FIFTEEN_REACHED,
-        CANCELLED,
-        UPDATED;
-    }
-
     public static final long TICK_RATE = 20L;
+    public static boolean DEBUG = false;
     private static String PACKAGE_VERSION;
-
-    public static String getPackageVersion() {
-        return PACKAGE_VERSION;
-    }
-
+    private final Map<UUID, Integer> stepSizes = new HashMap<>();
     private INmsAdapter nmsAdapter;
     private VarLightConfiguration configuration;
     private BukkitTask autosaveTask;
     private boolean doLoad = true;
     private PersistOnWorldSaveHandler persistOnWorldSaveHandler;
-    private Map<UUID, Integer> stepSizes = new HashMap<>();
-
     private Material lightUpdateItem;
+
+    public static String getPackageVersion() {
+        return PACKAGE_VERSION;
+    }
 
     private void unsupportedShutdown(String message) {
         getLogger().severe("------------------------------------------------------");
@@ -171,8 +159,12 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         long ticks = TimeUnit.MINUTES.toSeconds(saveInterval) * TICK_RATE;
 
-        autosaveTask = Bukkit.getScheduler().runTaskTimerAsynchronously(this,
-                () -> LightSourcePersistor.getAllPersistors(this).forEach(p -> p.save(Bukkit.getConsoleSender())),
+        autosaveTask = Bukkit.getScheduler().runTaskTimer(this,
+                () -> {
+                    for (LightSourcePersistor persistor : LightSourcePersistor.getAllPersistors(this)) {
+                        persistor.save(Bukkit.getConsoleSender());
+                    }
+                },
                 ticks, ticks
         );
     }
@@ -235,19 +227,19 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
-        Optional<LightSourcePersistor> optPersistor = LightSourcePersistor.getPersistor(this, e.getPlayer().getWorld());
+        LightSourcePersistor persistor = LightSourcePersistor.getPersistor(this, e.getPlayer().getWorld());
 
         if (e.isCancelled() || e.getAction() != Action.RIGHT_CLICK_BLOCK && e.getAction() != Action.LEFT_CLICK_BLOCK || nmsAdapter.hasCooldown(e.getPlayer(), lightUpdateItem)) {
             return;
         }
 
-        if (!optPersistor.isPresent() && configuration.getVarLightEnabledWorldNames().contains(e.getPlayer().getWorld().getName())) {
+        if (persistor == null && configuration.getVarLightEnabledWorldNames().contains(e.getPlayer().getWorld().getName())) {
             enableInWorld(e.getPlayer().getWorld());
 
-            optPersistor = LightSourcePersistor.getPersistor(this, e.getPlayer().getWorld());
+            persistor = LightSourcePersistor.getPersistor(this, e.getPlayer().getWorld());
         }
 
-        if (!optPersistor.isPresent()) {
+        if (persistor == null) {
             return;
         }
 
@@ -282,7 +274,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         final boolean creative = player.getGameMode() == GameMode.CREATIVE;
 
-        if (!nmsAdapter.isValidBlock(clickedBlock)) {
+        if (nmsAdapter.isIllegalBlock(clickedBlock)) {
             displayMessage(player, LightUpdateResult.INVALID_BLOCK);
             return;
         }
@@ -302,7 +294,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         int lightTo = lightUpdateEvent.getToLight();
 
-        optPersistor.get().getOrCreatePersistentLightSource(new IntPosition(clickedBlock.getLocation()))
+        persistor.getOrCreatePersistentLightSource(new IntPosition(clickedBlock.getLocation()))
                 .setEmittingLight(lightTo);
 
         nmsAdapter.updateBlockLight(clickedBlock.getLocation(), lightTo);
@@ -350,8 +342,15 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
             case UPDATED: {
                 nmsAdapter.sendActionBarMessage(player, "Updated Light level");
-                return;
             }
         }
+    }
+
+    private enum LightUpdateResult {
+        INVALID_BLOCK,
+        ZERO_REACHED,
+        FIFTEEN_REACHED,
+        CANCELLED,
+        UPDATED
     }
 }

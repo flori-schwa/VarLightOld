@@ -15,7 +15,7 @@ public class CommandSuggestions {
     private final CommandSender commandSender;
     private final String[] args;
 
-    private List<String> suggestions = new ArrayList<>();
+    private final List<String> suggestions = new ArrayList<>();
 
     public CommandSuggestions(VarLightPlugin plugin, CommandSender commandSender, String[] args) {
         this.plugin = plugin;

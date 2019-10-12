@@ -26,17 +26,7 @@ public abstract class VarLightSubCommand {
             return null;
         }
 
-        StringBuilder builder = new StringBuilder();
-
-        builder.append(ChatColor.GOLD);
-        builder.append("/varlight ");
-        builder.append(getName());
-        builder.append(getSyntax());
-        builder.append(": ");
-        builder.append(ChatColor.RESET);
-        builder.append(getDescription());
-
-        return builder.toString();
+        return ChatColor.GOLD + "/varlight " + getName() + getSyntax() + ": " + ChatColor.RESET + getDescription();
     }
 
     public abstract boolean execute(CommandSender sender, ArgumentIterator args);

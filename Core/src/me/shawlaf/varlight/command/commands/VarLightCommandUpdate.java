@@ -83,12 +83,13 @@ public class VarLightCommandUpdate extends VarLightSubCommand {
             return true;
         }
 
-        if (!LightSourcePersistor.hasPersistor(plugin, world)) {
+
+        final LightSourcePersistor lightSourcePersistor = LightSourcePersistor.getPersistor(plugin, world);
+
+        if (lightSourcePersistor == null) {
             VarLightCommand.sendPrefixedMessage(sender, "VarLight is not active in that world!");
             return true;
         }
-
-        final LightSourcePersistor lightSourcePersistor = LightSourcePersistor.getPersistor(plugin, world).get();
 
         final Location toUpdate = new Location(world, x, y, z);
         final int fromLight = LightSourcePersistor.getEmittingLightLevel(plugin, toUpdate);
@@ -98,7 +99,7 @@ public class VarLightCommandUpdate extends VarLightSubCommand {
             return true;
         }
 
-        if (!plugin.getNmsAdapter().isValidBlock(world.getBlockAt(toUpdate))) {
+        if (plugin.getNmsAdapter().isIllegalBlock(world.getBlockAt(toUpdate))) {
             VarLightCommand.sendPrefixedMessage(sender, String.format("%s cannot be used as a custom light source!", world.getBlockAt(toUpdate).getType().name()));
             return true;
         }

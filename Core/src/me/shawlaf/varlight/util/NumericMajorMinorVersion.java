@@ -1,5 +1,7 @@
 package me.shawlaf.varlight.util;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -7,33 +9,8 @@ public class NumericMajorMinorVersion implements Comparable<NumericMajorMinorVer
 
     private final int[] versions;
 
-    public static boolean isValid(String input) {
-        try {
-            new NumericMajorMinorVersion(input);
-            return true;
-        } catch (IllegalArgumentException e) {
-            return false;
-        }
-    }
-
-    private static IllegalArgumentException forVersionString(String input, Throwable cause) {
-        return new IllegalArgumentException(String.format("Illegal version string %s", input), cause);
-    }
-
-    private static int occurrencesIn(String in, char toBeFound) {
-        int count = 0;
-
-        for (char c : in.toCharArray()) {
-            if (c == toBeFound) {
-                count++;
-            }
-        }
-
-        return count;
-    }
-
     public NumericMajorMinorVersion(String version) {
-        int expected = occurrencesIn(version, '.') + 1;
+        int expected = occurencesOfDot(version) + 1;
         String[] parts = version.split("\\.");
 
         if (expected != parts.length) {
@@ -49,6 +26,31 @@ public class NumericMajorMinorVersion implements Comparable<NumericMajorMinorVer
         } catch (NumberFormatException e) {
             throw forVersionString(version, e);
         }
+    }
+
+    public static boolean isValid(String input) {
+        try {
+            new NumericMajorMinorVersion(input);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    private static IllegalArgumentException forVersionString(String input, Throwable cause) {
+        return new IllegalArgumentException(String.format("Illegal version string %s", input), cause);
+    }
+
+    private static int occurencesOfDot(String in) {
+        int count = 0;
+
+        for (char c : in.toCharArray()) {
+            if (c == '.') {
+                count++;
+            }
+        }
+
+        return count;
     }
 
     public int length() {
@@ -89,7 +91,7 @@ public class NumericMajorMinorVersion implements Comparable<NumericMajorMinorVer
     }
 
     @Override
-    public int compareTo(NumericMajorMinorVersion o) {
+    public int compareTo(@NotNull NumericMajorMinorVersion o) {
         Objects.requireNonNull(o);
 
         int parts = Math.min(length(), o.length());

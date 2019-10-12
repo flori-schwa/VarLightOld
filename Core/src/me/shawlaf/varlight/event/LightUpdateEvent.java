@@ -10,10 +10,20 @@ import org.bukkit.event.block.BlockEvent;
 public class LightUpdateEvent extends BlockEvent implements Cancellable {
 
     public static final HandlerList HANDLERS = new HandlerList();
+    private final int fromLight;
+    private int toLight;
+    private boolean cancelled = false;
 
     public LightUpdateEvent(VarLightPlugin varLightPlugin, Block block, int mod) {
         this(block, block.getLightFromBlocks(),
                 LightSourcePersistor.getEmittingLightLevel(varLightPlugin, block.getLocation()) + mod);
+    }
+
+    public LightUpdateEvent(Block theBlock, int fromLight, int toLight) {
+        super(theBlock);
+
+        this.fromLight = fromLight & 0xF;
+        this.toLight = toLight & 0xF;
     }
 
     public static HandlerList getHandlerList() {
@@ -23,17 +33,6 @@ public class LightUpdateEvent extends BlockEvent implements Cancellable {
     @Override
     public HandlerList getHandlers() {
         return HANDLERS;
-    }
-
-    private final int fromLight;
-    private int toLight;
-    private boolean cancelled = false;
-
-    public LightUpdateEvent(Block theBlock, int fromLight, int toLight) {
-        super(theBlock);
-
-        this.fromLight = fromLight & 0xF;
-        this.toLight = toLight & 0xF;
     }
 
     public int getFromLight() {

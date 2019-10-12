@@ -11,7 +11,6 @@ import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class VarLightCommandSave extends VarLightSubCommand {
@@ -49,10 +48,10 @@ public class VarLightCommandSave extends VarLightSubCommand {
 
             Player player = (Player) sender;
 
-            Optional<LightSourcePersistor> optLightSourcePersistor = LightSourcePersistor.getPersistor(plugin, player.getWorld());
+            LightSourcePersistor persistor = LightSourcePersistor.getPersistor(plugin, player.getWorld());
 
-            if (optLightSourcePersistor.isPresent()) {
-                optLightSourcePersistor.get().save(player);
+            if (persistor != null) {
+                persistor.save(player);
             } else {
                 VarLightCommand.sendPrefixedMessage(player, String.format("No custom Light sources present in world \"%s\"", player.getWorld().getName()));
             }
@@ -70,12 +69,12 @@ public class VarLightCommandSave extends VarLightSubCommand {
         if (world == null) {
             VarLightCommand.sendPrefixedMessage(sender, "Could not find a world with that name");
         } else {
-            Optional<LightSourcePersistor> optLightSourcePersistor = LightSourcePersistor.getPersistor(plugin, world);
+            LightSourcePersistor persistor = LightSourcePersistor.getPersistor(plugin, world);
 
-            if (!optLightSourcePersistor.isPresent()) {
+            if (persistor == null) {
                 VarLightCommand.sendPrefixedMessage(sender, String.format("VarLight is not active in world \"%s\"", world.getName()));
             } else {
-                optLightSourcePersistor.get().save(sender);
+                persistor.save(sender);
             }
         }
 

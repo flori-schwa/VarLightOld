@@ -30,6 +30,7 @@ import org.bukkit.event.block.BlockEvent;
 import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.metadata.FixedMetadataValue;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
@@ -41,6 +42,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.IntSupplier;
 
+@SuppressWarnings("deprecation")
 @ForMinecraft(version = "Spigot 1.14 - 1.14.1")
 public class NmsAdapter implements INmsAdapter, Listener {
 
@@ -91,7 +93,7 @@ public class NmsAdapter implements INmsAdapter, Listener {
     }
 
     @Override
-    public void onWorldEnable(World world) {
+    public void onWorldEnable(@NotNull World world) {
         try {
             injectCustomIBlockAccess(world);
         } catch (IllegalAccessException e) {
@@ -100,7 +102,7 @@ public class NmsAdapter implements INmsAdapter, Listener {
     }
 
     @Override
-    public boolean isBlockTransparent(Block block) {
+    public boolean isBlockTransparent(@NotNull Block block) {
         try {
             return !(boolean) ReflectionHelper.Safe.get(fieldLightBlocking, getNmsWorld(block.getWorld()).getType(toBlockPosition(block.getLocation())).getBlock());
         } catch (IllegalAccessException e) {
@@ -109,7 +111,7 @@ public class NmsAdapter implements INmsAdapter, Listener {
     }
 
     @Override
-    public void updateBlockLight(final Location at, final int lightLevel) {
+    public void updateBlockLight(@NotNull final Location at, final int lightLevel) {
         final WorldServer worldServer = getNmsWorld(at.getWorld());
         final BlockPosition position = toBlockPosition(at);
         final LightEngineThreaded lightEngineThreaded = worldServer.getChunkProvider().getLightEngine();
@@ -137,7 +139,7 @@ public class NmsAdapter implements INmsAdapter, Listener {
     }
 
     @Override
-    public int getEmittingLightLevel(Block block) {
+    public int getEmittingLightLevel(@NotNull Block block) {
         IBlockData blockData = ((CraftBlock) block).getNMS();
 
         return blockData.getBlock().a(blockData);
@@ -145,35 +147,35 @@ public class NmsAdapter implements INmsAdapter, Listener {
 
     @Override
     @Deprecated
-    public void sendChunkUpdates(Chunk chunk, int mask) {
+    public void sendChunkUpdates(@NotNull Chunk chunk, int mask) {
         throw new UnsupportedOperationException("Not used in this version");
     }
 
     @Override
-    public boolean isValidBlock(Block block) {
+    public boolean isIllegalBlock(@NotNull Block block) {
         if (!block.getType().isBlock()) {
-            return false;
+            return true;
         }
 
         if (getEmittingLightLevel(block) > 0) {
-            return false;
+            return true;
         }
 
         BlockData blockData = block.getType().createBlockData();
 
         if (blockData instanceof Powerable || blockData instanceof AnaloguePowerable || blockData instanceof Openable || blockData instanceof Piston) {
-            return false;
+            return true;
         }
 
         if (block.getType() == Material.SLIME_BLOCK) {
-            return false;
+            return true;
         }
 
         if (block.getType() == Material.BLUE_ICE) {
-            return true; // Packed ice is solid and occluding but blue ice isn't?
+            return false; // Packed ice is solid and occluding but blue ice isn't?
         }
 
-        return block.getType().isSolid() && block.getType().isOccluding();
+        return !block.getType().isSolid() || !block.getType().isOccluding();
     }
 
     @Override
@@ -191,19 +193,20 @@ public class NmsAdapter implements INmsAdapter, Listener {
         return player.hasCooldown(material);
     }
 
+    @NotNull
     @Override
     public String getNumericMinecraftVersion() {
         return MinecraftServer.getServer().getVersion();
     }
 
     public int getCustomLuminance(WorldServer worldServer, BlockPosition pos, IntSupplier def) {
-        LightSourcePersistor persistor = LightSourcePersistor.getPersistor(plugin, worldServer.getWorld()).orElse(null);
+        LightSourcePersistor persistor = LightSourcePersistor.getPersistor(plugin, worldServer.getWorld());
 
         if (persistor == null) {
             return def.getAsInt();
         }
 
-        PersistentLightSource lightSource = persistor.getPersistentLightSource(pos.getX(), pos.getY(), pos.getZ()).orElse(null);
+        PersistentLightSource lightSource = persistor.getPersistentLightSource(pos.getX(), pos.getY(), pos.getZ());
 
         if (lightSource == null) {
             return def.getAsInt();
@@ -234,8 +237,11 @@ public class NmsAdapter implements INmsAdapter, Listener {
 
         CompletableFuture<IChunkAccess> future = lightEngine.a(new WrappedIChunkAccess(this, worldServer, chunk), true);
 
-        Runnable updateChunkTask = () -> collectChunksToUpdate(location)
-                .forEach(c -> queueChunkLightUpdate(c, location.getBlockY() / 16));
+        Runnable updateChunkTask = () -> {
+            for (Chunk c : collectChunksToUpdate(location)) {
+                queueChunkLightUpdate(c, location.getBlockY() >> 4);
+            }
+        };
 
         if (worldServer.getMinecraftServer().isMainThread()) {
             worldServer.getMinecraftServer().awaitTasks(future::isDone);
@@ -356,24 +362,23 @@ public class NmsAdapter implements INmsAdapter, Listener {
         };
 
         // TODO inject
-        injectCustomLightAccess(ReflectionHelper.Safe.get(fieldLightEngineChunkMap, worldServer.getChunkProvider().playerChunkMap), customLightAccess, EnumSkyBlock.BLOCK);
-        injectCustomLightAccess(worldServer.getChunkProvider().getLightEngine(), customLightAccess, EnumSkyBlock.BLOCK);
+        injectCustomLightAccess(ReflectionHelper.Safe.get(fieldLightEngineChunkMap, worldServer.getChunkProvider().playerChunkMap), customLightAccess);
+        injectCustomLightAccess(worldServer.getChunkProvider().getLightEngine(), customLightAccess);
 
         world.setMetadata(TAG_VARLIGHT_INJECTED, new FixedMetadataValue(plugin, true));
 
         plugin.getLogger().info(String.format("Injected custom IBlockAccess into world \"%s\"", world.getName()));
     }
 
-    private void injectCustomLightAccess(LightEngineThreaded lightEngine, ILightAccess toInject, EnumSkyBlock... engines) throws IllegalAccessException {
-        for (EnumSkyBlock enumSkyBlock : engines) {
-            LightEngineLayerEventListener engineLayer = lightEngine.a(enumSkyBlock);
+    private void injectCustomLightAccess(LightEngineThreaded lightEngine, ILightAccess toInject) throws IllegalAccessException {
+        LightEngineLayerEventListener engineLayer = lightEngine.a(EnumSkyBlock.BLOCK);
 
-            if (engineLayer == LightEngineLayer.Void.INSTANCE) {
-                continue;
-            }
-
-            ReflectionHelper.Safe.set(engineLayer, fieldLightEngineLayerILightAccess, toInject);
+        if (engineLayer == LightEngineLayer.Void.INSTANCE) {
+            return;
         }
+
+        ReflectionHelper.Safe.set(engineLayer, fieldLightEngineLayerILightAccess, toInject);
+
     }
 
     // endregion

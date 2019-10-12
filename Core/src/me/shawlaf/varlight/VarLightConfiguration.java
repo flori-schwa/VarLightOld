@@ -16,28 +16,7 @@ public class VarLightConfiguration {
     public static final String REQUIRED_PERMISSION_DEFAULT = "";
     public static final String CONFIG_KEY_AUTOSAVE = "autosave";
     public static final int AUTOSAVE_DEFAULT = 5;
-
-    public enum WorldListType {
-        WHITELIST("whitelist", "Whitelist"),
-        BLACKLIST("blacklist", "Blacklist");
-
-        private String configPath, name;
-
-        WorldListType(String configPath, String name) {
-            this.configPath = configPath;
-            this.name = name;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public String getConfigPath() {
-            return configPath;
-        }
-    }
-
-    private VarLightPlugin plugin;
+    private final VarLightPlugin plugin;
 
     public VarLightConfiguration(VarLightPlugin plugin) {
         this.plugin = plugin;
@@ -155,5 +134,26 @@ public class VarLightConfiguration {
 
     public void save() {
         plugin.saveConfig();
+    }
+
+    public enum WorldListType {
+        WHITELIST("whitelist", "Whitelist"),
+        BLACKLIST("blacklist", "Blacklist");
+
+        private final String configPath;
+        private final String name;
+
+        WorldListType(String configPath, String name) {
+            this.configPath = configPath;
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getConfigPath() {
+            return configPath;
+        }
     }
 }

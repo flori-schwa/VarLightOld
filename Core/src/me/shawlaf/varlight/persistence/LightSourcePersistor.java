@@ -15,6 +15,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.metadata.MetadataValue;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileReader;
@@ -26,51 +27,6 @@ import java.util.stream.Stream;
 public class LightSourcePersistor {
 
     public static final String TAG_WORLD_LIGHT_SOURCE_PERSISTOR = "varlight:persistor";
-
-    public static Stream<LightSourcePersistor> getAllPersistors(VarLightPlugin plugin) {
-        return Bukkit.getWorlds().stream().map(w -> getPersistor(plugin, w)).filter(Optional::isPresent).map(Optional::get);
-    }
-
-    public static LightSourcePersistor createPersistor(VarLightPlugin plugin, World world) {
-        if (world.hasMetadata(TAG_WORLD_LIGHT_SOURCE_PERSISTOR)) {
-            return (LightSourcePersistor) world.getMetadata(TAG_WORLD_LIGHT_SOURCE_PERSISTOR)
-                    .stream()
-                    .filter(m -> m.getOwningPlugin().equals(plugin))
-                    .findFirst().map(MetadataValue::value).orElse(null);
-        }
-
-        FixedMetadataValue fixedMetadataValue = new FixedMetadataValue(plugin, new LightSourcePersistor(plugin, world));
-        world.setMetadata(TAG_WORLD_LIGHT_SOURCE_PERSISTOR, fixedMetadataValue);
-
-        return (LightSourcePersistor) fixedMetadataValue.value();
-    }
-
-    public static boolean hasPersistor(VarLightPlugin plugin, World world) {
-        return getPersistor(plugin, world).isPresent();
-    }
-
-    public static Optional<LightSourcePersistor> getPersistor(VarLightPlugin plugin, World world) {
-        return world.getMetadata(TAG_WORLD_LIGHT_SOURCE_PERSISTOR).stream().filter(m -> m.getOwningPlugin().equals(plugin)).findFirst().map(m -> (LightSourcePersistor) m.value());
-    }
-
-    public static int getEmittingLightLevel(VarLightPlugin plugin, Location location) {
-        Optional<LightSourcePersistor> optPersistor = getPersistor(plugin, location.getWorld());
-
-        if (!optPersistor.isPresent()) {
-            return plugin.getNmsAdapter().getEmittingLightLevel(location.getBlock());
-        }
-
-        LightSourcePersistor persistor = optPersistor.get();
-        Optional<PersistentLightSource> optPersistentLightSource = persistor.getPersistentLightSource(location);
-
-        if (!optPersistentLightSource.isPresent()) {
-            return plugin.getNmsAdapter().getEmittingLightLevel(location.getBlock());
-        }
-
-        return optPersistentLightSource.get().getEmittingLight();
-    }
-
-
     private final Map<RegionCoordinates, Map<IntPosition, PersistentLightSource>> worldMap;
     private final VarLightPlugin plugin;
     private final World world;
@@ -86,6 +42,69 @@ public class LightSourcePersistor {
         this.world = world;
     }
 
+    public static List<LightSourcePersistor> getAllPersistors(VarLightPlugin plugin) {
+        List<LightSourcePersistor> list = new ArrayList<>();
+
+        for (World w : Bukkit.getWorlds()) {
+            LightSourcePersistor persistor = getPersistor(plugin, w);
+
+            if (persistor != null) {
+                list.add(persistor);
+            }
+        }
+
+        return list;
+    }
+
+    public static LightSourcePersistor createPersistor(VarLightPlugin plugin, World world) {
+        if (world.hasMetadata(TAG_WORLD_LIGHT_SOURCE_PERSISTOR)) {
+
+            for (MetadataValue m : world.getMetadata(TAG_WORLD_LIGHT_SOURCE_PERSISTOR)) {
+                if (m.getOwningPlugin().equals(plugin)) {
+                    return (LightSourcePersistor) Optional.of(m).map(MetadataValue::value).orElse(null);
+                }
+            }
+
+            return (LightSourcePersistor) Optional.<MetadataValue>empty().map(MetadataValue::value).orElse(null);
+        }
+
+        FixedMetadataValue fixedMetadataValue = new FixedMetadataValue(plugin, new LightSourcePersistor(plugin, world));
+        world.setMetadata(TAG_WORLD_LIGHT_SOURCE_PERSISTOR, fixedMetadataValue);
+
+        return (LightSourcePersistor) fixedMetadataValue.value();
+    }
+
+    public static boolean hasPersistor(VarLightPlugin plugin, World world) {
+        return getPersistor(plugin, world) != null;
+    }
+
+    @Nullable
+    public static LightSourcePersistor getPersistor(VarLightPlugin plugin, World world) {
+        for (MetadataValue metadataValue : world.getMetadata(TAG_WORLD_LIGHT_SOURCE_PERSISTOR)) {
+            if (metadataValue.getOwningPlugin().equals(plugin)) {
+                return (LightSourcePersistor) metadataValue.value();
+            }
+        }
+
+        return null;
+    }
+
+    public static int getEmittingLightLevel(VarLightPlugin plugin, Location location) {
+        LightSourcePersistor persistor = getPersistor(plugin, location.getWorld());
+
+        if (persistor == null) {
+            return plugin.getNmsAdapter().getEmittingLightLevel(location.getBlock());
+        }
+
+        PersistentLightSource lightSource = persistor.getPersistentLightSource(location);
+
+        if (lightSource == null) {
+            return plugin.getNmsAdapter().getEmittingLightLevel(location.getBlock());
+        }
+
+        return lightSource.getEmittingLight();
+    }
+
     public VarLightPlugin getPlugin() {
         return plugin;
     }
@@ -95,22 +114,33 @@ public class LightSourcePersistor {
     }
 
     public int getEmittingLightLevel(Location location, int def) {
-        return getPersistentLightSource(location).map(PersistentLightSource::getEmittingLight).orElse(def);
+
+        PersistentLightSource lightSource = getPersistentLightSource(location);
+
+        if (lightSource == null) {
+            return def;
+        }
+
+        return lightSource.getEmittingLight();
     }
 
-    public Optional<PersistentLightSource> getPersistentLightSource(Block block) {
+    @Nullable
+    public PersistentLightSource getPersistentLightSource(Block block) {
         return getPersistentLightSource(block.getLocation());
     }
 
-    public Optional<PersistentLightSource> getPersistentLightSource(Location location) {
+    @Nullable
+    public PersistentLightSource getPersistentLightSource(Location location) {
         return getPersistentLightSource(new IntPosition(location));
     }
 
-    public Optional<PersistentLightSource> getPersistentLightSource(int x, int y, int z) {
+    @Nullable
+    public PersistentLightSource getPersistentLightSource(int x, int y, int z) {
         return getPersistentLightSource(new IntPosition(x, y, z));
     }
 
-    public Optional<PersistentLightSource> getPersistentLightSource(IntPosition intPosition) {
+    @Nullable
+    public PersistentLightSource getPersistentLightSource(IntPosition intPosition) {
         Map<IntPosition, PersistentLightSource> regionMap = getRegionMap(new RegionCoordinates(intPosition));
         PersistentLightSource persistentLightSource = regionMap.get(intPosition);
 
@@ -122,7 +152,7 @@ public class LightSourcePersistor {
             }
         }
 
-        return Optional.ofNullable(persistentLightSource);
+        return persistentLightSource;
     }
 
     public PersistentLightSource createPersistentLightSource(IntPosition intPosition, int emittingLight) {
@@ -135,7 +165,8 @@ public class LightSourcePersistor {
     }
 
     public PersistentLightSource getOrCreatePersistentLightSource(IntPosition position) {
-        return getPersistentLightSource(position).orElseGet(() -> createPersistentLightSource(position, 0));
+        return Optional.ofNullable(getPersistentLightSource(position))
+                .orElseGet(() -> createPersistentLightSource(position, 0));
     }
 
     public Stream<PersistentLightSource> getAllLightSources() {
@@ -264,11 +295,7 @@ public class LightSourcePersistor {
         try (JsonReader jsonReader = new JsonReader(new FileReader(file))) {
             jsonReader.beginArray();
 
-            while (true) {
-                if (jsonReader.peek() != JsonToken.BEGIN_OBJECT) {
-                    break;
-                }
-
+            while (jsonReader.peek() != JsonToken.BEGIN_OBJECT) {
                 PersistentLightSource persistentLightSource = PersistentLightSource.read(gson, jsonReader);
                 persistentLightSource.initialize(world, plugin);
 
