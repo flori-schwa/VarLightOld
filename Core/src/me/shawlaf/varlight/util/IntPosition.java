@@ -15,6 +15,10 @@ public class IntPosition {
         this(location.getBlockX(), location.getBlockY(), location.getBlockZ());
     }
 
+    public IntPosition(long val) {
+        this((int) (val >> 38), (int) (val & 0xFFF), (int) (val << 26 >> 38));
+    }
+
     public IntPosition(int x, int y, int z) {
         this.x = x;
         this.y = y;
@@ -63,6 +67,10 @@ public class IntPosition {
 
     public boolean loadChunk(World world, boolean generate) {
         return world.loadChunk(getChunkX(), getChunkZ(), generate);
+    }
+
+    public long encode() {
+        return (((long) x & 0x3FFFFFF) << 38) | (((long) z & 0x3FFFFFF) << 12) | ((long) y & 0xFFF);
     }
 
     @Override

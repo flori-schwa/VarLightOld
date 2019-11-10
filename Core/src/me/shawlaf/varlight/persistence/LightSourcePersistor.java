@@ -1,14 +1,14 @@
 package me.shawlaf.varlight.persistence;
 
-import com.google.gson.Gson;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonToken;
-import com.google.gson.stream.JsonWriter;
 import me.shawlaf.varlight.VarLightPlugin;
+import me.shawlaf.varlight.persistence.migrate.LightDatabaseMigrator;
+import me.shawlaf.varlight.persistence.vldb.VLDBInputStream;
+import me.shawlaf.varlight.persistence.vldb.VLDBOutputStream;
 import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.RegionCoordinates;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
@@ -18,8 +18,8 @@ import org.bukkit.metadata.MetadataValue;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Stream;
@@ -40,6 +40,16 @@ public class LightSourcePersistor {
         this.worldMap = new HashMap<>();
         this.plugin = plugin;
         this.world = world;
+
+        synchronized (this.world) {
+            File varlightFolder = new File(world.getWorldFolder(), "varlight");
+
+            if (!varlightFolder.exists()) {
+                varlightFolder.mkdir();
+            }
+
+            new LightDatabaseMigrator(varlightFolder).runMigrations(plugin.getLogger());
+        }
     }
 
     public static List<LightSourcePersistor> getAllPersistors(VarLightPlugin plugin) {
@@ -58,7 +68,6 @@ public class LightSourcePersistor {
 
     public static LightSourcePersistor createPersistor(VarLightPlugin plugin, World world) {
         if (world.hasMetadata(TAG_WORLD_LIGHT_SOURCE_PERSISTOR)) {
-
             for (MetadataValue m : world.getMetadata(TAG_WORLD_LIGHT_SOURCE_PERSISTOR)) {
                 if (m.getOwningPlugin().equals(plugin)) {
                     return (LightSourcePersistor) Optional.of(m).map(MetadataValue::value).orElse(null);
@@ -170,20 +179,21 @@ public class LightSourcePersistor {
     }
 
     public Stream<PersistentLightSource> getAllLightSources() {
-
         File[] files = getSaveDirectory().listFiles();
 
-        if (files != null) {
-            for (File regionFile : files) {
-                try {
-                    String name = regionFile.getName().substring(2, regionFile.getName().length() - ".json".length());
-                    String[] coords = name.split("\\.");
+        if (files == null) {
+            return worldMap.values().stream().map(Map::values).flatMap(Collection::stream);
+        }
 
-                    RegionCoordinates regionCoordinates = new RegionCoordinates(Integer.parseInt(coords[0]), Integer.parseInt(coords[1]));
-                    getRegionMap(regionCoordinates);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+        for (File regionFile : files) {
+            try {
+                String name = regionFile.getName().substring(2, regionFile.getName().length() - ".json".length());
+                String[] coords = name.split("\\.");
+
+                RegionCoordinates regionCoordinates = new RegionCoordinates(Integer.parseInt(coords[0]), Integer.parseInt(coords[1]));
+                getRegionMap(regionCoordinates);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
 
@@ -192,44 +202,30 @@ public class LightSourcePersistor {
 
     public void save(CommandSender commandSender) {
         synchronized (world) {
-            Gson gson = new Gson();
-
             int persistedRegions = 0;
 
             List<RegionCoordinates> regionsToUnload = new ArrayList<>();
 
             for (Map.Entry<RegionCoordinates, Map<IntPosition, PersistentLightSource>> entry : worldMap.entrySet()) {
                 File saveFile = getSaveFile(entry.getKey());
-                List<IntPosition> lightSourcesToUnload = new ArrayList<>();
 
                 int written = 0, loaded = 0;
 
-                try (JsonWriter jsonWriter = new JsonWriter(new FileWriter(saveFile))) {
-                    jsonWriter.beginArray();
+                try (VLDBOutputStream out = new VLDBOutputStream(new FileOutputStream(saveFile))) {
+                    ICustomLightSource[] validLightSources = entry.getValue().values().stream().filter(PersistentLightSource::isValid).toArray(ICustomLightSource[]::new);
 
-                    for (PersistentLightSource persistentLightSource : entry.getValue().values()) {
-                        if (world.isChunkLoaded(persistentLightSource.getPosition().getChunkX(), persistentLightSource.getPosition().getChunkZ())) {
+                    out.writeInt(validLightSources.length);
+
+                    for (ICustomLightSource customLightSource : validLightSources) {
+                        written++;
+                        out.writeLightSource(customLightSource);
+
+                        if (world.isChunkLoaded(customLightSource.getPosition().getChunkX(), customLightSource.getPosition().getChunkZ())) {
                             loaded++;
-                        } else {
-                            written++;
-                            persistentLightSource.write(gson, jsonWriter);
-                            lightSourcesToUnload.add(persistentLightSource.getPosition());
-                            continue;
-                        }
-
-                        if (persistentLightSource.isValid()) {
-                            persistentLightSource.write(gson, jsonWriter);
-                            written++;
                         }
                     }
-
-                    jsonWriter.endArray();
                 } catch (IOException e) {
                     throw new LightPersistFailedException(e);
-                }
-
-                for (IntPosition intPosition : lightSourcesToUnload) {
-                    entry.getValue().remove(intPosition);
                 }
 
                 if (written == 0) {
@@ -285,28 +281,24 @@ public class LightSourcePersistor {
     }
 
     private File getSaveFile(RegionCoordinates regionCoordinates) {
-        return new File(getSaveDirectory(), String.format("r.%d.%d.json", regionCoordinates.getRegionX(), regionCoordinates.getRegionZ()));
+        return new File(getSaveDirectory(), String.format("r.%d.%d.vldb", regionCoordinates.getRegionX(), regionCoordinates.getRegionZ()));
     }
 
     private Map<IntPosition, PersistentLightSource> loadRegionMap(File file) {
         Map<IntPosition, PersistentLightSource> regionMap = new HashMap<>();
-        Gson gson = new Gson();
 
-        try (JsonReader jsonReader = new JsonReader(new FileReader(file))) {
-            jsonReader.beginArray();
+        try (VLDBInputStream in = new VLDBInputStream(new FileInputStream(file))) {
+            int count = in.readInt();
 
-            while (jsonReader.peek() != JsonToken.BEGIN_OBJECT) {
-                PersistentLightSource persistentLightSource = PersistentLightSource.read(gson, jsonReader);
-                persistentLightSource.initialize(world, plugin);
+            for (int i = 0; i < count; i++) {
+                IntPosition position = in.readPosition();
+                byte data = in.readByte();
+                Material material = Material.valueOf(in.readASCII());
 
-                regionMap.put(persistentLightSource.getPosition(), persistentLightSource);
+                regionMap.put(position, new PersistentLightSource(position, material, (data & 0xF) != 0, world, plugin, data >> 4));
             }
-
-            jsonReader.endArray();
         } catch (IOException e) {
             throw new LightPersistFailedException(e);
-        } catch (IllegalStateException e) {
-            throw new LightPersistFailedException(String.format("Failed to load %s: Malformed Region File", file.getName()), e);
         }
 
         return regionMap;

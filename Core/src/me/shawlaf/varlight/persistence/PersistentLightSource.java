@@ -1,8 +1,5 @@
 package me.shawlaf.varlight.persistence;
 
-import com.google.gson.Gson;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonWriter;
 import me.shawlaf.varlight.VarLightPlugin;
 import me.shawlaf.varlight.util.IntPosition;
 import org.bukkit.Material;
@@ -11,7 +8,7 @@ import org.bukkit.block.Block;
 
 import java.util.Objects;
 
-public class PersistentLightSource {
+public class PersistentLightSource implements ICustomLightSource {
 
     private final IntPosition position;
     private final Material type;
@@ -32,22 +29,31 @@ public class PersistentLightSource {
         this.emittingLight = (emittingLight & 0xF);
     }
 
-    static PersistentLightSource read(Gson gson, JsonReader jsonReader) {
-        return gson.fromJson(jsonReader, PersistentLightSource.class);
+    PersistentLightSource(IntPosition position, Material type, boolean migrated, World world, VarLightPlugin plugin, int emittingLight) {
+        Objects.requireNonNull(position);
+        Objects.requireNonNull(type);
+        Objects.requireNonNull(world);
+        Objects.requireNonNull(plugin);
+
+        this.position = position;
+        this.type = type;
+        this.migrated = migrated;
+        this.world = world;
+        this.plugin = plugin;
+        this.emittingLight = emittingLight;
     }
 
-    public World getWorld() {
-        return world;
-    }
-
+    @Override
     public IntPosition getPosition() {
         return position;
     }
 
+    @Override
     public Material getType() {
         return type;
     }
 
+    @Override
     public int getEmittingLight() {
 
         if (!isValid()) {
@@ -57,16 +63,21 @@ public class PersistentLightSource {
         return emittingLight & 0xF;
     }
 
+    @Override
+    public boolean isMigrated() {
+        return migrated;
+    }
+
+    public World getWorld() {
+        return world;
+    }
+
     public void setEmittingLight(int lightLevel) {
         this.emittingLight = (lightLevel & 0xF);
     }
 
     public boolean needsMigration() {
         return plugin.getNmsAdapter().getMinecraftVersion().newerOrEquals(VarLightPlugin.MC1_14_2) && !isMigrated();
-    }
-
-    public boolean isMigrated() {
-        return migrated;
     }
 
     public void migrate() {
@@ -97,15 +108,4 @@ public class PersistentLightSource {
 
         return block.getLightFromBlocks() >= emittingLight;
     }
-
-    void initialize(World world, VarLightPlugin plugin) {
-        this.world = world;
-        this.plugin = plugin;
-    }
-
-    void write(Gson gson, JsonWriter jsonWriter) {
-        gson.toJson(this, PersistentLightSource.class, jsonWriter);
-    }
-
-
 }
