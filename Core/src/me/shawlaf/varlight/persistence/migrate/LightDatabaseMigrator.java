@@ -6,11 +6,12 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Predicate;
 import java.util.logging.Logger;
 
 public class LightDatabaseMigrator {
 
-    private static final List<Migration> MIGRATIONS = new ArrayList<>();
+    private static final List<Predicate<File>> MIGRATIONS = new ArrayList<>();
 
     static {
         MIGRATIONS.add(new JsonToVLDBMigration());
@@ -46,8 +47,8 @@ public class LightDatabaseMigrator {
             }
 
             for (File file : files) {
-                for (Migration migration : MIGRATIONS) {
-                    if (migration.migrate(file)) {
+                for (Predicate<File> migration : MIGRATIONS) {
+                    if (migration.test(file)) {
                         logger.info(String.format("[%s] Migrated File \"%s\"", migration.getClass().getSimpleName(), file.getAbsolutePath()));
 
                         or = true;

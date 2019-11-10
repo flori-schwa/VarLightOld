@@ -10,10 +10,11 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Objects;
+import java.util.function.Predicate;
 
-public class JsonToVLDBMigration implements Migration {
+public class JsonToVLDBMigration implements Predicate<File> {
     @Override
-    public boolean migrate(File dataBaseFile) {
+    public boolean test(File dataBaseFile) {
 
         Objects.requireNonNull(dataBaseFile, "DB file may not be null!");
 
