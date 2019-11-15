@@ -2,13 +2,11 @@ package me.shawlaf.varlight.persistence.vldb;
 
 import me.shawlaf.varlight.persistence.ICustomLightSource;
 import me.shawlaf.varlight.util.ChunkCoords;
+import me.shawlaf.varlight.util.IntPosition;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /*
     .VLDB Format:
@@ -24,11 +22,13 @@ import java.util.Map;
     Chunk:
 
     [int16  ]       Relative coords of chunk in region (x: 0xFF00, z: 0x00FF)
-    [int24  ]       Amount of light sources in chunk, length of the next array
+    [uint24 ]       Amount of light sources in chunk, length of the next array
     [LightSource[]] Light Sources in chunk
 
-    Complete File Format:
+    Header Format:
 
+    [int32  ]       region X
+    [int32  ]       region Z
     [int16  ]       total amount of chunks with custom light sources
     [Array  ]       Offset table:
                 [int16  ]       Relative coords of chunk in region (x: 0xFF00, z: 0x00FF)
@@ -37,7 +37,7 @@ import java.util.Map;
 
 public class VLDBOutputStream implements Flushable, Closeable, AutoCloseable {
 
-    private final DataOutputStream baseStream;
+    protected final DataOutputStream baseStream;
 
 //    public static void main(String[] args) throws IOException {
 //        final boolean zipped = false;
@@ -152,6 +152,21 @@ public class VLDBOutputStream implements Flushable, Closeable, AutoCloseable {
     }
 
     public void write(ICustomLightSource[] region) throws IOException {
+        if (region.length == 0) {
+            return;
+        }
+
+        final int rx = region[0].getPosition().getRegionX();
+        final int rz = region[0].getPosition().getRegionZ();
+
+        for (ICustomLightSource iCustomLightSource : region) {
+            IntPosition pos = iCustomLightSource.getPosition();
+
+            if (pos.getRegionX() != rx || pos.getRegionZ() != rz) {
+                throw new IllegalArgumentException("Not all light sources are in the same region!");
+            }
+        }
+
         final Map<ChunkCoords, List<ICustomLightSource>> chunkMap = new HashMap<>();
 
         for (int i = 0; i < region.length; i++) {
@@ -171,13 +186,15 @@ public class VLDBOutputStream implements Flushable, Closeable, AutoCloseable {
         final ByteArrayOutputStream fileBodyBuffer = new ByteArrayOutputStream();
         final VLDBOutputStream bodyOutputStream = new VLDBOutputStream(fileBodyBuffer);
 
-        baseStream.writeShort(region.length); // [int16  ]       total amount of chunks with custom light sources
+        baseStream.writeInt(rx);
+        baseStream.writeInt(rz);
+        baseStream.writeShort(region.length);
 
         for (int i = 0; i < chunks.length; i++) {
             ChunkCoords chunkCoords = chunks[i];
 
-            baseStream.writeShort((chunkCoords.getRegionRelativeX()) << 8 | chunkCoords.getRegionRelativeZ()); // [int16  ]       Relative coords of chunk in region (x: 0xFF00, z: 0x00FF)
-            baseStream.writeInt(headerSize + fileBodyBuffer.size()); // [int32  ]       File offset for this chunk's Data
+            baseStream.writeShort((chunkCoords.getRegionRelativeX()) << 8 | chunkCoords.getRegionRelativeZ());
+            baseStream.writeInt(headerSize + fileBodyBuffer.size());
 
             bodyOutputStream.writeChunk(chunkCoords, chunkMap.get(chunkCoords).toArray(new ICustomLightSource[0]));
         }

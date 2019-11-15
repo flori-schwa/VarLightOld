@@ -45,6 +45,14 @@ public class IntPosition {
         return z >> 4;
     }
 
+    public int getRegionX() {
+        return getChunkX() >> 5;
+    }
+
+    public int getRegionZ() {
+        return getChunkZ() >> 5;
+    }
+
     public boolean outOfBounds() {
         return y < 0 || y > 255;
     }

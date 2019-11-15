@@ -3,7 +3,6 @@ package me.shawlaf.varlight.persistence;
 import me.shawlaf.varlight.VarLightPlugin;
 import me.shawlaf.varlight.persistence.migrate.LightDatabaseMigrator;
 import me.shawlaf.varlight.persistence.vldb.VLDBInputStream;
-import me.shawlaf.varlight.persistence.vldb.VLDBOutputStream;
 import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.RegionCoordinates;
 import org.bukkit.Bukkit;
@@ -19,7 +18,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Stream;
@@ -288,7 +286,7 @@ public class LightSourcePersistor {
         Map<IntPosition, PersistentLightSource> regionMap = new HashMap<>();
 
         try (VLDBInputStream in = new VLDBInputStream(new FileInputStream(file))) {
-            int count = in.readInt();
+            int count = in.readInt32();
 
             for (int i = 0; i < count; i++) {
                 IntPosition position = in.readPosition();
