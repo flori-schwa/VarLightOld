@@ -21,9 +21,6 @@ public class TestVLDB {
 
     @Test
     public void testVLDB() {
-
-        final String mat = "STONE";
-
         BasicCustomLightSource[][] testData = new BasicCustomLightSource[][]{
                 {
                         new BasicCustomLightSource(new IntPosition(0, 0, 0), "STONE", 15, true),
@@ -170,6 +167,35 @@ public class TestVLDB {
         }
 
         try (VLDBInputStream in = new VLDBInputStream(new ByteArrayInputStream(buffer))) {
+            int regionX = in.readInt32();
+            int regionZ = in.readInt32();
+
+            Assertions.assertEquals(0, regionX);
+            Assertions.assertEquals(0, regionZ);
+
+            Map<ChunkCoords, Integer> header = in.readHeader(regionX, regionZ);
+
+            Assertions.assertEquals(22, header.get(new ChunkCoords(0, 0)));
+            Assertions.assertEquals(22 + (2 + 3 + 10), header.get(new ChunkCoords(0, 1)));
+
+        } catch (IOException e) {
+            Assertions.fail("Something went wrong", e);
+        }
+
+        // endregion
+
+        // region zipped
+
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); VLDBOutputStream out = new VLDBOutputStream(new GZIPOutputStream(baos))) {
+            out.write(testData);
+            out.close();
+
+            buffer = baos.toByteArray();
+        } catch (IOException e) {
+            Assertions.fail("Something went wrong", e);
+        }
+
+        try (VLDBInputStream in = new VLDBInputStream(new GZIPInputStream(new ByteArrayInputStream(buffer)))) {
             int regionX = in.readInt32();
             int regionZ = in.readInt32();
 
