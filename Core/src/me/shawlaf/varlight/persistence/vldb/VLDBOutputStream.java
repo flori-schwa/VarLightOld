@@ -40,24 +40,19 @@ public class VLDBOutputStream implements Flushable, Closeable, AutoCloseable {
     private final DataOutputStream baseStream;
 
 //    public static void main(String[] args) throws IOException {
-//        final int regionX = -1, regionZ = -2;
+//        final boolean zipped = false;
+//        final int regionX = 0, regionZ = 0;
 //
 //        final Random random = new Random();
 //
 //        File testFile = new File("C:\\temp\\vldb_test.vldb");
-//        File jsonTest = new File("C:\\temp\\vldb_test.json");
+//
 //
 //        if (testFile.exists()) {
 //            testFile.delete();
 //        }
 //
 //        testFile.createNewFile();
-//
-//        if (jsonTest.exists()) {
-//            jsonTest.delete();
-//        }
-//
-//        jsonTest.createNewFile();
 //
 //        ICustomLightSource[] toWrite = new ICustomLightSource[32 * 32 * 16]; // 16 in each chunk in region
 //        int count = 0;
@@ -83,10 +78,27 @@ public class VLDBOutputStream implements Flushable, Closeable, AutoCloseable {
 //        }
 //
 //        try {
-//            new VLDBOutputStream(new GZIPOutputStream(new FileOutputStream(testFile))).write(toWrite);
+//            VLDBOutputStream outputStream;
+//
+//            if (zipped) {
+//                outputStream = new VLDBOutputStream(new GZIPOutputStream(new FileOutputStream(testFile)));
+//            } else {
+//                outputStream = new VLDBOutputStream(new FileOutputStream(testFile));
+//            }
+//
+//            outputStream.write(toWrite);
+//            outputStream.close();
 //        } catch (Exception e) {
 //            e.printStackTrace();
 //        }
+//
+//        File jsonTest = new File("C:\\temp\\vldb_test.json");
+//
+//        if (jsonTest.exists()) {
+//            jsonTest.delete();
+//        }
+//
+//        jsonTest.createNewFile();
 //
 //        Gson gson = new Gson();
 //
@@ -154,7 +166,7 @@ public class VLDBOutputStream implements Flushable, Closeable, AutoCloseable {
 
         final ChunkCoords[] chunks = chunkMap.keySet().toArray(new ChunkCoords[0]);
 
-        final int headerSize = 16 + chunkMap.keySet().size() * (16 + 32);
+        final int headerSize = 2 + chunks.length * (2 + 4);
 
         final ByteArrayOutputStream fileBodyBuffer = new ByteArrayOutputStream();
         final VLDBOutputStream bodyOutputStream = new VLDBOutputStream(fileBodyBuffer);
