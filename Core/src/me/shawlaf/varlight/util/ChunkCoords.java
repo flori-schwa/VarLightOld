@@ -11,6 +11,22 @@ public class ChunkCoords {
         this.z = z;
     }
 
+    public int getRegionX() {
+        return x >> 5;
+    }
+
+    public int getRegionRelativeX() {
+        return x % 32;
+    }
+
+    public int getRegionZ() {
+        return z >> 5;
+    }
+
+    public int getRegionRelativeZ() {
+        return z % 32;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

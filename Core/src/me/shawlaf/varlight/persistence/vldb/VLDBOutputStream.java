@@ -1,27 +1,17 @@
 package me.shawlaf.varlight.persistence.vldb;
 
 import me.shawlaf.varlight.persistence.ICustomLightSource;
+import me.shawlaf.varlight.util.ChunkCoords;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /*
-    .VLDB File format:
-
-    [int32]     total amount of custom light sources (N)
-    [Array(N)]
-        [int64] encoded coords of custom light source
-        [byte]  Light source data
-            MSB: [Nibble]   Custom light value (0 - F)
-            LSB: [Bool]     migrated
-        [ASCII] Material
-
-    ASCII encoding:
-
-    [int16]         Length
-    [Byte(Length)]  ASCII Bytes
-
-    NEW .VLDB Format:
+    .VLDB Format:
 
     Light Source:
 
@@ -48,6 +38,60 @@ import java.nio.charset.StandardCharsets;
 public class VLDBOutputStream implements Flushable, Closeable, AutoCloseable {
 
     private final DataOutputStream baseStream;
+
+//    public static void main(String[] args) throws IOException {
+//        final int regionX = -1, regionZ = -2;
+//
+//        final Random random = new Random();
+//
+//        File testFile = new File("C:\\temp\\vldb_test.vldb");
+//        File jsonTest = new File("C:\\temp\\vldb_test.json");
+//
+//        if (testFile.exists()) {
+//            testFile.delete();
+//        }
+//
+//        testFile.createNewFile();
+//
+//        if (jsonTest.exists()) {
+//            jsonTest.delete();
+//        }
+//
+//        jsonTest.createNewFile();
+//
+//        ICustomLightSource[] toWrite = new ICustomLightSource[32 * 32 * 16]; // 16 in each chunk in region
+//        int count = 0;
+//
+//        for (int rcx = 0; rcx < 32; rcx++) {
+//            for (int rcz = 0; rcz < 32; rcz++) {
+//                final int cx = rcx + (regionX * 32);
+//                final int cz = rcz + (regionZ * 32);
+//
+//                for (int cy = 0; cy < 16; cy++) {
+//                    toWrite[count++] = new BasicCustomLightSource(
+//                            new IntPosition(
+//                                    cx * 16 + (random.nextInt(16)),
+//                                    cy * 16 + (random.nextInt(16)),
+//                                    cz * 16 + (random.nextInt(16))
+//                            ),
+//                            "STONE",
+//                            random.nextInt(16),
+//                            random.nextBoolean()
+//                    );
+//                }
+//            }
+//        }
+//
+//        try {
+//            new VLDBOutputStream(new GZIPOutputStream(new FileOutputStream(testFile))).write(toWrite);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//
+//        Gson gson = new Gson();
+//
+//        new FileWriter(jsonTest).write(gson.toJson(toWrite));
+//    }
 
     public VLDBOutputStream(DataOutputStream baseStream) {
         this.baseStream = baseStream;
@@ -76,55 +120,63 @@ public class VLDBOutputStream implements Flushable, Closeable, AutoCloseable {
         writeASCII(lightSource.getType().name());
     }
 
-    public void writeChunk(int chunkX, int chunkZ, ICustomLightSource[] lightSources) throws IOException {
-        baseStream.writeShort((chunkX & 0xFF) << 8 | (chunkZ & 0xFF));
-        writeInt24(lightSources.length);
+    public void writeChunk(ChunkCoords chunkCoords, ICustomLightSource[] lightSources) throws IOException {
+        baseStream.writeShort((chunkCoords.getRegionRelativeX()) << 8 | chunkCoords.getRegionRelativeZ());
+        writeUInt24(lightSources.length);
 
         for (ICustomLightSource lightSource : lightSources) {
             writeLightSource(lightSource);
         }
     }
 
-    public void writeInt24(int i24) throws IOException {
-        if (i24 < 0 || i24 > ((1 << 24) - 1)) {
-            throw new IllegalArgumentException("Int24 out of range!");
+    public void writeUInt24(int ui24) throws IOException {
+        if (ui24 < 0 || ui24 > ((1 << 24) - 1)) {
+            throw new IllegalArgumentException("UInt24 out of range!");
         }
 
-        baseStream.writeByte((i24 >>> 16) & 0xFF);
-        baseStream.writeByte((i24 >>> 8) & 0xFF);
-        baseStream.writeByte(i24 & 0xFF);
+        baseStream.writeByte((ui24 >>> 16) & 0xFF);
+        baseStream.writeByte((ui24 >>> 8) & 0xFF);
+        baseStream.writeByte(ui24 & 0xFF);
     }
 
-    //    public void write(ICustomLightSource[] lightSources) throws IOException {
-//        writeInt(lightSources.length);
-//
-//        for (int i = 0; i < lightSources.length; i++) {
-//            writeLightSource(lightSources[i]);
-//        }
-//    }
-//
-//    public void writeByte(int b) throws IOException {
-//        baseStream.writeByte(b);
-//    }
-//
-//    public void writeInt(int v) throws IOException {
-//        baseStream.writeInt(v);
-//    }
-//
-//    public void writePosition(IntPosition position) throws IOException {
-//        baseStream.writeLong(position.encode());
-//    }
-//
+    public void write(ICustomLightSource[] region) throws IOException {
+        final Map<ChunkCoords, List<ICustomLightSource>> chunkMap = new HashMap<>();
+
+        for (int i = 0; i < region.length; i++) {
+            ChunkCoords chunkCoords = region[i].getPosition().toChunkCoords();
+
+            if (!chunkMap.containsKey(chunkCoords)) {
+                chunkMap.put(chunkCoords, new ArrayList<>());
+            }
+
+            chunkMap.get(chunkCoords).add(region[i]);
+        }
+
+        final ChunkCoords[] chunks = chunkMap.keySet().toArray(new ChunkCoords[0]);
+
+        final int headerSize = 16 + chunkMap.keySet().size() * (16 + 32);
+
+        final ByteArrayOutputStream fileBodyBuffer = new ByteArrayOutputStream();
+        final VLDBOutputStream bodyOutputStream = new VLDBOutputStream(fileBodyBuffer);
+
+        baseStream.writeShort(region.length); // [int16  ]       total amount of chunks with custom light sources
+
+        for (int i = 0; i < chunks.length; i++) {
+            ChunkCoords chunkCoords = chunks[i];
+
+            baseStream.writeShort((chunkCoords.getRegionRelativeX()) << 8 | chunkCoords.getRegionRelativeZ()); // [int16  ]       Relative coords of chunk in region (x: 0xFF00, z: 0x00FF)
+            baseStream.writeInt(headerSize + fileBodyBuffer.size()); // [int32  ]       File offset for this chunk's Data
+
+            bodyOutputStream.writeChunk(chunkCoords, chunkMap.get(chunkCoords).toArray(new ICustomLightSource[0]));
+        }
+
+        baseStream.write(fileBodyBuffer.toByteArray());
+    }
+
     public void writeASCII(String data) throws IOException {
         byte[] asciiData = data.getBytes(StandardCharsets.US_ASCII);
 
         baseStream.writeShort(asciiData.length);
         baseStream.write(asciiData);
     }
-//
-//    public void writeLightSource(ICustomLightSource lightSource) throws IOException {
-//        writePosition(lightSource.getPosition());
-//        writeByte(((lightSource.getEmittingLight() & 0xF) << 4) | (lightSource.isMigrated() ? 1 : 0));
-//        writeASCII(lightSource.getType().name());
-//    }
 }

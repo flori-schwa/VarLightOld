@@ -73,6 +73,10 @@ public class IntPosition {
         return (((long) x & 0x3FFFFFF) << 38) | (((long) z & 0x3FFFFFF) << 12) | ((long) y & 0xFFF);
     }
 
+    public ChunkCoords toChunkCoords() {
+        return new ChunkCoords(getChunkX(), getChunkZ());
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

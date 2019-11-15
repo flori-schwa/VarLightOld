@@ -211,22 +211,22 @@ public class LightSourcePersistor {
 
                 int written = 0, loaded = 0;
 
-                try (VLDBOutputStream out = new VLDBOutputStream(new FileOutputStream(saveFile))) {
-                    ICustomLightSource[] validLightSources = entry.getValue().values().stream().filter(PersistentLightSource::isValid).toArray(ICustomLightSource[]::new);
-
-                    out.writeInt(validLightSources.length);
-
-                    for (ICustomLightSource customLightSource : validLightSources) {
-                        written++;
-                        out.writeLightSource(customLightSource);
-
-                        if (world.isChunkLoaded(customLightSource.getPosition().getChunkX(), customLightSource.getPosition().getChunkZ())) {
-                            loaded++;
-                        }
-                    }
-                } catch (IOException e) {
-                    throw new LightPersistFailedException(e);
-                }
+//                try (VLDBOutputStream out = new VLDBOutputStream(new FileOutputStream(saveFile))) { TODO
+//                    ICustomLightSource[] validLightSources = entry.getValue().values().stream().filter(PersistentLightSource::isValid).toArray(ICustomLightSource[]::new);
+//
+//                    out.writeInt(validLightSources.length);
+//
+//                    for (ICustomLightSource customLightSource : validLightSources) {
+//                        written++;
+//                        out.writeLightSource(customLightSource);
+//
+//                        if (world.isChunkLoaded(customLightSource.getPosition().getChunkX(), customLightSource.getPosition().getChunkZ())) {
+//                            loaded++;
+//                        }
+//                    }
+//                } catch (IOException e) {
+//                    throw new LightPersistFailedException(e);
+//                }
 
                 if (written == 0) {
                     saveFile.delete();
