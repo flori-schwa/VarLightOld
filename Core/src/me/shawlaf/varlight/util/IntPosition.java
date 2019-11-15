@@ -4,10 +4,13 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
-public class IntPosition {
+public class IntPosition implements Comparable<IntPosition> {
+
+    public static final IntPosition ORIGIN = new IntPosition(0, 0, 0);
 
     private final int x, y, z;
 
@@ -55,6 +58,18 @@ public class IntPosition {
 
     public boolean outOfBounds() {
         return y < 0 || y > 255;
+    }
+
+    public int manhattanDistance(IntPosition other) {
+        Objects.requireNonNull(other);
+
+        int total = 0;
+
+        total += Math.abs(x - other.x);
+        total += Math.abs(y - other.y);
+        total += Math.abs(z - other.z);
+
+        return total;
     }
 
     public Location toLocation(World world) {
@@ -107,5 +122,10 @@ public class IntPosition {
                 ", y=" + y +
                 ", z=" + z +
                 '}';
+    }
+
+    @Override
+    public int compareTo(@NotNull IntPosition o) {
+        return Integer.compare(this.manhattanDistance(ORIGIN), o.manhattanDistance(ORIGIN));
     }
 }

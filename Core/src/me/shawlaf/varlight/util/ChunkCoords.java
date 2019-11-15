@@ -16,7 +16,7 @@ public class ChunkCoords {
     }
 
     public int getRegionRelativeX() {
-        return x % 32;
+        return ((x % 32) + 32) % 32;
     }
 
     public int getRegionZ() {
@@ -24,7 +24,7 @@ public class ChunkCoords {
     }
 
     public int getRegionRelativeZ() {
-        return z % 32;
+        return ((z % 32) + 32) % 32;
     }
 
     @Override

@@ -3,6 +3,8 @@ package me.shawlaf.varlight.persistence;
 import me.shawlaf.varlight.util.IntPosition;
 import org.bukkit.Material;
 
+import java.util.Objects;
+
 public class BasicCustomLightSource implements ICustomLightSource {
     private final IntPosition position;
     private final String type;
@@ -34,6 +36,22 @@ public class BasicCustomLightSource implements ICustomLightSource {
     @Override
     public int getEmittingLight() {
         return emittingLight;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BasicCustomLightSource that = (BasicCustomLightSource) o;
+        return emittingLight == that.emittingLight &&
+                migrated == that.migrated &&
+                position.equals(that.position) &&
+                type.equals(that.type);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(position, type, emittingLight, migrated);
     }
 
     @Override

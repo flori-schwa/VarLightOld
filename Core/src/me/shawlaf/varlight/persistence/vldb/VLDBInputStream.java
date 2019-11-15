@@ -1,9 +1,8 @@
 package me.shawlaf.varlight.persistence.vldb;
 
+import me.shawlaf.varlight.persistence.ICustomLightSource;
 import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
-import org.bukkit.craftbukkit.libs.it.unimi.dsi.fastutil.objects.Reference2IntArrayMap;
-import org.bukkit.craftbukkit.libs.it.unimi.dsi.fastutil.objects.Reference2IntMap;
 
 import java.io.Closeable;
 import java.io.DataInputStream;
@@ -11,6 +10,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.IntFunction;
 
 public class VLDBInputStream implements Closeable {
 
@@ -29,16 +33,55 @@ public class VLDBInputStream implements Closeable {
         this.baseStream.close();
     }
 
-    public Reference2IntMap<ChunkCoords> readHeader(int regionX, int regionZ) throws IOException {
+    public <L extends ICustomLightSource> L[] readAll(IntFunction<L[]> arrayCreator, VLDBFile.ToLightSource<L> toLightSource) throws IOException {
+        final int regionX = readInt32();
+        final int regionZ = readInt32();
+
+        List<L> lightSources = new ArrayList<>();
+
+        final short amountChunks = readInt16();
+
+        baseStream.skipBytes(amountChunks * (2 + 4)); // Skip header
+
+        for (int i = 0; i < amountChunks; i++) {
+            short encodedCoords = readInt16();
+
+            int cx = ((encodedCoords & 0xFF00) >>> 8) + (regionX * 32);
+            int cz = (encodedCoords & 0xFF) + (regionZ * 32);
+
+            int amountLightSources = readUInt24();
+
+            for (int j = 0; j < amountLightSources; j++) {
+                int coords = readInt16();
+                byte data = readByte();
+                String material = readASCII();
+
+                IntPosition position = new IntPosition(
+                        cx * 16 + ((coords & 0xF000) >>> 12),
+                        (coords & 0x0FF0) >>> 4,
+                        cz * 16 + (coords & 0xF)
+                );
+
+                int lightLevel = (data & 0xF0) >>> 4;
+                boolean migrated = (data & 0x0F) != 0;
+
+                lightSources.add(toLightSource.toLightSource(position, lightLevel, migrated, material));
+            }
+        }
+
+        return lightSources.toArray(arrayCreator.apply(0));
+    }
+
+    public Map<ChunkCoords, Integer> readHeader(int regionX, int regionZ) throws IOException {
         final int amountChunks = readInt16();
 
-        final Reference2IntMap<ChunkCoords> header = new Reference2IntArrayMap<>(amountChunks);
+        final Map<ChunkCoords, Integer> header = new HashMap<>(amountChunks);
 
         for (int i = 0; i < amountChunks; i++) {
             int encodedCoords = readInt16();
             int offset = readInt32();
 
-            int cx = (encodedCoords >>> 8) + (regionX * 32);
+            int cx = ((encodedCoords & 0xFF00) >>> 8) + (regionX * 32);
             int cz = (encodedCoords & 0xFF) + (regionZ * 32);
 
             header.put(new ChunkCoords(cx, cz), offset);
@@ -61,11 +104,6 @@ public class VLDBInputStream implements Closeable {
 
     public int readInt32() throws IOException {
         return baseStream.readInt();
-    }
-
-    @Deprecated
-    public IntPosition readPosition() throws IOException {
-        return new IntPosition(baseStream.readLong());
     }
 
     public String readASCII() throws IOException {

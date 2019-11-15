@@ -3,9 +3,9 @@ package me.shawlaf.varlight.persistence.vldb;
 import me.shawlaf.varlight.persistence.ICustomLightSource;
 import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
-import org.bukkit.craftbukkit.libs.it.unimi.dsi.fastutil.objects.Reference2IntMap;
 
 import java.io.*;
+import java.util.Map;
 import java.util.function.IntFunction;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -24,7 +24,7 @@ public class VLDBFile {
 
     private final int regionX, regionZ;
     private byte[] fileContents;
-    private Reference2IntMap<ChunkCoords> header;
+    private Map<ChunkCoords, Integer> header;
 //    private VLDBInputStream in;
 
     public VLDBFile(File file) throws IOException {
@@ -50,7 +50,7 @@ public class VLDBFile {
         }
 
         synchronized (lock) {
-            VLDBInputStream in = in(header.getInt(chunkCoords));
+            VLDBInputStream in = in(header.get(chunkCoords));
 
             int encodedCoords = in.readInt16();
 
@@ -98,18 +98,8 @@ public class VLDBFile {
         }
     }
 
-    private VLDBInputStream in(int offset) throws IOException {
-        VLDBInputStream in = in();
-        in.baseStream.skipBytes(offset);
-
-        return in;
-    }
-
-    private VLDBInputStream in(int offset, int length) {
-        byte[] off = new byte[length];
-        System.arraycopy(fileContents, offset, off, 0, length);
-
-        return new VLDBInputStream(new ByteArrayInputStream(off));
+    private VLDBInputStream in(int offset) {
+        return new VLDBInputStream(new ByteArrayInputStream(fileContents, offset, fileContents.length - offset));
     }
 
     private VLDBInputStream in() {

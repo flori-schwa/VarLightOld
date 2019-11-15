@@ -199,16 +199,18 @@ public class LightSourcePersistor {
     }
 
     public void save(CommandSender commandSender) {
-        synchronized (world) {
-            int persistedRegions = 0;
+        throw new RuntimeException("Not yet implemented");
 
-            List<RegionCoordinates> regionsToUnload = new ArrayList<>();
-
-            for (Map.Entry<RegionCoordinates, Map<IntPosition, PersistentLightSource>> entry : worldMap.entrySet()) {
-                File saveFile = getSaveFile(entry.getKey());
-
-                int written = 0, loaded = 0;
-
+//        synchronized (world) {
+//            int persistedRegions = 0;
+//
+//            List<RegionCoordinates> regionsToUnload = new ArrayList<>();
+//
+//            for (Map.Entry<RegionCoordinates, Map<IntPosition, PersistentLightSource>> entry : worldMap.entrySet()) {
+//                File saveFile = getSaveFile(entry.getKey());
+//
+//                int written = 0, loaded = 0;
+//
 //                try (VLDBOutputStream out = new VLDBOutputStream(new FileOutputStream(saveFile))) { TODO
 //                    ICustomLightSource[] validLightSources = entry.getValue().values().stream().filter(PersistentLightSource::isValid).toArray(ICustomLightSource[]::new);
 //
@@ -225,26 +227,26 @@ public class LightSourcePersistor {
 //                } catch (IOException e) {
 //                    throw new LightPersistFailedException(e);
 //                }
-
-                if (written == 0) {
-                    saveFile.delete();
-                } else {
-                    persistedRegions++;
-                }
-
-                if (loaded == 0) {
-                    regionsToUnload.add(entry.getKey());
-                }
-            }
-
-            for (RegionCoordinates regionCoordinates : regionsToUnload) {
-                unloadRegion(regionCoordinates);
-            }
-
-            if (plugin.getConfiguration().isLoggingPersist() || commandSender instanceof Player) { // Players will still receive the message if manually triggering a save
-                commandSender.sendMessage(String.format("[VarLight] Light Sources persisted for World \"%s\", Files written: %d", world.getName(), persistedRegions));
-            }
-        }
+//
+//                if (written == 0) {
+//                    saveFile.delete();
+//                } else {
+//                    persistedRegions++;
+//                }
+//
+//                if (loaded == 0) {
+//                    regionsToUnload.add(entry.getKey());
+//                }
+//            }
+//
+//            for (RegionCoordinates regionCoordinates : regionsToUnload) {
+//                unloadRegion(regionCoordinates);
+//            }
+//
+//            if (plugin.getConfiguration().isLoggingPersist() || commandSender instanceof Player) { // Players will still receive the message if manually triggering a save
+//                commandSender.sendMessage(String.format("[VarLight] Light Sources persisted for World \"%s\", Files written: %d", world.getName(), persistedRegions));
+//            }
+//        }
     }
 
     private void unloadRegion(RegionCoordinates key) {
@@ -283,22 +285,23 @@ public class LightSourcePersistor {
     }
 
     private Map<IntPosition, PersistentLightSource> loadRegionMap(File file) {
-        Map<IntPosition, PersistentLightSource> regionMap = new HashMap<>();
-
-        try (VLDBInputStream in = new VLDBInputStream(new FileInputStream(file))) {
-            int count = in.readInt32();
-
-            for (int i = 0; i < count; i++) {
-                IntPosition position = in.readPosition();
-                byte data = in.readByte();
-                Material material = Material.valueOf(in.readASCII());
-
-                regionMap.put(position, new PersistentLightSource(position, material, (data & 0xF) != 0, world, plugin, data >> 4));
-            }
-        } catch (IOException e) {
-            throw new LightPersistFailedException(e);
-        }
-
-        return regionMap;
+        throw new RuntimeException("Not yet implemented");
+//        Map<IntPosition, PersistentLightSource> regionMap = new HashMap<>();
+//
+//        try (VLDBInputStream in = new VLDBInputStream(new FileInputStream(file))) {
+//            int count = in.readInt32();
+//
+//            for (int i = 0; i < count; i++) {
+//                IntPosition position = in.readPosition();
+//                byte data = in.readByte();
+//                Material material = Material.valueOf(in.readASCII());
+//
+//                regionMap.put(position, new PersistentLightSource(position, material, (data & 0xF) != 0, world, plugin, data >> 4));
+//            }
+//        } catch (IOException e) {
+//            throw new LightPersistFailedException(e);
+//        }
+//
+//        return regionMap;
     }
 }

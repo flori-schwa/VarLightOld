@@ -1,5 +1,6 @@
 package me.shawlaf.varlight.persistence.vldb;
 
+import me.shawlaf.varlight.persistence.BasicCustomLightSource;
 import me.shawlaf.varlight.persistence.ICustomLightSource;
 import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
@@ -7,6 +8,7 @@ import me.shawlaf.varlight.util.IntPosition;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.zip.GZIPOutputStream;
 
 /*
     .VLDB Format:
@@ -18,6 +20,11 @@ import java.util.*;
                         MSB: [Nibble]   Custom light value (0 - F)
                         LSB: [Bool]     migrated
     [ASCII  ] Material
+
+    ASCII encoding:
+
+    [int16  ]           Length
+    [Byte[Length]]      ASCII Bytes
 
     Chunk:
 
@@ -39,59 +46,79 @@ public class VLDBOutputStream implements Flushable, Closeable, AutoCloseable {
 
     protected final DataOutputStream baseStream;
 
-//    public static void main(String[] args) throws IOException {
-//        final boolean zipped = false;
-//        final int regionX = 0, regionZ = 0;
-//
-//        final Random random = new Random();
-//
-//        File testFile = new File("C:\\temp\\vldb_test.vldb");
-//
-//
-//        if (testFile.exists()) {
-//            testFile.delete();
-//        }
-//
-//        testFile.createNewFile();
-//
-//        ICustomLightSource[] toWrite = new ICustomLightSource[32 * 32 * 16]; // 16 in each chunk in region
-//        int count = 0;
-//
-//        for (int rcx = 0; rcx < 32; rcx++) {
-//            for (int rcz = 0; rcz < 32; rcz++) {
-//                final int cx = rcx + (regionX * 32);
-//                final int cz = rcz + (regionZ * 32);
-//
-//                for (int cy = 0; cy < 16; cy++) {
-//                    toWrite[count++] = new BasicCustomLightSource(
-//                            new IntPosition(
-//                                    cx * 16 + (random.nextInt(16)),
-//                                    cy * 16 + (random.nextInt(16)),
-//                                    cz * 16 + (random.nextInt(16))
-//                            ),
-//                            "STONE",
-//                            random.nextInt(16),
-//                            random.nextBoolean()
-//                    );
+    public static void main(String[] args) throws IOException {
+        final boolean zipped = false;
+        final int regionX = 0, regionZ = 0;
+
+        final Random random = new Random();
+
+        File testFile = new File("C:\\temp\\vldb_test.vldb");
+
+
+        if (testFile.exists()) {
+            testFile.delete();
+        }
+
+        testFile.createNewFile();
+
+        ICustomLightSource[] toWrite = new ICustomLightSource[32 * 32 * 16];
+//        ICustomLightSource[] toWrite = new ICustomLightSource[32 * 32 * 16 * 16 * 256];
+        int count = 0;
+
+        for (int rcx = 0; rcx < 32; rcx++) {
+            for (int rcz = 0; rcz < 32; rcz++) {
+                final int cx = rcx + (regionX * 32);
+                final int cz = rcz + (regionZ * 32);
+
+                for (int cy = 0; cy < 16; cy++) {
+                    toWrite[count++] = new BasicCustomLightSource(
+                            new IntPosition(
+                                    cx * 16 + (random.nextInt(16)),
+                                    cy * 16 + (random.nextInt(16)),
+                                    cz * 16 + (random.nextInt(16))
+                            ),
+                            "STONE",
+                            random.nextInt(16),
+                            random.nextBoolean()
+                    );
+                }
+
+//                for (int y = 0; y < 256; y++) {
+//                    for (int z = 0; z < 16; z++) {
+//                        for (int x = 0; x < 16; x++) {
+//                                toWrite[count++] = new BasicCustomLightSource(
+//                                        new IntPosition(cx * 16 + x, y, cz * 16 + z),
+//                                        "STONE",
+//                                        random.nextInt(16),
+//                                        random.nextBoolean()
+//                                );
+//                        }
+//                    }
 //                }
-//            }
-//        }
-//
-//        try {
-//            VLDBOutputStream outputStream;
-//
-//            if (zipped) {
-//                outputStream = new VLDBOutputStream(new GZIPOutputStream(new FileOutputStream(testFile)));
-//            } else {
-//                outputStream = new VLDBOutputStream(new FileOutputStream(testFile));
-//            }
-//
-//            outputStream.write(toWrite);
-//            outputStream.close();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//
+            }
+        }
+
+        try {
+            VLDBOutputStream outputStream;
+
+            if (zipped) {
+                outputStream = new VLDBOutputStream(new GZIPOutputStream(new FileOutputStream(testFile)));
+            } else {
+                outputStream = new VLDBOutputStream(new FileOutputStream(testFile));
+            }
+
+            long start = System.currentTimeMillis();
+
+            outputStream.write(toWrite);
+            outputStream.close();
+
+            long total = System.currentTimeMillis() - start;
+
+            System.out.println("Writing took " + total + "ms");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
 //        File jsonTest = new File("C:\\temp\\vldb_test.json");
 //
 //        if (jsonTest.exists()) {
@@ -103,7 +130,7 @@ public class VLDBOutputStream implements Flushable, Closeable, AutoCloseable {
 //        Gson gson = new Gson();
 //
 //        new FileWriter(jsonTest).write(gson.toJson(toWrite));
-//    }
+    }
 
     public VLDBOutputStream(DataOutputStream baseStream) {
         this.baseStream = baseStream;
@@ -153,7 +180,7 @@ public class VLDBOutputStream implements Flushable, Closeable, AutoCloseable {
 
     public void write(ICustomLightSource[] region) throws IOException {
         if (region.length == 0) {
-            return;
+            throw new IllegalArgumentException("Amount of light sources must be > 0");
         }
 
         final int rx = region[0].getPosition().getRegionX();
@@ -181,14 +208,17 @@ public class VLDBOutputStream implements Flushable, Closeable, AutoCloseable {
 
         final ChunkCoords[] chunks = chunkMap.keySet().toArray(new ChunkCoords[0]);
 
-        final int headerSize = 2 + chunks.length * (2 + 4);
+        final int headerSize =
+                2 * 4 // region coords
+                        + 2 // short amount
+                        + chunks.length * (2 + 4); // offset table
 
         final ByteArrayOutputStream fileBodyBuffer = new ByteArrayOutputStream();
         final VLDBOutputStream bodyOutputStream = new VLDBOutputStream(fileBodyBuffer);
 
         baseStream.writeInt(rx);
         baseStream.writeInt(rz);
-        baseStream.writeShort(region.length);
+        baseStream.writeShort(chunks.length);
 
         for (int i = 0; i < chunks.length; i++) {
             ChunkCoords chunkCoords = chunks[i];
