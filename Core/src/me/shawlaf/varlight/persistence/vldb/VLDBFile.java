@@ -133,6 +133,10 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
             }
         }
 
+        if ((cx >> 5) != regionX || (cz >> 5) != regionZ) {
+            throw new IllegalArgumentException(String.format("Chunk %d %d not in region %d %d", cx, cz, regionX, regionZ));
+        }
+
         synchronized (lock) {
             final ChunkCoords chunkCoords = new ChunkCoords(cx, cz);
 
@@ -187,6 +191,10 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
             if (pos.getChunkX() != cx || pos.getChunkZ() != cz) {
                 throw new IllegalArgumentException("Not all Light sources are in the same chunk!");
             }
+        }
+
+        if (coords.getRegionX() != regionX || coords.getRegionZ() != regionZ) {
+            throw new IllegalArgumentException(String.format("Chunk %d %d not in region %d %d", coords.x, coords.z, regionX, regionZ));
         }
 
         synchronized (lock) {
@@ -249,6 +257,10 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
 
     public void removeChunk(@NotNull ChunkCoords coords) throws IOException {
         requireNonNull(coords);
+
+        if (coords.getRegionX() != regionX || coords.getRegionZ() != regionZ) {
+            throw new IllegalArgumentException(String.format("Chunk %d %d not in region %d %d", coords.x, coords.z, regionX, regionZ));
+        }
 
         synchronized (lock) {
             if (!hasChunkData(coords)) {

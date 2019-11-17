@@ -220,25 +220,29 @@ public class TestVLDB {
 
     @Test
     public void testVLDBFile(@TempDir File testDir) {
+        // region Test Data
+
         BasicCustomLightSource[] testData = new BasicCustomLightSource[]{
                 new BasicCustomLightSource(IntPosition.ORIGIN, 15, true, "STONE"), // Chunk 0,0
                 new BasicCustomLightSource(new IntPosition(16, 0, 0), 15, true, "STONE"), // Chunk 1,0
                 new BasicCustomLightSource(new IntPosition(0, 0, 16), 15, true, "STONE") // Chunk 0,1
         };
 
-        BasicCustomLightSource[] chunk22 = new BasicCustomLightSource[] {
+        BasicCustomLightSource[] chunk22 = new BasicCustomLightSource[]{
                 new BasicCustomLightSource(new IntPosition(32, 0, 32), 15, true, "STONE") // Chunk 2,2
         };
 
-        BasicCustomLightSource[] edited01DifferentLength = new BasicCustomLightSource[] {
+        BasicCustomLightSource[] edited01DifferentLength = new BasicCustomLightSource[]{
                 new BasicCustomLightSource(new IntPosition(0, 0, 16), 15, true, "STONE"), // Chunk 0,1
                 new BasicCustomLightSource(new IntPosition(0, 5, 16), 15, true, "STONE") // Chunk 0,1
         };
 
-        BasicCustomLightSource[] edited01SameLength = new BasicCustomLightSource[] {
+        BasicCustomLightSource[] edited01SameLength = new BasicCustomLightSource[]{
                 new BasicCustomLightSource(new IntPosition(0, 0, 16), 15, true, "STONE"), // Chunk 0,1
                 new BasicCustomLightSource(new IntPosition(0, 10, 16), 15, true, "STONE") // Chunk 0,1
         };
+
+        // endregion
 
         try {
             File file = new File(testDir, VLDBFile.getFileName(testData));
@@ -422,6 +426,69 @@ public class TestVLDB {
             }
 
             assertArrayEquals(vldbFile.fileContents, baos.toByteArray());
+            // endregion
+
+            // region testing bad input for insertChunk
+
+            assertThrows(IllegalArgumentException.class,
+                    () -> vldbFile.insertChunk(new BasicCustomLightSource[0])
+            );
+
+            assertThrows(IllegalArgumentException.class,
+                    () -> vldbFile.insertChunk(new BasicCustomLightSource[]{
+                            new BasicCustomLightSource(new IntPosition(5 * 16 + 1, 0, 5 * 16 + 1), 15, true, "STONE"),
+                            new BasicCustomLightSource(new IntPosition(6 * 16 + 1, 0, 5 * 16 + 1), 15, true, "STONE"),
+                    })
+            );
+
+            assertThrows(IllegalArgumentException.class,
+                    () -> vldbFile.insertChunk(new BasicCustomLightSource[]{
+                            new BasicCustomLightSource(new IntPosition(-1, 0, -1), 15, true, "STONE")
+                    })
+            );
+
+            assertThrows(IllegalStateException.class,
+                    () -> vldbFile.insertChunk(new BasicCustomLightSource[]{
+                            new BasicCustomLightSource(IntPosition.ORIGIN, 15, true, "STONE")
+                    })
+            );
+
+            // endregion
+
+            // region testing bad input for editChunk
+
+            assertThrows(IllegalArgumentException.class, () -> vldbFile.editChunk(ChunkCoords.ORIGIN, new BasicCustomLightSource[0]));
+
+            assertThrows(IllegalArgumentException.class,
+                    () -> vldbFile.editChunk(new ChunkCoords(-1, -1), new BasicCustomLightSource[]{
+                            new BasicCustomLightSource(new IntPosition(-1, 0, -1), 15, true, "STONE")
+                    })
+            );
+
+            assertThrows(IllegalArgumentException.class,
+                    () -> vldbFile.editChunk(ChunkCoords.ORIGIN, new BasicCustomLightSource[]{
+                            new BasicCustomLightSource(new IntPosition(1000, 0, 0), 15, true, "STONE")
+                    })
+            );
+
+            assertThrows(IllegalArgumentException.class,
+                    () -> vldbFile.editChunk(new ChunkCoords(3, 3), new BasicCustomLightSource[]{
+                            new BasicCustomLightSource(new IntPosition(3 * 16 + 1, 0, 3 * 16 + 1), 15, true, "STONE")
+                    })
+            );
+
+            // endregion
+
+            // region testing bad input for removeChunk
+
+            assertThrows(IllegalArgumentException.class,
+                    () -> vldbFile.removeChunk(new ChunkCoords(-1, -1))
+            );
+
+            assertThrows(IllegalStateException.class,
+                    () -> vldbFile.removeChunk(new ChunkCoords(16, 16))
+            );
+
             // endregion
 
             assertTrue(vldbFile.file.delete());
