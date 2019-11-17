@@ -9,10 +9,7 @@ import me.shawlaf.varlight.util.IntPosition;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Map;
@@ -230,54 +227,64 @@ public class TestVLDB {
         };
 
         try {
-            VLDBFile vldbFile = VLDBFile.createNewFile(testDir, testData);
 
-            BasicCustomLightSource[] readChunk = vldbFile.readChunk(new ChunkCoords(0, 0), BasicCustomLightSource[]::new,
-                    BasicCustomLightSource::new);
+            File file = new File(testDir, VLDBFile.getFileName(testData));
+
+            try (VLDBOutputStream out = new VLDBOutputStream(new GZIPOutputStream(new FileOutputStream(file)))) {
+                out.write(testData);
+            }
+
+            VLDBFile<BasicCustomLightSource> vldbFile = new VLDBFile<BasicCustomLightSource>(file) {
+                @Override
+                protected BasicCustomLightSource[] createArray(int size) {
+                    return new BasicCustomLightSource[size];
+                }
+
+                @Override
+                protected BasicCustomLightSource createInstance(IntPosition position, int lightLevel, boolean migrated, String material) {
+                    return new BasicCustomLightSource(position, lightLevel, migrated, material);
+                }
+            };
+
+            BasicCustomLightSource[] readChunk = vldbFile.readChunk(0, 0);
 
             assertEquals(1, readChunk.length);
             assertEquals(testData[0], readChunk[0]);
 
-            readChunk = vldbFile.readChunk(new ChunkCoords(1, 0), BasicCustomLightSource[]::new,
-                    BasicCustomLightSource::new);
+            readChunk = vldbFile.readChunk(1, 0);
 
             assertEquals(1, readChunk.length);
             assertEquals(testData[1], readChunk[0]);
 
-            readChunk = vldbFile.readChunk(new ChunkCoords(0, 1), BasicCustomLightSource[]::new,
-                    BasicCustomLightSource::new);
+            readChunk = vldbFile.readChunk(0, 1);
 
             assertEquals(1, readChunk.length);
             assertEquals(testData[2], readChunk[0]);
 
-            assertArrayEquals(new BasicCustomLightSource[0], vldbFile.readChunk(new ChunkCoords(2, 2), BasicCustomLightSource[]::new, BasicCustomLightSource::new));
-            assertThrows(IllegalArgumentException.class, () -> vldbFile.readChunk(new ChunkCoords(-1, -1), BasicCustomLightSource[]::new, BasicCustomLightSource::new));
+            assertArrayEquals(new BasicCustomLightSource[0], vldbFile.readChunk(2, 2));
+            assertThrows(IllegalArgumentException.class, () -> vldbFile.readChunk(-1, -1));
 
             BasicCustomLightSource[] copy = new BasicCustomLightSource[2];
             System.arraycopy(testData, 0, copy, 0, 2); // Exclude chunk 0,1 from test data
 
             vldbFile.write(copy);
 
-            readChunk = vldbFile.readChunk(new ChunkCoords(0, 0), BasicCustomLightSource[]::new,
-                    BasicCustomLightSource::new);
+            readChunk = vldbFile.readChunk(0, 0);
 
             assertEquals(1, readChunk.length);
             assertEquals(testData[0], readChunk[0]);
 
-            readChunk = vldbFile.readChunk(new ChunkCoords(1, 0), BasicCustomLightSource[]::new,
-                    BasicCustomLightSource::new);
+            readChunk = vldbFile.readChunk(1, 0);
 
             assertEquals(1, readChunk.length);
             assertEquals(testData[1], readChunk[0]);
 
-            assertArrayEquals(new BasicCustomLightSource[0], vldbFile.readChunk(new ChunkCoords(0, 1), BasicCustomLightSource[]::new, BasicCustomLightSource::new));
+            assertArrayEquals(new BasicCustomLightSource[0], vldbFile.readChunk(0, 1));
 
             assertTrue(vldbFile.file.delete());
         } catch (IOException e) {
             fail("Something went wrong", e);
         }
-
-
     }
 
 }

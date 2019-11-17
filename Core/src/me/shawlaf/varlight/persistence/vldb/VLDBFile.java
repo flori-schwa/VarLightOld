@@ -6,11 +6,10 @@ import me.shawlaf.varlight.util.IntPosition;
 
 import java.io.*;
 import java.util.Map;
-import java.util.function.IntFunction;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-public class VLDBFile {
+public abstract class VLDBFile<L extends ICustomLightSource> {
 
     private final Object lock = new Object();
 
@@ -19,7 +18,6 @@ public class VLDBFile {
     private final int regionX, regionZ;
     private byte[] fileContents;
     private Map<ChunkCoords, Integer> header;
-//    private VLDBInputStream in;
 
     public static String getFileName(ICustomLightSource[] region) {
         final int rx = region[0].getPosition().getRegionX();
@@ -44,16 +42,6 @@ public class VLDBFile {
         return true;
     }
 
-    public static VLDBFile createNewFile(File parent, ICustomLightSource[] lightData) throws IOException {
-        File file = new File(parent, getFileName(lightData));
-
-        try (VLDBOutputStream out = new VLDBOutputStream(new GZIPOutputStream(new FileOutputStream(file)))) {
-            out.write(lightData);
-        }
-
-        return new VLDBFile(file);
-    }
-
     public VLDBFile(File file) throws IOException {
         this.file = file;
 
@@ -71,19 +59,23 @@ public class VLDBFile {
         }
     }
 
-    public <L extends ICustomLightSource> L[] readChunk(ChunkCoords chunkCoords, IntFunction<L[]> arrayCreator, VLDBInputStream.ToLightSource<L> constructor) throws IOException {
+    public L[] readChunk(int chunkX, int chunkZ) throws IOException {
+        return readChunk(new ChunkCoords(chunkX, chunkZ));
+    }
+
+    public L[] readChunk(ChunkCoords chunkCoords) throws IOException {
 
         if (chunkCoords.getRegionX() != regionX || chunkCoords.getRegionZ() != regionZ) {
             throw new IllegalArgumentException(String.format("%s not in region %d %d", chunkCoords.toString(), regionX, regionZ));
         }
 
         if (!header.containsKey(chunkCoords)) {
-            return arrayCreator.apply(0);
+            return createArray(0);
         }
 
         synchronized (lock) {
             try (VLDBInputStream in = in(header.get(chunkCoords))) {
-                return in.readChunk(regionX, regionZ, arrayCreator, constructor).item2;
+                return in.readChunk(regionX, regionZ, this::createArray, this::createInstance).item2;
             }
         }
     }
@@ -144,4 +136,8 @@ public class VLDBFile {
 
         headerReader.close();
     }
+
+    protected abstract L[] createArray(int size);
+
+    protected abstract L createInstance(IntPosition position, int lightLevel, boolean migrated, String material);
 }
