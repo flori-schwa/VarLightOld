@@ -226,8 +226,11 @@ public class TestVLDB {
                 new BasicCustomLightSource(new IntPosition(0, 0, 16), 15, true, "STONE"), // Chunk 0,1
         };
 
-        try {
+        BasicCustomLightSource[] chunk22 = new BasicCustomLightSource[] {
+                new BasicCustomLightSource(new IntPosition(32, 0, 32), 15, true, "STONE") // Chunk 2,2
+        };
 
+        try {
             File file = new File(testDir, VLDBFile.getFileName(testData));
 
             try (VLDBOutputStream out = new VLDBOutputStream(new GZIPOutputStream(new FileOutputStream(file)))) {
@@ -245,6 +248,13 @@ public class TestVLDB {
                     return new BasicCustomLightSource(position, lightLevel, migrated, material);
                 }
             };
+
+            // region without 2,2
+
+            assertTrue(vldbFile.containsChunk(0, 0));
+            assertTrue(vldbFile.containsChunk(1, 0));
+            assertTrue(vldbFile.containsChunk(0, 1));
+            assertFalse(vldbFile.containsChunk(2, 2));
 
             BasicCustomLightSource[] readChunk = vldbFile.readChunk(0, 0);
 
@@ -264,10 +274,16 @@ public class TestVLDB {
             assertArrayEquals(new BasicCustomLightSource[0], vldbFile.readChunk(2, 2));
             assertThrows(IllegalArgumentException.class, () -> vldbFile.readChunk(-1, -1));
 
-            BasicCustomLightSource[] copy = new BasicCustomLightSource[2];
-            System.arraycopy(testData, 0, copy, 0, 2); // Exclude chunk 0,1 from test data
+            // endregion
 
-            vldbFile.write(copy);
+            vldbFile.insertChunk(chunk22);
+
+            // region with 2,2
+
+            assertTrue(vldbFile.containsChunk(0, 0));
+            assertTrue(vldbFile.containsChunk(1, 0));
+            assertTrue(vldbFile.containsChunk(0, 1));
+            assertTrue(vldbFile.containsChunk(2, 2));
 
             readChunk = vldbFile.readChunk(0, 0);
 
@@ -279,12 +295,40 @@ public class TestVLDB {
             assertEquals(1, readChunk.length);
             assertEquals(testData[1], readChunk[0]);
 
-            assertArrayEquals(new BasicCustomLightSource[0], vldbFile.readChunk(0, 1));
+            readChunk = vldbFile.readChunk(0, 1);
 
+            assertEquals(1, readChunk.length);
+            assertEquals(testData[2], readChunk[0]);
+
+            readChunk = vldbFile.readChunk(2, 2);
+
+            assertEquals(1, readChunk.length);
+            assertEquals(chunk22[0], readChunk[0]);
+
+            assertThrows(IllegalArgumentException.class, () -> vldbFile.readChunk(-1, -1));
+
+            // endregion
+
+//            BasicCustomLightSource[] copy = new BasicCustomLightSource[2];
+//            System.arraycopy(testData, 0, copy, 0, 2); // Exclude chunk 0,1 from test data
+//
+//            vldbFile.write(copy); TODO replace write file
+//
+//            readChunk = vldbFile.readChunk(0, 0);
+//
+//            assertEquals(1, readChunk.length);
+//            assertEquals(testData[0], readChunk[0]);
+//
+//            readChunk = vldbFile.readChunk(1, 0);
+//
+//            assertEquals(1, readChunk.length);
+//            assertEquals(testData[1], readChunk[0]);
+//
+//            assertArrayEquals(new BasicCustomLightSource[0], vldbFile.readChunk(0, 1));
+//
             assertTrue(vldbFile.file.delete());
         } catch (IOException e) {
             fail("Something went wrong", e);
         }
     }
-
 }

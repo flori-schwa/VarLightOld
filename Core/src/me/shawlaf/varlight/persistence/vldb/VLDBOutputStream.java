@@ -44,6 +44,9 @@ import java.util.zip.GZIPOutputStream;
 
 public class VLDBOutputStream implements Flushable, Closeable, AutoCloseable {
 
+    public static final int HEADER_SIZE_WITHOUT_OFFSET_TABLE = (2 * 4) + 2;
+    public static final int OFFSET_TABLE_ENTRY_SIZE = 2 + 4;
+
     protected final DataOutputStream baseStream;
 
     public static void main(String[] args) throws IOException {
@@ -166,16 +169,6 @@ public class VLDBOutputStream implements Flushable, Closeable, AutoCloseable {
         }
     }
 
-    public void writeUInt24(int ui24) throws IOException {
-        if (ui24 < 0 || ui24 > ((1 << 24) - 1)) {
-            throw new IllegalArgumentException("UInt24 out of range!");
-        }
-
-        baseStream.writeByte((ui24 >>> 16) & 0xFF);
-        baseStream.writeByte((ui24 >>> 8) & 0xFF);
-        baseStream.writeByte(ui24 & 0xFF);
-    }
-
     public void write(ICustomLightSource[] region) throws IOException {
         if (region.length == 0) {
             throw new IllegalArgumentException("Amount of light sources must be > 0");
@@ -189,6 +182,7 @@ public class VLDBOutputStream implements Flushable, Closeable, AutoCloseable {
         }
 
         final Map<ChunkCoords, List<ICustomLightSource>> chunkMap = new HashMap<>();
+        final Map<ChunkCoords, Integer> offsetTable = new HashMap<>();
 
         for (int i = 0; i < region.length; i++) {
             ChunkCoords chunkCoords = region[i].getPosition().toChunkCoords();
@@ -202,34 +196,67 @@ public class VLDBOutputStream implements Flushable, Closeable, AutoCloseable {
 
         final ChunkCoords[] chunks = chunkMap.keySet().toArray(new ChunkCoords[0]);
 
-        final int headerSize =
-                2 * 4 // region coords
-                        + 2 // short amount
-                        + chunks.length * (2 + 4); // offset table
+        final int headerSize = HEADER_SIZE_WITHOUT_OFFSET_TABLE + chunks.length * OFFSET_TABLE_ENTRY_SIZE;
 
         final ByteArrayOutputStream fileBodyBuffer = new ByteArrayOutputStream();
         final VLDBOutputStream bodyOutputStream = new VLDBOutputStream(fileBodyBuffer);
 
-        baseStream.writeInt(rx);
-        baseStream.writeInt(rz);
-        baseStream.writeShort(chunks.length);
-
         for (int i = 0; i < chunks.length; i++) {
             ChunkCoords chunkCoords = chunks[i];
 
-            baseStream.writeShort((chunkCoords.getRegionRelativeX()) << 8 | chunkCoords.getRegionRelativeZ());
-            baseStream.writeInt(headerSize + fileBodyBuffer.size());
-
+            offsetTable.put(chunkCoords, headerSize + fileBodyBuffer.size());
             bodyOutputStream.writeChunk(chunkCoords, chunkMap.get(chunkCoords).toArray(new ICustomLightSource[0]));
         }
 
-        baseStream.write(fileBodyBuffer.toByteArray());
+        writeHeader(rx, rz, offsetTable);
+        write(fileBodyBuffer.toByteArray());
+    }
+
+    public void writeHeader(int regionX, int regionZ, Map<ChunkCoords, Integer> offsetTable) throws IOException {
+        writeInt32(regionX);
+        writeInt32(regionZ);
+        writeInt16(offsetTable.keySet().size());
+
+        for (Map.Entry<ChunkCoords, Integer> entry : offsetTable.entrySet()) {
+            writeInt16((entry.getKey().getRegionRelativeX()) << 8 | entry.getKey().getRegionRelativeZ());
+            writeInt32(entry.getValue());
+        }
     }
 
     public void writeASCII(String data) throws IOException {
         byte[] asciiData = data.getBytes(StandardCharsets.US_ASCII);
 
-        baseStream.writeShort(asciiData.length);
-        baseStream.write(asciiData);
+        writeInt16(asciiData.length);
+        write(asciiData);
+    }
+
+    public void writeByte(int b) throws IOException {
+        baseStream.writeByte(b);
+    }
+
+    public void writeInt16(int i16) throws IOException {
+        baseStream.writeShort(i16);
+    }
+
+    public void writeUInt24(int ui24) throws IOException {
+        if (ui24 < 0 || ui24 > ((1 << 24) - 1)) {
+            throw new IllegalArgumentException("UInt24 out of range!");
+        }
+
+        writeByte((ui24 >>> 16) & 0xFF);
+        writeByte((ui24 >>> 8) & 0xFF);
+        writeByte(ui24 & 0xFF);
+    }
+
+    public void writeInt32(int i32) throws IOException {
+        baseStream.writeInt(i32);
+    }
+
+    public void write(byte[] data) throws IOException {
+        write(data, 0, data.length);
+    }
+
+    public void write(byte[] data, int off, int len) throws IOException {
+        baseStream.write(data, off, len);
     }
 }
