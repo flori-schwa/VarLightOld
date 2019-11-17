@@ -10,13 +10,7 @@ import java.util.function.IntFunction;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-// Only used for reading
 public class VLDBFile {
-
-    @FunctionalInterface
-    public interface ToLightSource<L extends ICustomLightSource> {
-        L toLightSource(IntPosition position, int lightLevel, boolean migrated, String material);
-    }
 
     private final Object lock = new Object();
 
@@ -26,6 +20,39 @@ public class VLDBFile {
     private byte[] fileContents;
     private Map<ChunkCoords, Integer> header;
 //    private VLDBInputStream in;
+
+    public static String getFileName(ICustomLightSource[] region) {
+        final int rx = region[0].getPosition().getRegionX();
+        final int rz = region[0].getPosition().getRegionZ();
+
+        if (!allLightSourcesInRegion(rx, rz, region)) {
+            throw new IllegalArgumentException("Not all light sources are in the same region!");
+        }
+
+        return String.format("r%d.%d.vldb", rx, rz);
+    }
+
+    public static boolean allLightSourcesInRegion(int rx, int rz, ICustomLightSource[] lightSources) {
+        for (ICustomLightSource iCustomLightSource : lightSources) {
+            IntPosition pos = iCustomLightSource.getPosition();
+
+            if (pos.getRegionX() != rx || pos.getRegionZ() != rz) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public static VLDBFile createNewFile(File parent, ICustomLightSource[] lightData) throws IOException {
+        File file = new File(parent, getFileName(lightData));
+
+        try (VLDBOutputStream out = new VLDBOutputStream(new GZIPOutputStream(new FileOutputStream(file)))) {
+            out.write(lightData);
+        }
+
+        return new VLDBFile(file);
+    }
 
     public VLDBFile(File file) throws IOException {
         this.file = file;
@@ -44,45 +71,20 @@ public class VLDBFile {
         }
     }
 
-    public <L extends ICustomLightSource> L[] readChunk(ChunkCoords chunkCoords, IntFunction<L[]> arrayCreator, ToLightSource<L> constructor) throws IOException {
+    public <L extends ICustomLightSource> L[] readChunk(ChunkCoords chunkCoords, IntFunction<L[]> arrayCreator, VLDBInputStream.ToLightSource<L> constructor) throws IOException {
+
+        if (chunkCoords.getRegionX() != regionX || chunkCoords.getRegionZ() != regionZ) {
+            throw new IllegalArgumentException(String.format("%s not in region %d %d", chunkCoords.toString(), regionX, regionZ));
+        }
+
         if (!header.containsKey(chunkCoords)) {
             return arrayCreator.apply(0);
         }
 
         synchronized (lock) {
-            VLDBInputStream in = in(header.get(chunkCoords));
-
-            int encodedCoords = in.readInt16();
-
-            int cx = (encodedCoords >>> 8) + (regionX * 32);
-            int cz = (encodedCoords & 0xFF) + (regionZ * 32);
-
-            if (cx != chunkCoords.x || cz != chunkCoords.z) {
-                throw new RuntimeException(String.format("Expected chunk (%d, %d) but got (%d, %d)", chunkCoords.x, chunkCoords.z, cx, cz));
+            try (VLDBInputStream in = in(header.get(chunkCoords))) {
+                return in.readChunk(regionX, regionZ, arrayCreator, constructor).item2;
             }
-
-            L[] lightSources = arrayCreator.apply(in.readUInt24());
-
-            for (int i = 0; i < lightSources.length; i++) {
-                int coords = in.readInt16();
-                byte data = in.readByte();
-                String material = in.readASCII();
-
-                IntPosition position = new IntPosition(
-                        cx * 16 + (coords >>> 12),
-                        (coords & 0x0FF0) >>> 4,
-                        cz * 16 + (coords & 0xF)
-                );
-
-                int lightLevel = data >>> 4;
-                boolean migrated = (data & 0xF) != 0;
-
-                lightSources[i] = constructor.toLightSource(position, lightLevel, migrated, material);
-            }
-
-            in.close();
-
-            return lightSources;
         }
     }
 
@@ -95,6 +97,8 @@ public class VLDBFile {
             outputStream.close();
 
             readFully();
+
+            rereadHeader();
         }
     }
 
@@ -112,16 +116,32 @@ public class VLDBFile {
 
     private void readFully() throws IOException {
         GZIPInputStream in = new GZIPInputStream(new FileInputStream(file));
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream out = new ByteArrayOutputStream(Math.toIntExact(file.length()));
 
         byte[] buffer = new byte[1024];
+        int read = 0;
 
-        while (in.available() == 1) {
-            out.write(buffer, 0, in.read(buffer));
+        while ((read = in.read(buffer)) > 0) {
+            out.write(buffer, 0, read);
         }
 
         this.fileContents = out.toByteArray();
 
         in.close();
+    }
+
+    private void rereadHeader() throws IOException {
+        VLDBInputStream headerReader = in();
+
+        int readRx = headerReader.readInt32();
+        int readRz = headerReader.readInt32();
+
+        if (readRx != regionX || readRz != regionZ) {
+            throw new RuntimeException(String.format("Region information in header changed? (was: %d %d, is: %d %d)", regionX, regionZ, readRx, readRz));
+        }
+
+        this.header = headerReader.readHeader(this.regionX, this.regionZ);
+
+        headerReader.close();
     }
 }

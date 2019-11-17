@@ -77,9 +77,7 @@ public class VLDBOutputStream implements Flushable, Closeable, AutoCloseable {
                                     cy * 16 + (random.nextInt(16)),
                                     cz * 16 + (random.nextInt(16))
                             ),
-                            "STONE",
-                            random.nextInt(16),
-                            random.nextBoolean()
+                            random.nextInt(16), random.nextBoolean(), "STONE"
                     );
                 }
 
@@ -186,12 +184,8 @@ public class VLDBOutputStream implements Flushable, Closeable, AutoCloseable {
         final int rx = region[0].getPosition().getRegionX();
         final int rz = region[0].getPosition().getRegionZ();
 
-        for (ICustomLightSource iCustomLightSource : region) {
-            IntPosition pos = iCustomLightSource.getPosition();
-
-            if (pos.getRegionX() != rx || pos.getRegionZ() != rz) {
-                throw new IllegalArgumentException("Not all light sources are in the same region!");
-            }
+        if (!VLDBFile.allLightSourcesInRegion(rx, rz, region)) {
+            throw new IllegalArgumentException("Not all light sources are in the same region!");
         }
 
         final Map<ChunkCoords, List<ICustomLightSource>> chunkMap = new HashMap<>();

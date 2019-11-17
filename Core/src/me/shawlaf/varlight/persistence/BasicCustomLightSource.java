@@ -11,7 +11,7 @@ public class BasicCustomLightSource implements ICustomLightSource {
     private final int emittingLight;
     private final boolean migrated;
 
-    public BasicCustomLightSource(IntPosition position, String type, int emittingLight, boolean migrated) {
+    public BasicCustomLightSource(IntPosition position, int emittingLight, boolean migrated, String type) {
         this.position = position;
         this.type = type;
         this.emittingLight = emittingLight;

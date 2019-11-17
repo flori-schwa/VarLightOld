@@ -1,15 +1,17 @@
 package me.shawlaf.varlight.test.util;
 
 import me.shawlaf.varlight.persistence.BasicCustomLightSource;
+import me.shawlaf.varlight.persistence.vldb.VLDBFile;
 import me.shawlaf.varlight.persistence.vldb.VLDBInputStream;
 import me.shawlaf.varlight.persistence.vldb.VLDBOutputStream;
 import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -17,45 +19,47 @@ import java.util.Map;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 public class TestVLDB {
 
     @Test
     public void testVLDB() {
         BasicCustomLightSource[][] testData = new BasicCustomLightSource[][]{
                 {
-                        new BasicCustomLightSource(new IntPosition(0, 0, 0), "STONE", 15, true),
-                        new BasicCustomLightSource(new IntPosition(1, 1, 1), "DIRT", 15, true),
-                        new BasicCustomLightSource(new IntPosition(2, 2, 2), "GRAVEL", 15, true),
-                        new BasicCustomLightSource(new IntPosition(3, 3, 3), "SAND", 15, true),
-                        new BasicCustomLightSource(new IntPosition(4, 4, 4), "BEDROCK", 15, true)
+                        new BasicCustomLightSource(new IntPosition(0, 0, 0), 15, true, "STONE"),
+                        new BasicCustomLightSource(new IntPosition(1, 1, 1), 15, true, "DIRT"),
+                        new BasicCustomLightSource(new IntPosition(2, 2, 2), 15, true, "GRAVEL"),
+                        new BasicCustomLightSource(new IntPosition(3, 3, 3), 15, true, "SAND"),
+                        new BasicCustomLightSource(new IntPosition(4, 4, 4), 15, true, "BEDROCK")
                 },
                 {
-                        new BasicCustomLightSource(new IntPosition(-1, 0, -1), "STONE", 15, true),
-                        new BasicCustomLightSource(new IntPosition(-2, 1, -2), "DIRT", 15, true),
-                        new BasicCustomLightSource(new IntPosition(-3, 2, -3), "GRAVEL", 15, true),
-                        new BasicCustomLightSource(new IntPosition(-4, 3, -4), "SAND", 15, true),
-                        new BasicCustomLightSource(new IntPosition(-5, 4, -5), "BEDROCK", 15, true)
+                        new BasicCustomLightSource(new IntPosition(-1, 0, -1), 15, true, "STONE"),
+                        new BasicCustomLightSource(new IntPosition(-2, 1, -2), 15, true, "DIRT"),
+                        new BasicCustomLightSource(new IntPosition(-3, 2, -3), 15, true, "GRAVEL"),
+                        new BasicCustomLightSource(new IntPosition(-4, 3, -4), 15, true, "SAND"),
+                        new BasicCustomLightSource(new IntPosition(-5, 4, -5), 15, true, "BEDROCK")
                 },
                 {
-                        new BasicCustomLightSource(new IntPosition(0, 0, -1), "STONE", 15, true),
-                        new BasicCustomLightSource(new IntPosition(1, 1, -2), "DIRT", 15, true),
-                        new BasicCustomLightSource(new IntPosition(2, 2, -3), "GRAVEL", 15, true),
-                        new BasicCustomLightSource(new IntPosition(3, 3, -4), "SAND", 15, true),
-                        new BasicCustomLightSource(new IntPosition(4, 4, -5), "BEDROCK", 15, true)
+                        new BasicCustomLightSource(new IntPosition(0, 0, -1), 15, true, "STONE"),
+                        new BasicCustomLightSource(new IntPosition(1, 1, -2), 15, true, "DIRT"),
+                        new BasicCustomLightSource(new IntPosition(2, 2, -3), 15, true, "GRAVEL"),
+                        new BasicCustomLightSource(new IntPosition(3, 3, -4), 15, true, "SAND"),
+                        new BasicCustomLightSource(new IntPosition(4, 4, -5), 15, true, "BEDROCK")
                 },
                 {
-                        new BasicCustomLightSource(new IntPosition(512, 0, -512), "STONE", 15, true),
-                        new BasicCustomLightSource(new IntPosition(513, 1, -511), "DIRT", 15, true),
-                        new BasicCustomLightSource(new IntPosition(514, 2, -510), "GRAVEL", 15, true),
-                        new BasicCustomLightSource(new IntPosition(515, 3, -509), "SAND", 15, true),
-                        new BasicCustomLightSource(new IntPosition(516, 4, -508), "BEDROCK", 15, true)
+                        new BasicCustomLightSource(new IntPosition(512, 0, -512), 15, true, "STONE"),
+                        new BasicCustomLightSource(new IntPosition(513, 1, -511), 15, true, "DIRT"),
+                        new BasicCustomLightSource(new IntPosition(514, 2, -510), 15, true, "GRAVEL"),
+                        new BasicCustomLightSource(new IntPosition(515, 3, -509), 15, true, "SAND"),
+                        new BasicCustomLightSource(new IntPosition(516, 4, -508), 15, true, "BEDROCK")
                 },
                 {
-                        new BasicCustomLightSource(new IntPosition(-512, 0, 512), "STONE", 15, true),
-                        new BasicCustomLightSource(new IntPosition(-511, 1, 513), "DIRT", 15, true),
-                        new BasicCustomLightSource(new IntPosition(-510, 2, 514), "GRAVEL", 15, true),
-                        new BasicCustomLightSource(new IntPosition(-509, 3, 515), "SAND", 15, true),
-                        new BasicCustomLightSource(new IntPosition(-508, 4, 516), "BEDROCK", 15, true)
+                        new BasicCustomLightSource(new IntPosition(-512, 0, 512), 15, true, "STONE"),
+                        new BasicCustomLightSource(new IntPosition(-511, 1, 513), 15, true, "DIRT"),
+                        new BasicCustomLightSource(new IntPosition(-510, 2, 514), 15, true, "GRAVEL"),
+                        new BasicCustomLightSource(new IntPosition(-509, 3, 515), 15, true, "SAND"),
+                        new BasicCustomLightSource(new IntPosition(-508, 4, 516), 15, true, "BEDROCK")
                 }
         };
 
@@ -75,13 +79,13 @@ public class TestVLDB {
 
                 writeToBuffer();
                 read = readFromBuffer();
-                Assertions.assertArrayEquals(lightSources, read);
+                assertArrayEquals(lightSources, read);
 
                 zipped = true;
 
                 writeToBuffer();
                 read = readFromBuffer();
-                Assertions.assertArrayEquals(lightSources, read);
+                assertArrayEquals(lightSources, read);
             }
 
             private void writeToBuffer() throws IOException {
@@ -100,7 +104,7 @@ public class TestVLDB {
                 );
 
                 BasicCustomLightSource[] read = in.readAll(BasicCustomLightSource[]::new,
-                        (position, lightLevel, migrated, material) -> new BasicCustomLightSource(position, material, lightLevel, migrated));
+                        BasicCustomLightSource::new);
 
                 Arrays.sort(read, Comparator.comparing(BasicCustomLightSource::getPosition));
 
@@ -113,19 +117,21 @@ public class TestVLDB {
                 new VLDBTest(data).doTest();
             }
 
-            Assertions.assertThrows(IllegalArgumentException.class, () -> new VLDBTest(new BasicCustomLightSource[0]).doTest());
+            assertThrows(IllegalArgumentException.class, () -> new VLDBTest(new BasicCustomLightSource[0]).doTest());
         } catch (IOException e) {
-            Assertions.fail("Failed to write or read from buffer", e);
+            fail("Failed to write or read from buffer", e);
         }
     }
 
     @Test
     public void testUInt24OutOfRange() {
         try (VLDBOutputStream outputStream = new VLDBOutputStream(new ByteArrayOutputStream())) {
-            Assertions.assertThrows(IllegalArgumentException.class,
+            assertThrows(IllegalArgumentException.class,
                     () -> outputStream.writeUInt24((1 << 24)));
+            assertThrows(IllegalArgumentException.class,
+                    () -> outputStream.writeUInt24(-1));
         } catch (IOException e) {
-            Assertions.fail("Something messed up", e);
+            fail("Something messed up", e);
         }
     }
 
@@ -133,22 +139,22 @@ public class TestVLDB {
     public void testNotAllLightSourcesInSameRegion() {
         try (VLDBOutputStream outputStream = new VLDBOutputStream(new ByteArrayOutputStream())) {
 
-            Assertions.assertThrows(IllegalArgumentException.class,
+            assertThrows(IllegalArgumentException.class,
                     () -> outputStream.write(new BasicCustomLightSource[]{
-                            new BasicCustomLightSource(IntPosition.ORIGIN, "STONE", 15, true),
-                            new BasicCustomLightSource(new IntPosition(1000, 0, 1000), "STONE", 15, true),
+                            new BasicCustomLightSource(IntPosition.ORIGIN, 15, true, "STONE"),
+                            new BasicCustomLightSource(new IntPosition(1000, 0, 1000), 15, true, "STONE"),
                     })
             );
         } catch (IOException e) {
-            Assertions.fail("Something messed up", e);
+            fail("Something messed up", e);
         }
     }
 
     @Test
     public void testHeader() {
         BasicCustomLightSource[] testData = new BasicCustomLightSource[]{
-                new BasicCustomLightSource(IntPosition.ORIGIN, "STONE", 15, true), // l: 2 + 1 + 2 + 5 = 10
-                new BasicCustomLightSource(new IntPosition(0, 0, 16), "STONE", 15, true), // l: 2 + 1 + 2 + 5 = 10
+                new BasicCustomLightSource(IntPosition.ORIGIN, 15, true, "STONE"), // l: 2 + 1 + 2 + 5 = 10
+                new BasicCustomLightSource(new IntPosition(0, 0, 16), 15, true, "STONE"), // l: 2 + 1 + 2 + 5 = 10
         };
 
         // Header size: 4 + 4 + 2 + 2 * (2 + 4) = 22
@@ -163,23 +169,23 @@ public class TestVLDB {
 
             buffer = baos.toByteArray();
         } catch (IOException e) {
-            Assertions.fail("Something went wrong", e);
+            fail("Something went wrong", e);
         }
 
         try (VLDBInputStream in = new VLDBInputStream(new ByteArrayInputStream(buffer))) {
             int regionX = in.readInt32();
             int regionZ = in.readInt32();
 
-            Assertions.assertEquals(0, regionX);
-            Assertions.assertEquals(0, regionZ);
+            assertEquals(0, regionX);
+            assertEquals(0, regionZ);
 
             Map<ChunkCoords, Integer> header = in.readHeader(regionX, regionZ);
 
-            Assertions.assertEquals(22, header.get(new ChunkCoords(0, 0)));
-            Assertions.assertEquals(22 + (2 + 3 + 10), header.get(new ChunkCoords(0, 1)));
+            assertEquals(22, header.get(new ChunkCoords(0, 0)));
+            assertEquals(22 + (2 + 3 + 10), header.get(new ChunkCoords(0, 1)));
 
         } catch (IOException e) {
-            Assertions.fail("Something went wrong", e);
+            fail("Something went wrong", e);
         }
 
         // endregion
@@ -192,26 +198,85 @@ public class TestVLDB {
 
             buffer = baos.toByteArray();
         } catch (IOException e) {
-            Assertions.fail("Something went wrong", e);
+            fail("Something went wrong", e);
         }
 
         try (VLDBInputStream in = new VLDBInputStream(new GZIPInputStream(new ByteArrayInputStream(buffer)))) {
             int regionX = in.readInt32();
             int regionZ = in.readInt32();
 
-            Assertions.assertEquals(0, regionX);
-            Assertions.assertEquals(0, regionZ);
+            assertEquals(0, regionX);
+            assertEquals(0, regionZ);
 
             Map<ChunkCoords, Integer> header = in.readHeader(regionX, regionZ);
 
-            Assertions.assertEquals(22, header.get(new ChunkCoords(0, 0)));
-            Assertions.assertEquals(22 + (2 + 3 + 10), header.get(new ChunkCoords(0, 1)));
+            assertEquals(22, header.get(new ChunkCoords(0, 0)));
+            assertEquals(22 + (2 + 3 + 10), header.get(new ChunkCoords(0, 1)));
 
         } catch (IOException e) {
-            Assertions.fail("Something went wrong", e);
+            fail("Something went wrong", e);
         }
 
         // endregion
+
+    }
+
+    @Test
+    public void testVLDBFile(@TempDir File testDir) {
+        BasicCustomLightSource[] testData = new BasicCustomLightSource[]{
+                new BasicCustomLightSource(IntPosition.ORIGIN, 15, true, "STONE"), // Chunk 0,0
+                new BasicCustomLightSource(new IntPosition(16, 0, 0), 15, true, "STONE"), // Chunk 1,0
+                new BasicCustomLightSource(new IntPosition(0, 0, 16), 15, true, "STONE"), // Chunk 0,1
+        };
+
+        try {
+            VLDBFile vldbFile = VLDBFile.createNewFile(testDir, testData);
+
+            BasicCustomLightSource[] readChunk = vldbFile.readChunk(new ChunkCoords(0, 0), BasicCustomLightSource[]::new,
+                    BasicCustomLightSource::new);
+
+            assertEquals(1, readChunk.length);
+            assertEquals(testData[0], readChunk[0]);
+
+            readChunk = vldbFile.readChunk(new ChunkCoords(1, 0), BasicCustomLightSource[]::new,
+                    BasicCustomLightSource::new);
+
+            assertEquals(1, readChunk.length);
+            assertEquals(testData[1], readChunk[0]);
+
+            readChunk = vldbFile.readChunk(new ChunkCoords(0, 1), BasicCustomLightSource[]::new,
+                    BasicCustomLightSource::new);
+
+            assertEquals(1, readChunk.length);
+            assertEquals(testData[2], readChunk[0]);
+
+            assertArrayEquals(new BasicCustomLightSource[0], vldbFile.readChunk(new ChunkCoords(2, 2), BasicCustomLightSource[]::new, BasicCustomLightSource::new));
+            assertThrows(IllegalArgumentException.class, () -> vldbFile.readChunk(new ChunkCoords(-1, -1), BasicCustomLightSource[]::new, BasicCustomLightSource::new));
+
+            BasicCustomLightSource[] copy = new BasicCustomLightSource[2];
+            System.arraycopy(testData, 0, copy, 0, 2); // Exclude chunk 0,1 from test data
+
+            vldbFile.write(copy);
+
+            readChunk = vldbFile.readChunk(new ChunkCoords(0, 0), BasicCustomLightSource[]::new,
+                    BasicCustomLightSource::new);
+
+            assertEquals(1, readChunk.length);
+            assertEquals(testData[0], readChunk[0]);
+
+            readChunk = vldbFile.readChunk(new ChunkCoords(1, 0), BasicCustomLightSource[]::new,
+                    BasicCustomLightSource::new);
+
+            assertEquals(1, readChunk.length);
+            assertEquals(testData[1], readChunk[0]);
+
+            assertArrayEquals(new BasicCustomLightSource[0], vldbFile.readChunk(new ChunkCoords(0, 1), BasicCustomLightSource[]::new, BasicCustomLightSource::new));
+
+            assertTrue(vldbFile.file.delete());
+        } catch (IOException e) {
+            fail("Something went wrong", e);
+        }
+
 
     }
 
