@@ -223,11 +223,21 @@ public class TestVLDB {
         BasicCustomLightSource[] testData = new BasicCustomLightSource[]{
                 new BasicCustomLightSource(IntPosition.ORIGIN, 15, true, "STONE"), // Chunk 0,0
                 new BasicCustomLightSource(new IntPosition(16, 0, 0), 15, true, "STONE"), // Chunk 1,0
-                new BasicCustomLightSource(new IntPosition(0, 0, 16), 15, true, "STONE"), // Chunk 0,1
+                new BasicCustomLightSource(new IntPosition(0, 0, 16), 15, true, "STONE") // Chunk 0,1
         };
 
         BasicCustomLightSource[] chunk22 = new BasicCustomLightSource[] {
                 new BasicCustomLightSource(new IntPosition(32, 0, 32), 15, true, "STONE") // Chunk 2,2
+        };
+
+        BasicCustomLightSource[] edited01DifferentLength = new BasicCustomLightSource[] {
+                new BasicCustomLightSource(new IntPosition(0, 0, 16), 15, true, "STONE"), // Chunk 0,1
+                new BasicCustomLightSource(new IntPosition(0, 5, 16), 15, true, "STONE") // Chunk 0,1
+        };
+
+        BasicCustomLightSource[] edited01SameLength = new BasicCustomLightSource[] {
+                new BasicCustomLightSource(new IntPosition(0, 0, 16), 15, true, "STONE"), // Chunk 0,1
+                new BasicCustomLightSource(new IntPosition(0, 10, 16), 15, true, "STONE") // Chunk 0,1
         };
 
         try {
@@ -327,6 +337,64 @@ public class TestVLDB {
 
             assertEquals(1, readChunk.length);
             assertEquals(testData[2], readChunk[0]);
+
+            readChunk = vldbFile.readChunk(2, 2);
+
+            assertEquals(1, readChunk.length);
+            assertEquals(chunk22[0], readChunk[0]);
+
+            assertArrayEquals(new BasicCustomLightSource[0], vldbFile.readChunk(1, 0));
+            assertThrows(IllegalArgumentException.class, () -> vldbFile.readChunk(-1, -1));
+
+            // endregion
+
+            // region Editing 0,1 with different length
+
+            vldbFile.editChunk(new ChunkCoords(0, 1), edited01DifferentLength);
+
+            assertTrue(vldbFile.hasChunkData(0, 0));
+            assertFalse(vldbFile.hasChunkData(1, 0));
+            assertTrue(vldbFile.hasChunkData(0, 1));
+            assertTrue(vldbFile.hasChunkData(2, 2));
+
+            readChunk = vldbFile.readChunk(0, 0);
+
+            assertEquals(1, readChunk.length);
+            assertEquals(testData[0], readChunk[0]);
+
+            readChunk = vldbFile.readChunk(0, 1);
+
+            assertEquals(2, readChunk.length);
+            assertArrayEquals(edited01DifferentLength, readChunk);
+
+            readChunk = vldbFile.readChunk(2, 2);
+
+            assertEquals(1, readChunk.length);
+            assertEquals(chunk22[0], readChunk[0]);
+
+            assertArrayEquals(new BasicCustomLightSource[0], vldbFile.readChunk(1, 0));
+            assertThrows(IllegalArgumentException.class, () -> vldbFile.readChunk(-1, -1));
+
+            // endregion
+
+            // region Editing 0,1 with same length
+
+            vldbFile.editChunk(new ChunkCoords(0, 1), edited01SameLength);
+
+            assertTrue(vldbFile.hasChunkData(0, 0));
+            assertFalse(vldbFile.hasChunkData(1, 0));
+            assertTrue(vldbFile.hasChunkData(0, 1));
+            assertTrue(vldbFile.hasChunkData(2, 2));
+
+            readChunk = vldbFile.readChunk(0, 0);
+
+            assertEquals(1, readChunk.length);
+            assertEquals(testData[0], readChunk[0]);
+
+            readChunk = vldbFile.readChunk(0, 1);
+
+            assertEquals(2, readChunk.length);
+            assertArrayEquals(edited01SameLength, readChunk);
 
             readChunk = vldbFile.readChunk(2, 2);
 

@@ -4,6 +4,8 @@ import java.util.Objects;
 
 public class ChunkCoords {
 
+    public static final ChunkCoords ORIGIN = new ChunkCoords(0, 0);
+
     public final int x, z;
 
     public ChunkCoords(int x, int z) {

@@ -115,14 +115,146 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
         }
     }
 
-    public void removeChunk(@NotNull ChunkCoords coords) throws IOException {
-        requireNonNull(coords);
+    public void insertChunk(@NotNull L[] chunk) throws IOException {
+        requireNonNull(chunk);
 
-        if (!hasChunkData(coords)) {
-            throw new IllegalStateException("Chunk not contained within this File!");
+        if (chunk.length == 0) {
+            throw new IllegalArgumentException("Array may not be empty!");
+        }
+
+        final int cx = chunk[0].getPosition().getChunkX();
+        final int cz = chunk[0].getPosition().getChunkZ();
+
+        for (int i = 1; i < chunk.length; i++) {
+            IntPosition pos = chunk[i].getPosition();
+
+            if (pos.getChunkX() != cx || pos.getChunkZ() != cz) {
+                throw new IllegalArgumentException("Not all Light sources are in the same chunk!");
+            }
         }
 
         synchronized (lock) {
+            final ChunkCoords chunkCoords = new ChunkCoords(cx, cz);
+
+            if (hasChunkData(chunkCoords)) {
+                throw new IllegalStateException("Chunk already in this file!");
+            }
+
+            Map<ChunkCoords, Integer> newOffsetTable = new HashMap<>();
+
+            for (ChunkCoords key : offsetTable.keySet()) {
+                newOffsetTable.put(key, offsetTable.get(key) + SIZEOF_OFFSET_TABLE_ENTRY);
+            }
+
+            newOffsetTable.put(chunkCoords, fileContents.length + SIZEOF_OFFSET_TABLE_ENTRY);
+
+            Pair<ByteArrayOutputStream, VLDBOutputStream> out = outToMemory();
+
+            out.item2.writeChunk(chunkCoords, chunk);
+            out.item2.close();
+
+            final int oldHeaderSize = sizeofHeader(offsetTable.keySet().size());
+
+            final byte[] append = out.item1.toByteArray();
+            Pair<ByteArrayOutputStream, VLDBOutputStream> newFileOut = outToMemory(fileContents.length + SIZEOF_OFFSET_TABLE_ENTRY + append.length);
+
+            newFileOut.item2.writeHeader(regionX, regionZ, newOffsetTable);
+            newFileOut.item2.write(fileContents, oldHeaderSize, fileContents.length - oldHeaderSize);
+            newFileOut.item2.write(append);
+
+            newFileOut.item2.close();
+
+            this.offsetTable = newOffsetTable;
+            this.fileContents = newFileOut.item1.toByteArray();
+
+            this.modified = true;
+        }
+    }
+
+    public void editChunk(@NotNull ChunkCoords coords, @NotNull L[] data) throws IOException {
+        requireNonNull(data);
+
+        if (data.length == 0) {
+            throw new IllegalArgumentException("Array may not be empty!");
+        }
+
+        final int cx = coords.x;
+        final int cz = coords.z;
+
+        for (int i = 0; i < data.length; i++) {
+            IntPosition pos = data[i].getPosition();
+
+            if (pos.getChunkX() != cx || pos.getChunkZ() != cz) {
+                throw new IllegalArgumentException("Not all Light sources are in the same chunk!");
+            }
+        }
+
+        synchronized (lock) {
+            if (!hasChunkData(coords)) {
+                throw new IllegalArgumentException("Cannot edit chunk that is not already present");
+            }
+
+            final int newChunkSize = sizeofChunk(data);
+            final int oldChunkSize = sizeofChunk(readChunk(coords));
+
+            final int targetChunkOffset = offsetTable.get(coords);
+
+            if (newChunkSize == oldChunkSize) {
+                // Header does not change, neither does total size
+
+                Pair<ByteArrayOutputStream, VLDBOutputStream> newFileOut = outToMemory(fileContents.length);
+
+                newFileOut.item2.write(fileContents, 0, targetChunkOffset);
+                newFileOut.item2.writeChunk(coords, data);
+                newFileOut.item2.write(fileContents, targetChunkOffset + oldChunkSize, fileContents.length - (targetChunkOffset + oldChunkSize));
+
+                newFileOut.item2.close();
+
+                this.fileContents = newFileOut.item1.toByteArray();
+            } else {
+                // Size of Header stays the same
+                // All chunks BEFORE the target chunk will keep the same offset
+                // All chunk AFTER the target chunk will have their offset increased by (newChunkSize - oldChunkSize)
+
+                final Map<ChunkCoords, Integer> newOffsetTable = new HashMap<>();
+
+                for (Map.Entry<ChunkCoords, Integer> entry : offsetTable.entrySet()) {
+                    if (coords.equals(entry.getKey())) {
+                        newOffsetTable.put(entry.getKey(), entry.getValue());
+                    } else if (entry.getValue() < targetChunkOffset) {
+                        newOffsetTable.put(entry.getKey(), entry.getValue());
+                    } else {
+                        newOffsetTable.put(entry.getKey(), entry.getValue() + (newChunkSize - oldChunkSize));
+                    }
+                }
+
+                final int headerLength = sizeofHeader(newOffsetTable.keySet().size());
+
+                Pair<ByteArrayOutputStream, VLDBOutputStream> newFileOut = outToMemory(fileContents.length + (newChunkSize - oldChunkSize));
+
+                newFileOut.item2.writeHeader(regionX, regionZ, newOffsetTable);
+                newFileOut.item2.write(fileContents, headerLength, (targetChunkOffset - headerLength));
+                newFileOut.item2.writeChunk(coords, data);
+                newFileOut.item2.write(fileContents, targetChunkOffset + oldChunkSize, fileContents.length - (targetChunkOffset + oldChunkSize));
+
+                newFileOut.item2.close();
+
+                this.offsetTable = newOffsetTable;
+                this.fileContents = newFileOut.item1.toByteArray();
+            }
+
+            this.modified = true;
+        }
+    }
+
+    public void removeChunk(@NotNull ChunkCoords coords) throws IOException {
+        requireNonNull(coords);
+
+        synchronized (lock) {
+            if (!hasChunkData(coords)) {
+                throw new IllegalStateException("Chunk not contained within this File!");
+            }
+
             // All chunks BEFORE the target chunk will have their offset reduced by 6 (OFFSET_TABLE_ENTRY_SIZE)
             // All chunks AFTER the target chunk will have their offset reduced by 6 + sizeof(targetchunk)
 
@@ -150,62 +282,6 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
             newFileOut.item2.writeHeader(regionX, regionZ, newOffsetTable);
             newFileOut.item2.write(fileContents, oldHeaderSize, (targetChunkOffset - oldHeaderSize));
             newFileOut.item2.write(fileContents, (targetChunkOffset + targetChunkSize), (fileContents.length - (targetChunkOffset + targetChunkSize)));
-
-            newFileOut.item2.close();
-
-            this.offsetTable = newOffsetTable;
-            this.fileContents = newFileOut.item1.toByteArray();
-
-            this.modified = true;
-        }
-    }
-
-    public void insertChunk(@NotNull L[] chunk) throws IOException {
-        requireNonNull(chunk);
-
-        if (chunk.length == 0) {
-            throw new IllegalArgumentException("Array may not be empty!");
-        }
-
-        final int cx = chunk[0].getPosition().getChunkX();
-        final int cz = chunk[0].getPosition().getChunkZ();
-
-        for (int i = 1; i < chunk.length; i++) {
-            IntPosition pos = chunk[i].getPosition();
-
-            if (pos.getChunkX() != cx || pos.getChunkZ() != cz) {
-                throw new IllegalArgumentException("Not all Light sources are in the same chunk!");
-            }
-        }
-
-        final ChunkCoords chunkCoords = new ChunkCoords(cx, cz);
-
-        if (hasChunkData(chunkCoords)) {
-            throw new IllegalStateException("Chunk already in this file!");
-        }
-
-        synchronized (lock) {
-            Map<ChunkCoords, Integer> newOffsetTable = new HashMap<>();
-
-            for (ChunkCoords key : offsetTable.keySet()) {
-                newOffsetTable.put(key, offsetTable.get(key) + SIZEOF_OFFSET_TABLE_ENTRY);
-            }
-
-            newOffsetTable.put(chunkCoords, fileContents.length + SIZEOF_OFFSET_TABLE_ENTRY);
-
-            Pair<ByteArrayOutputStream, VLDBOutputStream> out = outToMemory();
-
-            out.item2.writeChunk(chunkCoords, chunk);
-            out.item2.close();
-
-            final int oldHeaderSize = sizeofHeader(offsetTable.keySet().size());
-
-            final byte[] append = out.item1.toByteArray();
-            Pair<ByteArrayOutputStream, VLDBOutputStream> newFileOut = outToMemory(fileContents.length + SIZEOF_OFFSET_TABLE_ENTRY + append.length);
-
-            newFileOut.item2.writeHeader(regionX, regionZ, newOffsetTable);
-            newFileOut.item2.write(fileContents, oldHeaderSize, fileContents.length - oldHeaderSize);
-            newFileOut.item2.write(append);
 
             newFileOut.item2.close();
 
