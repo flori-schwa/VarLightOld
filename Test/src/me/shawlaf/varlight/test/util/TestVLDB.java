@@ -251,10 +251,10 @@ public class TestVLDB {
 
             // region without 2,2
 
-            assertTrue(vldbFile.containsChunk(0, 0));
-            assertTrue(vldbFile.containsChunk(1, 0));
-            assertTrue(vldbFile.containsChunk(0, 1));
-            assertFalse(vldbFile.containsChunk(2, 2));
+            assertTrue(vldbFile.hasChunkData(0, 0));
+            assertTrue(vldbFile.hasChunkData(1, 0));
+            assertTrue(vldbFile.hasChunkData(0, 1));
+            assertFalse(vldbFile.hasChunkData(2, 2));
 
             BasicCustomLightSource[] readChunk = vldbFile.readChunk(0, 0);
 
@@ -276,14 +276,14 @@ public class TestVLDB {
 
             // endregion
 
+            // region with 2,2 (testing insertChunk)
+
             vldbFile.insertChunk(chunk22);
 
-            // region with 2,2
-
-            assertTrue(vldbFile.containsChunk(0, 0));
-            assertTrue(vldbFile.containsChunk(1, 0));
-            assertTrue(vldbFile.containsChunk(0, 1));
-            assertTrue(vldbFile.containsChunk(2, 2));
+            assertTrue(vldbFile.hasChunkData(0, 0));
+            assertTrue(vldbFile.hasChunkData(1, 0));
+            assertTrue(vldbFile.hasChunkData(0, 1));
+            assertTrue(vldbFile.hasChunkData(2, 2));
 
             readChunk = vldbFile.readChunk(0, 0);
 
@@ -309,23 +309,53 @@ public class TestVLDB {
 
             // endregion
 
-//            BasicCustomLightSource[] copy = new BasicCustomLightSource[2];
-//            System.arraycopy(testData, 0, copy, 0, 2); // Exclude chunk 0,1 from test data
-//
-//            vldbFile.write(copy); TODO replace write file
-//
-//            readChunk = vldbFile.readChunk(0, 0);
-//
-//            assertEquals(1, readChunk.length);
-//            assertEquals(testData[0], readChunk[0]);
-//
-//            readChunk = vldbFile.readChunk(1, 0);
-//
-//            assertEquals(1, readChunk.length);
-//            assertEquals(testData[1], readChunk[0]);
-//
-//            assertArrayEquals(new BasicCustomLightSource[0], vldbFile.readChunk(0, 1));
-//
+            // region without 1,0 (testing removeChunk)
+
+            vldbFile.removeChunk(new ChunkCoords(1, 0));
+
+            assertTrue(vldbFile.hasChunkData(0, 0));
+            assertFalse(vldbFile.hasChunkData(1, 0));
+            assertTrue(vldbFile.hasChunkData(0, 1));
+            assertTrue(vldbFile.hasChunkData(2, 2));
+
+            readChunk = vldbFile.readChunk(0, 0);
+
+            assertEquals(1, readChunk.length);
+            assertEquals(testData[0], readChunk[0]);
+
+            readChunk = vldbFile.readChunk(0, 1);
+
+            assertEquals(1, readChunk.length);
+            assertEquals(testData[2], readChunk[0]);
+
+            readChunk = vldbFile.readChunk(2, 2);
+
+            assertEquals(1, readChunk.length);
+            assertEquals(chunk22[0], readChunk[0]);
+
+            assertArrayEquals(new BasicCustomLightSource[0], vldbFile.readChunk(1, 0));
+            assertThrows(IllegalArgumentException.class, () -> vldbFile.readChunk(-1, -1));
+
+            // endregion
+
+            // region testing save
+
+            vldbFile.save();
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+            try (GZIPInputStream in = new GZIPInputStream(new FileInputStream(vldbFile.file))) {
+                byte[] buffer = new byte[1024];
+                int read = 0;
+
+                while ((read = in.read(buffer)) > 0) {
+                    baos.write(buffer, 0, read);
+                }
+            }
+
+            assertArrayEquals(vldbFile.fileContents, baos.toByteArray());
+            // endregion
+
             assertTrue(vldbFile.file.delete());
         } catch (IOException e) {
             fail("Something went wrong", e);

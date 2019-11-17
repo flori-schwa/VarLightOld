@@ -44,9 +44,6 @@ import java.util.zip.GZIPOutputStream;
 
 public class VLDBOutputStream implements Flushable, Closeable, AutoCloseable {
 
-    public static final int HEADER_SIZE_WITHOUT_OFFSET_TABLE = (2 * 4) + 2;
-    public static final int OFFSET_TABLE_ENTRY_SIZE = 2 + 4;
-
     protected final DataOutputStream baseStream;
 
     public static void main(String[] args) throws IOException {
@@ -196,7 +193,7 @@ public class VLDBOutputStream implements Flushable, Closeable, AutoCloseable {
 
         final ChunkCoords[] chunks = chunkMap.keySet().toArray(new ChunkCoords[0]);
 
-        final int headerSize = HEADER_SIZE_WITHOUT_OFFSET_TABLE + chunks.length * OFFSET_TABLE_ENTRY_SIZE;
+        final int headerSize = VLDBUtil.SIZEOF_HEADER_WITHOUT_OFFSET_TABLE + chunks.length * VLDBUtil.SIZEOF_OFFSET_TABLE_ENTRY;
 
         final ByteArrayOutputStream fileBodyBuffer = new ByteArrayOutputStream();
         final VLDBOutputStream bodyOutputStream = new VLDBOutputStream(fileBodyBuffer);

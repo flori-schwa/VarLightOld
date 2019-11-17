@@ -13,17 +13,16 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import static java.util.Objects.requireNonNull;
-import static me.shawlaf.varlight.persistence.vldb.VLDBOutputStream.HEADER_SIZE_WITHOUT_OFFSET_TABLE;
-import static me.shawlaf.varlight.persistence.vldb.VLDBOutputStream.OFFSET_TABLE_ENTRY_SIZE;
+import static me.shawlaf.varlight.persistence.vldb.VLDBUtil.*;
 
 public abstract class VLDBFile<L extends ICustomLightSource> {
 
     private final Object lock = new Object();
 
     public final File file;
+    public byte[] fileContents;
 
     private final int regionX, regionZ;
-    private byte[] fileContents;
     private Map<ChunkCoords, Integer> offsetTable;
     private boolean modified = false;
 
@@ -106,13 +105,58 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
 //        }
 //    }
 
-    public boolean containsChunk(int cx, int cz) {
-        return containsChunk(new ChunkCoords(cx, cz));
+    public boolean hasChunkData(int cx, int cz) {
+        return hasChunkData(new ChunkCoords(cx, cz));
     }
 
-    public boolean containsChunk(ChunkCoords chunkCoords) {
+    public boolean hasChunkData(ChunkCoords chunkCoords) {
         synchronized (lock) {
             return offsetTable.containsKey(chunkCoords);
+        }
+    }
+
+    public void removeChunk(@NotNull ChunkCoords coords) throws IOException {
+        requireNonNull(coords);
+
+        if (!hasChunkData(coords)) {
+            throw new IllegalStateException("Chunk not contained within this File!");
+        }
+
+        synchronized (lock) {
+            // All chunks BEFORE the target chunk will have their offset reduced by 6 (OFFSET_TABLE_ENTRY_SIZE)
+            // All chunks AFTER the target chunk will have their offset reduced by 6 + sizeof(targetchunk)
+
+            final int targetChunkOffset = offsetTable.get(coords);
+            final int targetChunkSize = sizeofChunk(readChunk(coords));
+            final Map<ChunkCoords, Integer> newOffsetTable = new HashMap<>();
+
+            for (Map.Entry<ChunkCoords, Integer> entry : offsetTable.entrySet()) {
+                if (coords.equals(entry.getKey())) {
+                    continue;
+                }
+
+                if (entry.getValue() < targetChunkOffset) {
+                    newOffsetTable.put(entry.getKey(), entry.getValue() - SIZEOF_OFFSET_TABLE_ENTRY);
+                } else {
+                    newOffsetTable.put(entry.getKey(), entry.getValue() - (SIZEOF_OFFSET_TABLE_ENTRY + targetChunkSize));
+                }
+            }
+
+            final int oldHeaderSize = sizeofHeader(offsetTable.keySet().size());
+            final int newHeaderSize = sizeofHeader(newOffsetTable.keySet().size());
+
+            final Pair<ByteArrayOutputStream, VLDBOutputStream> newFileOut = outToMemory(newHeaderSize + (fileContents.length - oldHeaderSize - targetChunkSize));
+
+            newFileOut.item2.writeHeader(regionX, regionZ, newOffsetTable);
+            newFileOut.item2.write(fileContents, oldHeaderSize, (targetChunkOffset - oldHeaderSize));
+            newFileOut.item2.write(fileContents, (targetChunkOffset + targetChunkSize), (fileContents.length - (targetChunkOffset + targetChunkSize)));
+
+            newFileOut.item2.close();
+
+            this.offsetTable = newOffsetTable;
+            this.fileContents = newFileOut.item1.toByteArray();
+
+            this.modified = true;
         }
     }
 
@@ -136,7 +180,7 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
 
         final ChunkCoords chunkCoords = new ChunkCoords(cx, cz);
 
-        if (containsChunk(chunkCoords)) {
+        if (hasChunkData(chunkCoords)) {
             throw new IllegalStateException("Chunk already in this file!");
         }
 
@@ -144,21 +188,20 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
             Map<ChunkCoords, Integer> newOffsetTable = new HashMap<>();
 
             for (ChunkCoords key : offsetTable.keySet()) {
-                newOffsetTable.put(key, offsetTable.get(key) + OFFSET_TABLE_ENTRY_SIZE);
+                newOffsetTable.put(key, offsetTable.get(key) + SIZEOF_OFFSET_TABLE_ENTRY);
             }
 
-            newOffsetTable.put(chunkCoords, fileContents.length + OFFSET_TABLE_ENTRY_SIZE);
+            newOffsetTable.put(chunkCoords, fileContents.length + SIZEOF_OFFSET_TABLE_ENTRY);
 
             Pair<ByteArrayOutputStream, VLDBOutputStream> out = outToMemory();
 
             out.item2.writeChunk(chunkCoords, chunk);
             out.item2.close();
 
-            final int oldHeaderSize = HEADER_SIZE_WITHOUT_OFFSET_TABLE
-                    + offsetTable.keySet().size() * OFFSET_TABLE_ENTRY_SIZE;
+            final int oldHeaderSize = sizeofHeader(offsetTable.keySet().size());
 
             final byte[] append = out.item1.toByteArray();
-            Pair<ByteArrayOutputStream, VLDBOutputStream> newFileOut = outToMemory(fileContents.length + OFFSET_TABLE_ENTRY_SIZE + append.length);
+            Pair<ByteArrayOutputStream, VLDBOutputStream> newFileOut = outToMemory(fileContents.length + SIZEOF_OFFSET_TABLE_ENTRY + append.length);
 
             newFileOut.item2.writeHeader(regionX, regionZ, newOffsetTable);
             newFileOut.item2.write(fileContents, oldHeaderSize, fileContents.length - oldHeaderSize);
@@ -168,6 +211,24 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
 
             this.offsetTable = newOffsetTable;
             this.fileContents = newFileOut.item1.toByteArray();
+
+            this.modified = true;
+        }
+    }
+
+    public boolean isModified() {
+        return modified;
+    }
+
+    public void save() throws IOException {
+        synchronized (lock) {
+            if (!modified) {
+                return;
+            }
+
+            try (VLDBOutputStream out = out()) {
+                out.write(fileContents);
+            }
         }
     }
 
