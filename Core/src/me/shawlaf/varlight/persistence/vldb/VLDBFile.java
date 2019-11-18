@@ -19,6 +19,8 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
 
     private final Object lock = new Object();
 
+    public static String FILE_NAME_FORMAT = "r%d.%d.vldb";
+
     public final File file;
     public byte[] fileContents;
 
@@ -34,7 +36,7 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
             throw new IllegalArgumentException("Not all light sources are in the same region!");
         }
 
-        return String.format("r%d.%d.vldb", rx, rz);
+        return String.format(FILE_NAME_FORMAT, rx, rz);
     }
 
     public static boolean allLightSourcesInRegion(int rx, int rz, ICustomLightSource[] lightSources) {
@@ -47,6 +49,26 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
         }
 
         return true;
+    }
+
+    public VLDBFile(@NotNull  File file, int regionX, int regionZ) throws IOException {
+        this.file = requireNonNull(file);
+
+        synchronized (lock) {
+            this.regionX = regionX;
+            this.regionZ = regionZ;
+
+            this.offsetTable = new HashMap<>();
+
+            Pair<ByteArrayOutputStream, VLDBOutputStream> out = outToMemory(sizeofHeader(0));
+
+            out.item2.writeHeader(regionX, regionZ, offsetTable);
+            out.item2.close();
+
+            this.fileContents = out.item1.toByteArray();
+
+            this.modified = true;
+        }
     }
 
     public VLDBFile(@NotNull File file) throws IOException {
@@ -317,6 +339,8 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
             try (VLDBOutputStream out = out()) {
                 out.write(fileContents);
             }
+
+            modified = false;
         }
     }
 
