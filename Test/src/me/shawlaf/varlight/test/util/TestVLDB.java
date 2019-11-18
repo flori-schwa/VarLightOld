@@ -12,6 +12,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.*;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -100,12 +101,12 @@ public class TestVLDB {
                         zipped ? new GZIPInputStream(new ByteArrayInputStream(buffer)) : new ByteArrayInputStream(buffer)
                 );
 
-                BasicCustomLightSource[] read = in.readAll(BasicCustomLightSource[]::new,
+                List<BasicCustomLightSource> read = in.readAll(BasicCustomLightSource[]::new,
                         BasicCustomLightSource::new);
 
-                Arrays.sort(read, Comparator.comparing(BasicCustomLightSource::getPosition));
+                read.sort(Comparator.comparing(BasicCustomLightSource::getPosition));
 
-                return read;
+                return read.toArray(new BasicCustomLightSource[0]);
             }
         }
 

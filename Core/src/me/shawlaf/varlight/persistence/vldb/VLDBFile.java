@@ -7,7 +7,9 @@ import me.shawlaf.varlight.util.Pair;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -88,6 +90,10 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
         }
     }
 
+    public Map<ChunkCoords, Integer> getOffsetTable() {
+        return Collections.unmodifiableMap(offsetTable);
+    }
+
     @NotNull
     public L[] readChunk(int chunkX, int chunkZ) throws IOException {
         return readChunk(new ChunkCoords(chunkX, chunkZ));
@@ -109,6 +115,13 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
             try (VLDBInputStream in = in(offsetTable.get(chunkCoords))) {
                 return in.readChunk(regionX, regionZ, this::createArray, this::createInstance).item2;
             }
+        }
+    }
+
+    @NotNull
+    public List<L> readAll() throws IOException {
+        try (VLDBInputStream in = in()) { // Skip Header
+            return in.readAll(this::createArray, this::createInstance);
         }
     }
 
@@ -407,4 +420,10 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
 
     @NotNull
     protected abstract L createInstance(IntPosition position, int lightLevel, boolean migrated, String material);
+
+    public boolean delete() {
+        synchronized (lock) {
+            return file.delete();
+        }
+    }
 }

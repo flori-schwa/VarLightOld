@@ -3,26 +3,25 @@ package me.shawlaf.varlight.persistence;
 import me.shawlaf.varlight.VarLightPlugin;
 import me.shawlaf.varlight.persistence.vldb.VLDBFile;
 import me.shawlaf.varlight.util.ChunkCoords;
+import me.shawlaf.varlight.util.CollectionUtil;
 import me.shawlaf.varlight.util.IntPosition;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class RegionPersistor {
 
-    private final int regionX, regionZ;
+    public final int regionX, regionZ;
     private final World world;
     private final VarLightPlugin plugin;
 
-    private VLDBFile<PersistentLightSource> file;
-    private Map<ChunkCoords, List<PersistentLightSource>> chunkCache = new HashMap<>();
+    public final VLDBFile<PersistentLightSource> file;
+    private final Map<ChunkCoords, List<PersistentLightSource>> chunkCache = new HashMap<>();
 
     public RegionPersistor(VarLightPlugin plugin, File vldbRoot, World world, int regionX, int regionZ) throws IOException {
         Objects.requireNonNull(vldbRoot);
@@ -72,6 +71,136 @@ public class RegionPersistor {
                 }
             };
         }
+    }
 
+    public void loadChunk(@NotNull ChunkCoords chunkCoords) throws IOException {
+        Objects.requireNonNull(chunkCoords);
+
+        synchronized (chunkCache) {
+            synchronized (file) {
+                chunkCache.put(chunkCoords, CollectionUtil.toList(file.readChunk(chunkCoords)));
+            }
+        }
+    }
+
+    public void unloadChunk(ChunkCoords chunkCoords) throws IOException {
+        Objects.requireNonNull(chunkCoords);
+
+        synchronized (chunkCache) {
+            List<PersistentLightSource> toUnload = chunkCache.remove(chunkCoords);
+
+            if (toUnload == null) { // There was no mapping for the chunk
+                return;
+            }
+
+            flushChunk(chunkCoords, toUnload);
+        }
+    }
+
+    public void put(PersistentLightSource lightSource) throws IOException {
+        ChunkCoords chunkCoords = lightSource.getPosition().toChunkCoords();
+
+        synchronized (chunkCache) {
+            if (chunkCache.containsKey(chunkCoords)) {
+                putInternal(lightSource);
+            } else {
+                loadChunk(chunkCoords);
+                putInternal(lightSource);
+                unloadChunk(chunkCoords);
+            }
+        }
+    }
+
+    public void flushAll() throws IOException {
+        synchronized (chunkCache) {
+            synchronized (file) {
+                for (ChunkCoords key : chunkCache.keySet()) {
+                    flushChunk(key);
+                }
+            }
+        }
+    }
+
+    public List<ChunkCoords> getAffectedChunks() {
+        synchronized (file) {
+            return new ArrayList<>(file.getOffsetTable().keySet());
+        }
+    }
+
+    private void flushChunk(ChunkCoords chunkCoords, List<PersistentLightSource> lightData) throws IOException {
+        synchronized (file) {
+            if (lightData.size() == 0) {
+                if (file.hasChunkData(chunkCoords)) {
+                    file.removeChunk(chunkCoords);
+                }
+
+                return;
+            }
+
+            if (!file.hasChunkData(chunkCoords)) {
+                file.insertChunk(lightData.toArray(new PersistentLightSource[0]));
+            } else {
+                file.editChunk(chunkCoords, lightData.toArray(new PersistentLightSource[0]));
+            }
+        }
+    }
+
+    private void flushChunk(ChunkCoords chunkCoords) throws IOException {
+        synchronized (chunkCache) {
+            flushChunk(chunkCoords, chunkCache.get(chunkCoords));
+        }
+    }
+
+    private void putInternal(PersistentLightSource lightSource) {
+        ChunkCoords chunkCoords = lightSource.getPosition().toChunkCoords();
+
+        synchronized (chunkCache) {
+            List<PersistentLightSource> list = chunkCache.get(chunkCoords);
+
+            if (list == null) {
+                throw new IllegalArgumentException("No Data present for chunk");
+            }
+
+            list.removeIf(l -> l.getPosition().equals(lightSource.getPosition()));
+            list.add(lightSource);
+        }
+    }
+
+    public List<PersistentLightSource> loadAll() throws IOException {
+        synchronized (file) {
+            synchronized (chunkCache) {
+                for (ChunkCoords chunkCoords : chunkCache.keySet()) {
+                    flushChunk(chunkCoords);
+                }
+
+                return file.readAll();
+            }
+        }
+    }
+
+    public void save() throws IOException {
+        synchronized (file) {
+            file.save();
+        }
+    }
+
+    @Nullable
+    public PersistentLightSource getLightSource(IntPosition position) {
+        ChunkCoords chunkCoords = position.toChunkCoords();
+
+        synchronized (chunkCache) {
+
+            if (!chunkCache.containsKey(chunkCoords)) {
+                return null;
+            }
+
+            for (PersistentLightSource lightSource : chunkCache.get(chunkCoords)) {
+                if (lightSource.getPosition().equals(position)) {
+                    return lightSource;
+                }
+            }
+        }
+
+        return null;
     }
 }

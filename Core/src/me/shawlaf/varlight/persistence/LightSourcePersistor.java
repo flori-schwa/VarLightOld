@@ -2,30 +2,30 @@ package me.shawlaf.varlight.persistence;
 
 import me.shawlaf.varlight.VarLightPlugin;
 import me.shawlaf.varlight.persistence.migrate.LightDatabaseMigrator;
-import me.shawlaf.varlight.persistence.vldb.VLDBInputStream;
+import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.RegionCoordinates;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.metadata.MetadataValue;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class LightSourcePersistor {
 
     public static final String TAG_WORLD_LIGHT_SOURCE_PERSISTOR = "varlight:persistor";
-    private final Map<RegionCoordinates, Map<IntPosition, PersistentLightSource>> worldMap;
+    private final Map<RegionCoordinates, RegionPersistor> worldMap;
     private final VarLightPlugin plugin;
     private final World world;
 
@@ -39,11 +39,13 @@ public class LightSourcePersistor {
         this.plugin = plugin;
         this.world = world;
 
-        synchronized (this.world) {
+        synchronized (worldMap) {
             File varlightFolder = new File(world.getWorldFolder(), "varlight");
 
             if (!varlightFolder.exists()) {
-                varlightFolder.mkdir();
+                if (varlightFolder.mkdir()) {
+                    throw new LightPersistFailedException("Could not create varlight directory in world \"" + world.getName() + "\"");
+                }
             }
 
             new LightDatabaseMigrator(varlightFolder).runMigrations(plugin.getLogger());
@@ -148,8 +150,11 @@ public class LightSourcePersistor {
 
     @Nullable
     public PersistentLightSource getPersistentLightSource(IntPosition intPosition) {
-        Map<IntPosition, PersistentLightSource> regionMap = getRegionMap(new RegionCoordinates(intPosition));
-        PersistentLightSource persistentLightSource = regionMap.get(intPosition);
+        RegionPersistor regionMap;
+
+        regionMap = getRegionPersistor(new RegionCoordinates(intPosition));
+
+        PersistentLightSource persistentLightSource = regionMap.getLightSource(intPosition);
 
         if (persistentLightSource != null) {
             persistentLightSource.update();
@@ -162,25 +167,47 @@ public class LightSourcePersistor {
         return persistentLightSource;
     }
 
+    @NotNull
     public PersistentLightSource createPersistentLightSource(IntPosition intPosition, int emittingLight) {
         PersistentLightSource persistentLightSource = new PersistentLightSource(plugin, world, intPosition, emittingLight);
         persistentLightSource.migrated = plugin.getNmsAdapter().getMinecraftVersion().newerOrEquals(VarLightPlugin.MC1_14_2);
 
-        getRegionMap(new RegionCoordinates(intPosition)).put(intPosition, persistentLightSource);
+        try {
+            getRegionPersistor(new RegionCoordinates(intPosition)).put(persistentLightSource);
+        } catch (IOException e) {
+            throw new LightPersistFailedException(e);
+        }
 
         return persistentLightSource;
     }
 
+    @NotNull
     public PersistentLightSource getOrCreatePersistentLightSource(IntPosition position) {
-        return Optional.ofNullable(getPersistentLightSource(position))
-                .orElseGet(() -> createPersistentLightSource(position, 0));
+        PersistentLightSource persistentLightSource = getPersistentLightSource(position);
+
+        if (persistentLightSource == null) {
+            persistentLightSource = createPersistentLightSource(position, 0);
+        }
+
+        return persistentLightSource;
     }
 
-    public Stream<PersistentLightSource> getAllLightSources() {
+    @NotNull
+    public List<PersistentLightSource> getAllLightSources() {
         File[] files = getSaveDirectory().listFiles();
 
         if (files == null) {
-            return worldMap.values().stream().map(Map::values).flatMap(Collection::stream);
+            synchronized (worldMap) {
+                return worldMap.values().stream().flatMap(regionPersistor -> {
+                    try {
+                        return regionPersistor.loadAll().stream();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+
+                        return Stream.empty();
+                    }
+                }).collect(Collectors.toList());
+            }
         }
 
         for (File regionFile : files) {
@@ -189,83 +216,92 @@ public class LightSourcePersistor {
                 String[] coords = name.split("\\.");
 
                 RegionCoordinates regionCoordinates = new RegionCoordinates(Integer.parseInt(coords[0]), Integer.parseInt(coords[1]));
-                getRegionMap(regionCoordinates);
+                getRegionPersistor(regionCoordinates);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
 
-        return worldMap.values().stream().map(Map::values).flatMap(Collection::stream);
+        synchronized (worldMap) {
+            return worldMap.values().stream().flatMap(regionPersistor -> {
+                try {
+                    return regionPersistor.loadAll().stream();
+                } catch (IOException e) {
+                    e.printStackTrace();
+
+                    return Stream.empty();
+                }
+            }).collect(Collectors.toList());
+        }
     }
 
     public void save(CommandSender commandSender) {
-        throw new RuntimeException("Not yet implemented");
+        int persistedRegions = 0;
+        List<RegionCoordinates> regionsToUnload = new ArrayList<>();
 
-//        synchronized (world) {
-//            int persistedRegions = 0;
-//
-//            List<RegionCoordinates> regionsToUnload = new ArrayList<>();
-//
-//            for (Map.Entry<RegionCoordinates, Map<IntPosition, PersistentLightSource>> entry : worldMap.entrySet()) {
-//                File saveFile = getSaveFile(entry.getKey());
-//
-//                int written = 0, loaded = 0;
-//
-//                try (VLDBOutputStream out = new VLDBOutputStream(new FileOutputStream(saveFile))) { TODO
-//                    ICustomLightSource[] validLightSources = entry.getValue().values().stream().filter(PersistentLightSource::isValid).toArray(ICustomLightSource[]::new);
-//
-//                    out.writeInt(validLightSources.length);
-//
-//                    for (ICustomLightSource customLightSource : validLightSources) {
-//                        written++;
-//                        out.writeLightSource(customLightSource);
-//
-//                        if (world.isChunkLoaded(customLightSource.getPosition().getChunkX(), customLightSource.getPosition().getChunkZ())) {
-//                            loaded++;
-//                        }
-//                    }
-//                } catch (IOException e) {
-//                    throw new LightPersistFailedException(e);
-//                }
-//
-//                if (written == 0) {
-//                    saveFile.delete();
-//                } else {
-//                    persistedRegions++;
-//                }
-//
-//                if (loaded == 0) {
-//                    regionsToUnload.add(entry.getKey());
-//                }
-//            }
-//
-//            for (RegionCoordinates regionCoordinates : regionsToUnload) {
-//                unloadRegion(regionCoordinates);
-//            }
-//
-//            if (plugin.getConfiguration().isLoggingPersist() || commandSender instanceof Player) { // Players will still receive the message if manually triggering a save
-//                commandSender.sendMessage(String.format("[VarLight] Light Sources persisted for World \"%s\", Files written: %d", world.getName(), persistedRegions));
-//            }
-//        }
-    }
+        synchronized (worldMap) {
+            for (RegionPersistor persistor : worldMap.values()) {
+                int loaded = 0;
 
-    private void unloadRegion(RegionCoordinates key) {
-        worldMap.remove(key);
-    }
+                try {
+                    persistor.flushAll();
+                    persistor.save();
+                } catch (IOException e) {
+                    throw new LightPersistFailedException(e);
+                }
 
-    private Map<IntPosition, PersistentLightSource> getRegionMap(RegionCoordinates regionCoordinates) {
-        if (!worldMap.containsKey(regionCoordinates)) {
+                List<ChunkCoords> affected = persistor.getAffectedChunks();
 
-            File regionFile = getSaveFile(regionCoordinates);
+                if (affected.size() == 0) {
+                    if (!persistor.file.delete()) {
+                        throw new LightPersistFailedException("Could not delete file " + persistor.file.file.getAbsolutePath());
+                    }
 
-            if (!regionFile.exists()) {
-                worldMap.put(regionCoordinates, new HashMap<>());
-            } else {
-                worldMap.put(regionCoordinates, loadRegionMap(regionFile));
+                    regionsToUnload.add(new RegionCoordinates(persistor.regionX, persistor.regionZ));
+                    continue;
+                } else {
+                    persistedRegions++;
+                }
+
+                for (ChunkCoords chunkCoords : affected) {
+                    if (world.isChunkLoaded(chunkCoords.x, chunkCoords.z)) {
+                        loaded++;
+                    }
+                }
+
+                if (loaded == 0) {
+                    regionsToUnload.add(new RegionCoordinates(persistor.regionX, persistor.regionZ));
+                }
+            }
+
+            for (RegionCoordinates regionCoordinates : regionsToUnload) {
+                unloadRegion(regionCoordinates);
             }
         }
 
-        return worldMap.get(regionCoordinates);
+        if (plugin.getConfiguration().isLoggingPersist() || commandSender instanceof Player) { // Players will still receive the message if manually triggering a save
+            commandSender.sendMessage(String.format("[VarLight] Light Sources persisted for World \"%s\", Files written: %d", world.getName(), persistedRegions));
+        }
+    }
+
+    private void unloadRegion(RegionCoordinates key) {
+        synchronized (worldMap) {
+            worldMap.remove(key);
+        }
+    }
+
+    private RegionPersistor getRegionPersistor(RegionCoordinates regionCoordinates) {
+        synchronized (worldMap) {
+            if (!worldMap.containsKey(regionCoordinates)) {
+                try {
+                    worldMap.put(regionCoordinates, new RegionPersistor(plugin, getSaveDirectory(), world, regionCoordinates.x, regionCoordinates.z));
+                } catch (IOException e) {
+                    throw new LightPersistFailedException(e);
+                }
+            }
+
+            return worldMap.get(regionCoordinates);
+        }
     }
 
     private File getSaveDirectory() {
@@ -278,30 +314,5 @@ public class LightSourcePersistor {
         }
 
         return varlightDir;
-    }
-
-    private File getSaveFile(RegionCoordinates regionCoordinates) {
-        return new File(getSaveDirectory(), String.format("r.%d.%d.vldb", regionCoordinates.getRegionX(), regionCoordinates.getRegionZ()));
-    }
-
-    private Map<IntPosition, PersistentLightSource> loadRegionMap(File file) {
-        throw new RuntimeException("Not yet implemented");
-//        Map<IntPosition, PersistentLightSource> regionMap = new HashMap<>();
-//
-//        try (VLDBInputStream in = new VLDBInputStream(new FileInputStream(file))) {
-//            int count = in.readInt32();
-//
-//            for (int i = 0; i < count; i++) {
-//                IntPosition position = in.readPosition();
-//                byte data = in.readByte();
-//                Material material = Material.valueOf(in.readASCII());
-//
-//                regionMap.put(position, new PersistentLightSource(position, material, (data & 0xF) != 0, world, plugin, data >> 4));
-//            }
-//        } catch (IOException e) {
-//            throw new LightPersistFailedException(e);
-//        }
-//
-//        return regionMap;
     }
 }

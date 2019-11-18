@@ -4,7 +4,7 @@ import org.bukkit.Location;
 
 public class RegionCoordinates {
 
-    private final int regionX, regionZ;
+    public final int x, z;
 
     public RegionCoordinates(Location location) {
         this(new IntPosition(location));
@@ -14,17 +14,9 @@ public class RegionCoordinates {
         this(intPosition.getChunkX() >> 5, intPosition.getChunkZ() >> 5);
     }
 
-    public RegionCoordinates(int regionX, int regionZ) {
-        this.regionX = regionX;
-        this.regionZ = regionZ;
-    }
-
-    public int getRegionX() {
-        return regionX;
-    }
-
-    public int getRegionZ() {
-        return regionZ;
+    public RegionCoordinates(int x, int z) {
+        this.x = x;
+        this.z = z;
     }
 
     @Override
@@ -32,18 +24,18 @@ public class RegionCoordinates {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         RegionCoordinates that = (RegionCoordinates) o;
-        return regionX == that.regionX &&
-                regionZ == that.regionZ;
+        return x == that.x &&
+                z == that.z;
     }
 
     @Override
     public int hashCode() {
-        int result = 89 * 113 + regionX;
-        return 89 * result + regionZ;
+        int result = 89 * 113 + x;
+        return 89 * result + z;
     }
 
     @Override
     public String toString() {
-        return String.format("%d %d", regionX, regionZ);
+        return String.format("%d %d", x, z);
     }
 }

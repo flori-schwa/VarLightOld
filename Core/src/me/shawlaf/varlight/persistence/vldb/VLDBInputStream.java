@@ -31,7 +31,7 @@ public class VLDBInputStream implements Closeable {
         this.baseStream.close();
     }
 
-    public <L extends ICustomLightSource> L[] readAll(IntFunction<L[]> arrayCreator, ToLightSource<L> toLightSource) throws IOException {
+    public <L extends ICustomLightSource> List<L> readAll(IntFunction<L[]> arrayCreator, ToLightSource<L> toLightSource) throws IOException {
         final int regionX = readInt32();
         final int regionZ = readInt32();
 
@@ -45,7 +45,7 @@ public class VLDBInputStream implements Closeable {
             lightSources.addAll(Arrays.asList(readChunk(regionX, regionZ, arrayCreator, toLightSource).item2));
         }
 
-        return lightSources.toArray(arrayCreator.apply(0));
+        return lightSources;
     }
 
     public <L extends ICustomLightSource> Pair<ChunkCoords, L[]> readChunk(int regionX, int regionZ, IntFunction<L[]> arrayCreator, ToLightSource<L> toLightSource) throws IOException {
