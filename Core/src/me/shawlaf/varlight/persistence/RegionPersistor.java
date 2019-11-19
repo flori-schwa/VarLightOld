@@ -1,12 +1,9 @@
 package me.shawlaf.varlight.persistence;
 
-import me.shawlaf.varlight.VarLightPlugin;
 import me.shawlaf.varlight.persistence.vldb.VLDBFile;
 import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.CollectionUtil;
 import me.shawlaf.varlight.util.IntPosition;
-import org.bukkit.Material;
-import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,23 +11,20 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-public class RegionPersistor {
+public abstract class RegionPersistor<L extends ICustomLightSource> {
 
     public final int regionX, regionZ;
-    private final World world;
-    private final VarLightPlugin plugin;
 
-    public final VLDBFile<PersistentLightSource> file;
-    private final Map<ChunkCoords, List<PersistentLightSource>> chunkCache = new HashMap<>();
+    public final VLDBFile<L> file;
+    private final Map<ChunkCoords, List<L>> chunkCache = new HashMap<>();
 
-    public RegionPersistor(VarLightPlugin plugin, File vldbRoot, World world, int regionX, int regionZ) throws IOException {
+    public RegionPersistor(@NotNull File vldbRoot, int regionX, int regionZ) throws IOException {
         Objects.requireNonNull(vldbRoot);
 
-        this.world = Objects.requireNonNull(world);
-        this.plugin = Objects.requireNonNull(plugin);
-
         if (!vldbRoot.exists()) {
-            vldbRoot.mkdir();
+            if (!vldbRoot.mkdir()) {
+                throw new LightPersistFailedException("Could not create directory ");
+            }
         }
 
         if (!vldbRoot.isDirectory()) {
@@ -43,31 +37,31 @@ public class RegionPersistor {
         File vldbFile = new File(vldbRoot, String.format(VLDBFile.FILE_NAME_FORMAT, regionX, regionZ));
 
         if (!vldbFile.exists()) {
-            this.file = new VLDBFile<PersistentLightSource>(vldbFile, regionX, regionZ) {
+            this.file = new VLDBFile<L>(vldbFile, regionX, regionZ) {
                 @NotNull
                 @Override
-                protected PersistentLightSource[] createArray(int size) {
-                    return new PersistentLightSource[size];
+                protected L[] createArray(int size) {
+                    return RegionPersistor.this.createArray(size);
                 }
 
                 @NotNull
                 @Override
-                protected PersistentLightSource createInstance(IntPosition position, int lightLevel, boolean migrated, String material) {
-                    return new PersistentLightSource(position, Material.valueOf(material), migrated, world, plugin, lightLevel);
+                protected L createInstance(IntPosition position, int lightLevel, boolean migrated, String material) {
+                    return RegionPersistor.this.createInstance(position, lightLevel, migrated, material);
                 }
             };
         } else {
-            this.file = new VLDBFile<PersistentLightSource>(vldbFile) {
+            this.file = new VLDBFile<L>(vldbFile) {
                 @NotNull
                 @Override
-                protected PersistentLightSource[] createArray(int size) {
-                    return new PersistentLightSource[size];
+                protected L[] createArray(int size) {
+                    return RegionPersistor.this.createArray(size);
                 }
 
                 @NotNull
                 @Override
-                protected PersistentLightSource createInstance(IntPosition position, int lightLevel, boolean migrated, String material) {
-                    return new PersistentLightSource(position, Material.valueOf(material), migrated, world, plugin, lightLevel);
+                protected L createInstance(IntPosition position, int lightLevel, boolean migrated, String material) {
+                    return RegionPersistor.this.createInstance(position, lightLevel, migrated, material);
                 }
             };
         }
@@ -87,7 +81,7 @@ public class RegionPersistor {
         Objects.requireNonNull(chunkCoords);
 
         synchronized (chunkCache) {
-            List<PersistentLightSource> toUnload = chunkCache.remove(chunkCoords);
+            List<L> toUnload = chunkCache.remove(chunkCoords);
 
             if (toUnload == null) { // There was no mapping for the chunk
                 return;
@@ -97,7 +91,7 @@ public class RegionPersistor {
         }
     }
 
-    public void put(PersistentLightSource lightSource) throws IOException {
+    public void put(L lightSource) throws IOException {
         ChunkCoords chunkCoords = lightSource.getPosition().toChunkCoords();
 
         synchronized (chunkCache) {
@@ -127,7 +121,7 @@ public class RegionPersistor {
         }
     }
 
-    private void flushChunk(ChunkCoords chunkCoords, List<PersistentLightSource> lightData) throws IOException {
+    private void flushChunk(ChunkCoords chunkCoords, List<L> lightData) throws IOException {
         synchronized (file) {
             if (lightData.size() == 0) {
                 if (file.hasChunkData(chunkCoords)) {
@@ -138,9 +132,9 @@ public class RegionPersistor {
             }
 
             if (!file.hasChunkData(chunkCoords)) {
-                file.insertChunk(lightData.toArray(new PersistentLightSource[0]));
+                file.insertChunk(lightData.toArray(createArray(0)));
             } else {
-                file.editChunk(chunkCoords, lightData.toArray(new PersistentLightSource[0]));
+                file.editChunk(chunkCoords, lightData.toArray(createArray(0)));
             }
         }
     }
@@ -151,11 +145,11 @@ public class RegionPersistor {
         }
     }
 
-    private void putInternal(PersistentLightSource lightSource) {
+    private void putInternal(L lightSource) {
         ChunkCoords chunkCoords = lightSource.getPosition().toChunkCoords();
 
         synchronized (chunkCache) {
-            List<PersistentLightSource> list = chunkCache.get(chunkCoords);
+            List<L> list = chunkCache.get(chunkCoords);
 
             if (list == null) {
                 throw new IllegalArgumentException("No Data present for chunk");
@@ -166,7 +160,7 @@ public class RegionPersistor {
         }
     }
 
-    public List<PersistentLightSource> loadAll() throws IOException {
+    public List<L> loadAll() throws IOException {
         synchronized (file) {
             synchronized (chunkCache) {
                 for (ChunkCoords chunkCoords : chunkCache.keySet()) {
@@ -185,7 +179,7 @@ public class RegionPersistor {
     }
 
     @Nullable
-    public PersistentLightSource getLightSource(IntPosition position) {
+    public L getLightSource(IntPosition position) {
         ChunkCoords chunkCoords = position.toChunkCoords();
 
         synchronized (chunkCache) {
@@ -194,7 +188,7 @@ public class RegionPersistor {
                 return null;
             }
 
-            for (PersistentLightSource lightSource : chunkCache.get(chunkCoords)) {
+            for (L lightSource : chunkCache.get(chunkCoords)) {
                 if (lightSource.getPosition().equals(position)) {
                     return lightSource;
                 }
@@ -203,4 +197,11 @@ public class RegionPersistor {
 
         return null;
     }
+
+
+    @NotNull
+    protected abstract L[] createArray(int size);
+
+    @NotNull
+    protected abstract L createInstance(IntPosition position, int lightLevel, boolean migrated, String material);
 }

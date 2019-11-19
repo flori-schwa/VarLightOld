@@ -7,6 +7,7 @@ import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.RegionCoordinates;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
@@ -25,7 +26,7 @@ import java.util.stream.Stream;
 public class LightSourcePersistor {
 
     public static final String TAG_WORLD_LIGHT_SOURCE_PERSISTOR = "varlight:persistor";
-    private final Map<RegionCoordinates, RegionPersistor> worldMap;
+    private final Map<RegionCoordinates, RegionPersistor<PersistentLightSource>> worldMap;
     private final VarLightPlugin plugin;
     private final World world;
 
@@ -150,7 +151,7 @@ public class LightSourcePersistor {
 
     @Nullable
     public PersistentLightSource getPersistentLightSource(IntPosition intPosition) {
-        RegionPersistor regionMap;
+        RegionPersistor<PersistentLightSource> regionMap;
 
         regionMap = getRegionPersistor(new RegionCoordinates(intPosition));
 
@@ -240,7 +241,7 @@ public class LightSourcePersistor {
         List<RegionCoordinates> regionsToUnload = new ArrayList<>();
 
         synchronized (worldMap) {
-            for (RegionPersistor persistor : worldMap.values()) {
+            for (RegionPersistor<PersistentLightSource> persistor : worldMap.values()) {
                 int loaded = 0;
 
                 try {
@@ -290,11 +291,23 @@ public class LightSourcePersistor {
         }
     }
 
-    private RegionPersistor getRegionPersistor(RegionCoordinates regionCoordinates) {
+    private RegionPersistor<PersistentLightSource> getRegionPersistor(RegionCoordinates regionCoordinates) {
         synchronized (worldMap) {
             if (!worldMap.containsKey(regionCoordinates)) {
                 try {
-                    worldMap.put(regionCoordinates, new RegionPersistor(plugin, getSaveDirectory(), world, regionCoordinates.x, regionCoordinates.z));
+                    worldMap.put(regionCoordinates, new RegionPersistor<PersistentLightSource>(getSaveDirectory(), regionCoordinates.x, regionCoordinates.z) {
+                        @NotNull
+                        @Override
+                        protected PersistentLightSource[] createArray(int size) {
+                            return new PersistentLightSource[size];
+                        }
+
+                        @NotNull
+                        @Override
+                        protected PersistentLightSource createInstance(IntPosition position, int lightLevel, boolean migrated, String material) {
+                            return new PersistentLightSource(position, Material.valueOf(material), migrated, world, plugin, lightLevel);
+                        }
+                    });
                 } catch (IOException e) {
                     throw new LightPersistFailedException(e);
                 }

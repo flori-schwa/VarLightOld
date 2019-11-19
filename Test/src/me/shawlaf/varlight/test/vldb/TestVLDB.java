@@ -1,4 +1,4 @@
-package me.shawlaf.varlight.test.util;
+package me.shawlaf.varlight.test.vldb;
 
 import me.shawlaf.varlight.persistence.BasicCustomLightSource;
 import me.shawlaf.varlight.persistence.vldb.VLDBFile;

@@ -28,6 +28,7 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
 
     private final int regionX, regionZ;
     private Map<ChunkCoords, Integer> offsetTable;
+
     private boolean modified = false;
 
     public static String getFileName(ICustomLightSource[] region) {
@@ -53,7 +54,8 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
         return true;
     }
 
-    public VLDBFile(@NotNull  File file, int regionX, int regionZ) throws IOException {
+
+    public VLDBFile(@NotNull File file, int regionX, int regionZ) throws IOException {
         this.file = requireNonNull(file);
 
         synchronized (lock) {
