@@ -98,7 +98,7 @@ public class TestRegionPersistor {
     }
 
     @Test
-    public void testFileExists() { // TODO fails: java.io.EOFException: Unexpected end of ZLIB input stream
+    public void testFileExists() {
         class Test {
             public Test(int rx, int rz) throws IOException {
                 File testFile = new File(tempDir, String.format(VLDBFile.FILE_NAME_FORMAT, rx, rz));
@@ -113,16 +113,20 @@ public class TestRegionPersistor {
                 final boolean migrated = ThreadLocalRandom.current().nextBoolean();
 
                 try (FileOutputStream fos = new FileOutputStream(testFile)) {
-                    VLDBOutputStream out = new VLDBOutputStream(new GZIPOutputStream(fos));
+                    GZIPOutputStream gzipOut = new GZIPOutputStream(fos);
+                    VLDBOutputStream out = new VLDBOutputStream(gzipOut);
 
                     out.write(new BasicCustomLightSource[]{
-                            new BasicCustomLightSource(pos, light, migrated, "STONE")
+                            new BasicCustomLightSource(pos, light, migrated, "SAND")
                     });
 
-                    out.flush();
+                    gzipOut.flush();
+                    gzipOut.close();
                 }
 
                 RegionPersistorBasic regionPersistorBasic = new RegionPersistorBasic(tempDir, rx, rz);
+
+                regionPersistorBasic.loadChunk(pos.toChunkCoords());
 
                 BasicCustomLightSource bcls = regionPersistorBasic.getLightSource(pos);
 
@@ -131,6 +135,12 @@ public class TestRegionPersistor {
                 assertEquals(pos, bcls.getPosition());
                 assertEquals(light, bcls.getEmittingLight());
                 assertEquals(migrated, bcls.isMigrated());
+//                assertFalse(regionPersistorBasic.save()); // TODO put in separate test
+//
+//                regionPersistorBasic.put(new BasicCustomLightSource(pos, light, migrated, "DIRT"));
+//
+//                regionPersistorBasic.unloadChunk(pos.toChunkCoords());
+//                assertTrue(regionPersistorBasic.save());
             }
         }
 

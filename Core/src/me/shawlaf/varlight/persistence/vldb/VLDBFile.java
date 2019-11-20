@@ -345,10 +345,10 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
         return modified;
     }
 
-    public void save() throws IOException {
+    public boolean save() throws IOException {
         synchronized (lock) {
             if (!modified) {
-                return;
+                return false;
             }
 
             try (VLDBOutputStream out = out()) {
@@ -356,6 +356,7 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
             }
 
             modified = false;
+            return true;
         }
     }
 

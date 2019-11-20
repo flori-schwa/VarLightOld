@@ -168,9 +168,9 @@ public abstract class RegionPersistor<L extends ICustomLightSource> {
         }
     }
 
-    public void save() throws IOException {
+    public boolean save() throws IOException {
         synchronized (file) {
-            file.save();
+            return file.save();
         }
     }
 
