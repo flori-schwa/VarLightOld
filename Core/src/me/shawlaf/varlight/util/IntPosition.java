@@ -1,12 +1,12 @@
 package me.shawlaf.varlight.util;
 
-import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.jetbrains.annotations.NotNull;
 
+import javax.swing.plaf.synth.Region;
 import java.util.Objects;
 
 public class IntPosition implements Comparable<IntPosition> {
@@ -99,6 +99,10 @@ public class IntPosition implements Comparable<IntPosition> {
 
     public ChunkCoords toChunkCoords() {
         return new ChunkCoords(getChunkX(), getChunkZ());
+    }
+
+    public RegionCoords toRegionCoords() {
+        return new RegionCoords(getRegionX(), getRegionZ());
     }
 
     @Override

@@ -3,8 +3,8 @@ package me.shawlaf.varlight.nms;
 import com.google.common.collect.BiMap;
 import com.mojang.datafixers.util.Either;
 import me.shawlaf.varlight.VarLightPlugin;
-import me.shawlaf.varlight.persistence.LightSourcePersistor;
-import me.shawlaf.varlight.persistence.PersistentLightSource;
+import me.shawlaf.varlight.persistence.WorldLightSourceManager;
+import me.shawlaf.varlight.util.IntPosition;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.server.v1_14_R1.*;
@@ -200,19 +200,13 @@ public class NmsAdapter implements INmsAdapter, Listener {
     }
 
     public int getCustomLuminance(WorldServer worldServer, BlockPosition pos, IntSupplier def) {
-        LightSourcePersistor persistor = LightSourcePersistor.getPersistor(plugin, worldServer.getWorld());
+        WorldLightSourceManager manager = WorldLightSourceManager.getManager(plugin, worldServer.getWorld());
 
-        if (persistor == null) {
+        if (manager == null) {
             return def.getAsInt();
         }
 
-        PersistentLightSource lightSource = persistor.getPersistentLightSource(pos.getX(), pos.getY(), pos.getZ());
-
-        if (lightSource == null) {
-            return def.getAsInt();
-        }
-
-        return lightSource.getEmittingLight();
+        return manager.getCustomLuminance(new IntPosition(pos.getX(), pos.getY(), pos.getZ()), def);
     }
 
     @Override
@@ -313,7 +307,7 @@ public class NmsAdapter implements INmsAdapter, Listener {
     }
 
     private CompletableFuture<Void> doWork(ChunkStatus status, WorldServer worldServer, IChunkAccess iChunkAccess, LightEngineThreaded lightEngineThreaded) {
-        boolean useWrapped = LightSourcePersistor.hasPersistor(plugin, worldServer.getWorld());
+        boolean useWrapped = WorldLightSourceManager.hasManager(plugin, worldServer.getWorld());
 
         boolean flag = iChunkAccess.getChunkStatus().b(status) && iChunkAccess.r();
         IChunkAccess wrapped = useWrapped ? new WrappedIChunkAccess(this, worldServer, iChunkAccess) : iChunkAccess;
@@ -330,7 +324,7 @@ public class NmsAdapter implements INmsAdapter, Listener {
     // region Block Access
 
     private void injectCustomIBlockAccess(World world) throws IllegalAccessException {
-        if (!LightSourcePersistor.hasPersistor(plugin, world)) {
+        if (!WorldLightSourceManager.hasManager(plugin, world)) {
             return;
         }
 

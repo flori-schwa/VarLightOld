@@ -3,8 +3,7 @@ package me.shawlaf.varlight;
 import me.shawlaf.varlight.command.VarLightCommand;
 import me.shawlaf.varlight.event.LightUpdateEvent;
 import me.shawlaf.varlight.nms.*;
-import me.shawlaf.varlight.persistence.LightSourcePersistor;
-import me.shawlaf.varlight.util.IntPosition;
+import me.shawlaf.varlight.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.util.NumericMajorMinorVersion;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -161,8 +160,8 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         autosaveTask = Bukkit.getScheduler().runTaskTimer(this,
                 () -> {
-                    for (LightSourcePersistor persistor : LightSourcePersistor.getAllPersistors(this)) {
-                        persistor.save(Bukkit.getConsoleSender());
+                    for (WorldLightSourceManager manager : WorldLightSourceManager.getAllManager(this)) {
+                        manager.save(Bukkit.getConsoleSender());
                     }
                 },
                 ticks, ticks
@@ -179,7 +178,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         // If PersistOnSave is enabled, PersistOnWorldSaveHandler.onWorldSave will automatically save the Light Sources
         if (configuration.getAutosaveInterval() >= 0) {
-            LightSourcePersistor.getAllPersistors(this).forEach(l -> l.save(Bukkit.getConsoleSender()));
+            WorldLightSourceManager.getAllManager(this).forEach(l -> l.save(Bukkit.getConsoleSender()));
         }
     }
 
@@ -193,7 +192,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     }
 
     public void enableInWorld(World world) {
-        LightSourcePersistor.createPersistor(this, world);
+        WorldLightSourceManager.createManager(this, world);
         nmsAdapter.onWorldEnable(world);
     }
 
@@ -227,19 +226,19 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
-        LightSourcePersistor persistor = LightSourcePersistor.getPersistor(this, e.getPlayer().getWorld());
+        WorldLightSourceManager manager = WorldLightSourceManager.getManager(this, e.getPlayer().getWorld());
 
         if (e.isCancelled() || e.getAction() != Action.RIGHT_CLICK_BLOCK && e.getAction() != Action.LEFT_CLICK_BLOCK || nmsAdapter.hasCooldown(e.getPlayer(), lightUpdateItem)) {
             return;
         }
 
-        if (persistor == null && configuration.getVarLightEnabledWorldNames().contains(e.getPlayer().getWorld().getName())) {
+        if (manager == null && configuration.getVarLightEnabledWorldNames().contains(e.getPlayer().getWorld().getName())) {
             enableInWorld(e.getPlayer().getWorld());
 
-            persistor = LightSourcePersistor.getPersistor(this, e.getPlayer().getWorld());
+            manager = WorldLightSourceManager.getManager(this, e.getPlayer().getWorld());
         }
 
-        if (persistor == null) {
+        if (manager == null) {
             return;
         }
 
@@ -294,9 +293,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         int lightTo = lightUpdateEvent.getToLight();
 
-        persistor.getOrCreatePersistentLightSource(new IntPosition(clickedBlock.getLocation()))
-                .setEmittingLight(lightTo);
-
+        manager.setCustomLuminance(clickedBlock.getLocation(), lightTo);
         nmsAdapter.updateBlockLight(clickedBlock.getLocation(), lightTo);
 
         e.setCancelled(creative && e.getAction() == Action.LEFT_CLICK_BLOCK);

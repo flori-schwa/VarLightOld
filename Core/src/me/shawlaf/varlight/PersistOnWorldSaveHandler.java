@@ -1,6 +1,6 @@
 package me.shawlaf.varlight;
 
-import me.shawlaf.varlight.persistence.LightSourcePersistor;
+import me.shawlaf.varlight.persistence.WorldLightSourceManager;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -16,10 +16,10 @@ public class PersistOnWorldSaveHandler implements Listener {
 
     @EventHandler
     public void onWorldSave(WorldSaveEvent e) {
-        LightSourcePersistor persistor = LightSourcePersistor.getPersistor(plugin, e.getWorld());
+        WorldLightSourceManager manager = WorldLightSourceManager.getManager(plugin, e.getWorld());
 
-        if (persistor != null) {
-            persistor.save(Bukkit.getConsoleSender());
+        if (manager != null) {
+            manager.save(Bukkit.getConsoleSender());
         }
     }
 

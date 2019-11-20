@@ -98,7 +98,7 @@ public class TestRegionPersistor {
     }
 
     @Test
-    public void testFileExists() {
+    public void testFileExists() { // TODO fails: java.io.EOFException: Unexpected end of ZLIB input stream
         class Test {
             public Test(int rx, int rz) throws IOException {
                 File testFile = new File(tempDir, String.format(VLDBFile.FILE_NAME_FORMAT, rx, rz));
@@ -115,7 +115,7 @@ public class TestRegionPersistor {
                 try (FileOutputStream fos = new FileOutputStream(testFile)) {
                     VLDBOutputStream out = new VLDBOutputStream(new GZIPOutputStream(fos));
 
-                    out.write(new BasicCustomLightSource[] {
+                    out.write(new BasicCustomLightSource[]{
                             new BasicCustomLightSource(pos, light, migrated, "STONE")
                     });
 

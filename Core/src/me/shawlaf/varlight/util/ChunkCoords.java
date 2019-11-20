@@ -50,4 +50,8 @@ public class ChunkCoords {
                 ", z=" + z +
                 '}';
     }
+
+    public RegionCoords toRegionCoords() {
+        return new RegionCoords(getRegionX(), getRegionZ());
+    }
 }

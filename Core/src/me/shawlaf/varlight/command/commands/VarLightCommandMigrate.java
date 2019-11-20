@@ -5,7 +5,7 @@ import me.shawlaf.varlight.command.ArgumentIterator;
 import me.shawlaf.varlight.command.VarLightCommand;
 import me.shawlaf.varlight.command.VarLightSubCommand;
 import me.shawlaf.varlight.command.exception.VarLightCommandException;
-import me.shawlaf.varlight.persistence.LightSourcePersistor;
+import me.shawlaf.varlight.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.persistence.PersistentLightSource;
 import org.bukkit.command.CommandSender;
 
@@ -46,12 +46,12 @@ public class VarLightCommandMigrate extends VarLightSubCommand {
 
         VarLightCommand.broadcastResult(sender, "Starting migration...", node);
 
-        for (LightSourcePersistor p : LightSourcePersistor.getAllPersistors(plugin)) {
+        for (WorldLightSourceManager manager : WorldLightSourceManager.getAllManager(plugin)) {
             int migrated = 0, skipped = 0;
 
-            VarLightCommand.broadcastResult(sender, String.format("Migrating \"%s\"", p.getWorld().getName()), node);
+            VarLightCommand.broadcastResult(sender, String.format("Migrating \"%s\"", manager.getWorld().getName()), node);
 
-            for (PersistentLightSource lightSource : p.getAllLightSources()) {
+            for (PersistentLightSource lightSource : manager.getAllLightSources()) {
 
                 if (lightSource.needsMigration()) {
                     if (!lightSource.getPosition().isChunkLoaded(lightSource.getWorld())) {
@@ -69,7 +69,7 @@ public class VarLightCommandMigrate extends VarLightSubCommand {
 
             }
 
-            VarLightCommand.broadcastResult(sender, String.format("Migrated Light sources in world \"%s\" (migrated: %d, skipped: %d)", p.getWorld().getName(), migrated, skipped), node);
+            VarLightCommand.broadcastResult(sender, String.format("Migrated Light sources in world \"%s\" (migrated: %d, skipped: %d)", manager.getWorld().getName(), migrated, skipped), node);
 
             totalMigrated += migrated;
             totalSkipped += skipped;

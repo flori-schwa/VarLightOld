@@ -1,7 +1,7 @@
 package me.shawlaf.varlight.event;
 
 import me.shawlaf.varlight.VarLightPlugin;
-import me.shawlaf.varlight.persistence.LightSourcePersistor;
+import me.shawlaf.varlight.persistence.WorldLightSourceManager;
 import org.bukkit.block.Block;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
@@ -16,7 +16,7 @@ public class LightUpdateEvent extends BlockEvent implements Cancellable {
 
     public LightUpdateEvent(VarLightPlugin varLightPlugin, Block block, int mod) {
         this(block, block.getLightFromBlocks(),
-                LightSourcePersistor.getEmittingLightLevel(varLightPlugin, block.getLocation()) + mod);
+                WorldLightSourceManager.getLuminance(varLightPlugin, block.getLocation()) + mod);
     }
 
     public LightUpdateEvent(Block theBlock, int fromLight, int toLight) {

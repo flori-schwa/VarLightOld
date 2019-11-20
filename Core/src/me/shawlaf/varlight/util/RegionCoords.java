@@ -2,19 +2,19 @@ package me.shawlaf.varlight.util;
 
 import org.bukkit.Location;
 
-public class RegionCoordinates {
+public class RegionCoords {
 
     public final int x, z;
 
-    public RegionCoordinates(Location location) {
+    public RegionCoords(Location location) {
         this(new IntPosition(location));
     }
 
-    public RegionCoordinates(IntPosition intPosition) {
+    public RegionCoords(IntPosition intPosition) {
         this(intPosition.getChunkX() >> 5, intPosition.getChunkZ() >> 5);
     }
 
-    public RegionCoordinates(int x, int z) {
+    public RegionCoords(int x, int z) {
         this.x = x;
         this.z = z;
     }
@@ -23,7 +23,7 @@ public class RegionCoordinates {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        RegionCoordinates that = (RegionCoordinates) o;
+        RegionCoords that = (RegionCoords) o;
         return x == that.x &&
                 z == that.z;
     }

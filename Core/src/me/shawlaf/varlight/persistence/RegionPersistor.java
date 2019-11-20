@@ -91,6 +91,26 @@ public abstract class RegionPersistor<L extends ICustomLightSource> {
         }
     }
 
+    @Nullable
+    public L getLightSource(IntPosition position) {
+        ChunkCoords chunkCoords = position.toChunkCoords();
+
+        synchronized (chunkCache) {
+
+            if (!chunkCache.containsKey(chunkCoords)) {
+                return null;
+            }
+
+            for (L lightSource : chunkCache.get(chunkCoords)) {
+                if (lightSource.getPosition().equals(position)) {
+                    return lightSource;
+                }
+            }
+        }
+
+        return null;
+    }
+
     public void put(L lightSource) throws IOException {
         ChunkCoords chunkCoords = lightSource.getPosition().toChunkCoords();
 
@@ -101,6 +121,21 @@ public abstract class RegionPersistor<L extends ICustomLightSource> {
                 loadChunk(chunkCoords);
                 putInternal(lightSource);
                 unloadChunk(chunkCoords);
+            }
+        }
+    }
+
+    public void removeLightSource(IntPosition position) throws IOException {
+        ChunkCoords chunkCoords = position.toChunkCoords();
+
+        synchronized (chunkCache) {
+
+            if (!chunkCache.containsKey(chunkCoords)) {
+                return;
+            }
+
+            if (chunkCache.get(chunkCoords).removeIf(l -> l.getPosition().equals(position))) {
+                file.editChunk(chunkCoords, chunkCache.get(chunkCoords).toArray(createArray(0)));
             }
         }
     }
@@ -118,6 +153,24 @@ public abstract class RegionPersistor<L extends ICustomLightSource> {
     public List<ChunkCoords> getAffectedChunks() {
         synchronized (file) {
             return new ArrayList<>(file.getOffsetTable().keySet());
+        }
+    }
+
+    public List<L> loadAll() throws IOException {
+        synchronized (file) {
+            synchronized (chunkCache) {
+                for (ChunkCoords chunkCoords : chunkCache.keySet()) {
+                    flushChunk(chunkCoords);
+                }
+
+                return file.readAll();
+            }
+        }
+    }
+
+    public void save() throws IOException {
+        synchronized (file) {
+            file.save();
         }
     }
 
@@ -159,45 +212,6 @@ public abstract class RegionPersistor<L extends ICustomLightSource> {
             list.add(lightSource);
         }
     }
-
-    public List<L> loadAll() throws IOException {
-        synchronized (file) {
-            synchronized (chunkCache) {
-                for (ChunkCoords chunkCoords : chunkCache.keySet()) {
-                    flushChunk(chunkCoords);
-                }
-
-                return file.readAll();
-            }
-        }
-    }
-
-    public void save() throws IOException {
-        synchronized (file) {
-            file.save();
-        }
-    }
-
-    @Nullable
-    public L getLightSource(IntPosition position) {
-        ChunkCoords chunkCoords = position.toChunkCoords();
-
-        synchronized (chunkCache) {
-
-            if (!chunkCache.containsKey(chunkCoords)) {
-                return null;
-            }
-
-            for (L lightSource : chunkCache.get(chunkCoords)) {
-                if (lightSource.getPosition().equals(position)) {
-                    return lightSource;
-                }
-            }
-        }
-
-        return null;
-    }
-
 
     @NotNull
     protected abstract L[] createArray(int size);
