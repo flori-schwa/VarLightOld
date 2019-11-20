@@ -23,12 +23,12 @@ public abstract class RegionPersistor<L extends ICustomLightSource> {
 
         if (!vldbRoot.exists()) {
             if (!vldbRoot.mkdir()) {
-                throw new LightPersistFailedException("Could not create directory ");
+                throw new LightPersistFailedException("Could not create directory \"" + vldbRoot.getAbsolutePath() + "\"");
             }
         }
 
         if (!vldbRoot.isDirectory()) {
-            throw new IllegalArgumentException(String.format("%s is not a directory!", vldbRoot.getAbsolutePath()));
+            throw new IllegalArgumentException(String.format("\"%s\" is not a directory!", vldbRoot.getAbsolutePath()));
         }
 
         this.regionX = regionX;
