@@ -1,14 +1,14 @@
 package me.shawlaf.varlight.persistence.vldb;
 
-import me.shawlaf.varlight.persistence.BasicCustomLightSource;
 import me.shawlaf.varlight.persistence.ICustomLightSource;
 import me.shawlaf.varlight.util.ChunkCoords;
-import me.shawlaf.varlight.util.IntPosition;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.zip.GZIPOutputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /*
     .VLDB Format:
@@ -45,90 +45,6 @@ import java.util.zip.GZIPOutputStream;
 public class VLDBOutputStream implements Flushable, Closeable, AutoCloseable {
 
     protected final DataOutputStream baseStream;
-
-    public static void main(String[] args) throws IOException {
-        final boolean zipped = false;
-        final int regionX = 0, regionZ = 0;
-
-        final Random random = new Random();
-
-        File testFile = new File("C:\\temp\\vldb_test.vldb");
-
-
-        if (testFile.exists()) {
-            testFile.delete();
-        }
-
-        testFile.createNewFile();
-
-        ICustomLightSource[] toWrite = new ICustomLightSource[32 * 32 * 16];
-//        ICustomLightSource[] toWrite = new ICustomLightSource[32 * 32 * 16 * 16 * 256];
-        int count = 0;
-
-        for (int rcx = 0; rcx < 32; rcx++) {
-            for (int rcz = 0; rcz < 32; rcz++) {
-                final int cx = rcx + (regionX * 32);
-                final int cz = rcz + (regionZ * 32);
-
-                for (int cy = 0; cy < 16; cy++) {
-                    toWrite[count++] = new BasicCustomLightSource(
-                            new IntPosition(
-                                    cx * 16 + (random.nextInt(16)),
-                                    cy * 16 + (random.nextInt(16)),
-                                    cz * 16 + (random.nextInt(16))
-                            ),
-                            random.nextInt(16), random.nextBoolean(), "STONE"
-                    );
-                }
-
-//                for (int y = 0; y < 256; y++) {
-//                    for (int z = 0; z < 16; z++) {
-//                        for (int x = 0; x < 16; x++) {
-//                                toWrite[count++] = new BasicCustomLightSource(
-//                                        new IntPosition(cx * 16 + x, y, cz * 16 + z),
-//                                        "STONE",
-//                                        random.nextInt(16),
-//                                        random.nextBoolean()
-//                                );
-//                        }
-//                    }
-//                }
-            }
-        }
-
-        try {
-            VLDBOutputStream outputStream;
-
-            if (zipped) {
-                outputStream = new VLDBOutputStream(new GZIPOutputStream(new FileOutputStream(testFile)));
-            } else {
-                outputStream = new VLDBOutputStream(new FileOutputStream(testFile));
-            }
-
-            long start = System.currentTimeMillis();
-
-            outputStream.write(toWrite);
-            outputStream.close();
-
-            long total = System.currentTimeMillis() - start;
-
-            System.out.println("Writing took " + total + "ms");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-//        File jsonTest = new File("C:\\temp\\vldb_test.json");
-//
-//        if (jsonTest.exists()) {
-//            jsonTest.delete();
-//        }
-//
-//        jsonTest.createNewFile();
-//
-//        Gson gson = new Gson();
-//
-//        new FileWriter(jsonTest).write(gson.toJson(toWrite));
-    }
 
     public VLDBOutputStream(DataOutputStream baseStream) {
         this.baseStream = baseStream;
