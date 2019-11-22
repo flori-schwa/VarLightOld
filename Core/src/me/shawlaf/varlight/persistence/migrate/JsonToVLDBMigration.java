@@ -11,39 +11,47 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.function.Predicate;
+import java.util.zip.GZIPOutputStream;
 
 public class JsonToVLDBMigration implements Predicate<File> {
     @Override
-    public boolean test(File dataBaseFile) {
+    public boolean test(File jsonFile) {
 
-        Objects.requireNonNull(dataBaseFile, "DB file may not be null!");
+        Objects.requireNonNull(jsonFile, "DB file may not be null!");
 
-        if (!dataBaseFile.exists()) {
-            throw new IllegalArgumentException("\"" + dataBaseFile.getAbsolutePath() + "\" does not exist!");
+        if (!jsonFile.exists()) {
+            throw new IllegalArgumentException("\"" + jsonFile.getAbsolutePath() + "\" does not exist!");
         }
 
-        if (!".json".equalsIgnoreCase(FileUtil.getExtension(dataBaseFile))) {
+        if (!".json".equalsIgnoreCase(FileUtil.getExtension(jsonFile))) {
             return false; // Ignore all non-json files
         }
 
         Gson gson = new Gson();
         BasicCustomLightSource[] jsonData;
 
-        try (FileReader reader = new FileReader(dataBaseFile)) {
+        try (FileReader reader = new FileReader(jsonFile)) {
             jsonData = gson.fromJson(reader, BasicCustomLightSource[].class);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to migrate \"" + dataBaseFile.getAbsolutePath() + "\"", e);
+            throw new RuntimeException("Failed to migrate \"" + jsonFile.getAbsolutePath() + "\"", e);
         }
 
-        String fileInName = dataBaseFile.getName();
+        String fileInName = jsonFile.getName();
         fileInName = fileInName.substring(0, fileInName.lastIndexOf('.'));
 
-        File fileOut = new File(dataBaseFile.getParentFile().getAbsoluteFile(), fileInName + ".vldb");
+        File fileOut = new File(jsonFile.getParentFile().getAbsoluteFile(), fileInName + ".vldb");
 
-        try (VLDBOutputStream out = new VLDBOutputStream(new FileOutputStream(fileOut))) {
+        try (FileOutputStream fos = new FileOutputStream(fileOut)) {
+            GZIPOutputStream gzipOut = new GZIPOutputStream(fos);
+            VLDBOutputStream out = new VLDBOutputStream(gzipOut);
+
             out.write(jsonData);
+
+            out.flush();
+            gzipOut.flush();
+            gzipOut.close();
         } catch (IOException e) {
-            throw new RuntimeException("Failed to migrate \"" + dataBaseFile.getAbsolutePath() + "\"", e);
+            throw new RuntimeException("Failed to migrate \"" + jsonFile.getAbsolutePath() + "\"", e);
         }
 
         return true;

@@ -21,7 +21,7 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
 
     private final Object lock = new Object();
 
-    public static String FILE_NAME_FORMAT = "r%d.%d.vldb";
+    public static String FILE_NAME_FORMAT = "r.%d.%d.vldb";
 
     public final File file;
     public byte[] fileContents;
@@ -122,7 +122,7 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
 
     @NotNull
     public List<L> readAll() throws IOException {
-        try (VLDBInputStream in = in()) { // Skip Header
+        try (VLDBInputStream in = in()) {
             return in.readAll(this::createArray, this::createInstance);
         }
     }
@@ -351,8 +351,16 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
                 return false;
             }
 
-            try (VLDBOutputStream out = out()) {
+            try (FileOutputStream fos = new FileOutputStream(file)) {
+                GZIPOutputStream gzipOut = new GZIPOutputStream(fos);
+                VLDBOutputStream out = new VLDBOutputStream(gzipOut);
+
                 out.write(fileContents);
+
+                out.flush();
+                gzipOut.flush();
+
+                gzipOut.close();
             }
 
             modified = false;
@@ -388,19 +396,21 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
     }
 
     private void readFileFully() throws IOException {
-        GZIPInputStream in = new GZIPInputStream(new FileInputStream(file));
-        ByteArrayOutputStream out = new ByteArrayOutputStream(Math.toIntExact(file.length()));
+        synchronized (lock) {
+            GZIPInputStream in = new GZIPInputStream(new FileInputStream(file));
+            ByteArrayOutputStream out = new ByteArrayOutputStream(Math.toIntExact(file.length()));
 
-        byte[] buffer = new byte[1024];
-        int read = 0;
+            byte[] buffer = new byte[1024];
+            int read;
 
-        while ((read = in.read(buffer)) > 0) {
-            out.write(buffer, 0, read);
+            while ((read = in.read(buffer, 0, buffer.length)) > 0) {
+                out.write(buffer, 0, read);
+            }
+
+            this.fileContents = out.toByteArray();
+
+            in.close();
         }
-
-        this.fileContents = out.toByteArray();
-
-        in.close();
     }
 
     private void rereadHeader() throws IOException {
