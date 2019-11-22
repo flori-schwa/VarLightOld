@@ -43,6 +43,9 @@
     <property name="v1_14_R1-LightAPI-src" location="v1_14_R1-LightAPI/src"/>
     <property name="v1_14_R1-LightAPI-build" location="${build}/v1_14_R1-LightAPI"/>
 
+    <property name="paper-version" value="226"/>
+    <property name="use-compiler" value="javac1.8"/>
+
     <property name="lib-dir" location="lib"/>
 
     <target name="clean">
@@ -86,7 +89,6 @@
     </target>
 
     <target name="build-core" depends="init, git-rev">
-
         <condition property="plugin.version.set">
             <isset property="plugin.version"/>
         </condition>
@@ -98,7 +100,8 @@
         </copy>
 
         <replace file="${core-build}/plugin.yml" token="plugin.version" value="${plugin.version}"/>
-        <javac srcdir="${core-src}" destdir="${core-build}" compiler="modern">
+
+        <javac srcdir="${core-src}" destdir="${core-build}" includeantruntime="false" compiler="${use-compiler}">
             <classpath>
                 <fileset dir="${lib-dir}">
                     <include name="**/spigot-1.13.2.jar"/>
@@ -108,348 +111,125 @@
                 </fileset>
             </classpath>
         </javac>
-
         <delete file="${core-build}/me/shawlaf/varlight/nms/NmsAdapter.class"/>
     </target>
 
-    <target name="build-v1_8_R3" depends="build-core">
-        <copy todir="${v1_8_R3-build}">
-            <fileset dir="${core-build}"/>
-        </copy>
+    <target name="master" depends="build-core">
+        <macrodef name="build">
+            <attribute name="version"/>
+            <attribute name="out-dir"/>
+            <attribute name="api-version"/>
+            <attribute name="src-dir"/>
 
-        <replace file="${v1_8_R3-build}/plugin.yml" token="api.version" value="1.13"/>
+            <element name="libraries"/>
 
-        <javac srcdir="${v1_8_R3-src}" destdir="${v1_8_R3-build}" compiler="modern">
-            <classpath>
-                <fileset dir="${lib-dir}">
-                    <include name="**/spigot-1.8.8.jar"/>
-                    <include name="**/annotations-17.0.0.jar"/>
-                </fileset>
+            <sequential>
 
-                <fileset dir="${core-build}">
-                    <include name="**/*.class"/>
-                </fileset>
-            </classpath>
-        </javac>
-    </target>
+                <copy todir="@{out-dir}">
+                    <fileset dir="${core-build}"/>
+                </copy>
 
-    <target name="build-v1_9_R2" depends="build-core">
-        <copy todir="${v1_9_R2-build}">
-            <fileset dir="${core-build}"/>
-        </copy>
+                <replace file="@{out-dir}/plugin.yml" token="api.version" value="@{api-version}"/>
 
-        <replace file="${v1_9_R2-build}/plugin.yml" token="api.version" value="1.13"/>
+                <javac srcdir="@{src-dir}" destdir="@{out-dir}" includeantruntime="false" compiler="${use-compiler}">
+                    <classpath>
+                        <fileset dir="${core-build}">
+                            <include name="**/*.class"/>
+                        </fileset>
 
-        <javac srcdir="${v1_9_R2-src}" destdir="${v1_9_R2-build}" compiler="modern">
-            <classpath>
-                <fileset dir="${lib-dir}">
-                    <include name="**/spigot-1.9.4.jar"/>
-                    <include name="**/annotations-17.0.0.jar"/>
-                </fileset>
+                        <fileset dir="${lib-dir}">
+                            <include name="**/annotations-17.0.0.jar"/>
+                            <libraries/>
+                        </fileset>
+                    </classpath>
+                </javac>
 
-                <fileset dir="${core-build}">
-                    <include name="**/*.class"/>
-                </fileset>
-            </classpath>
-        </javac>
-    </target>
+                <jar destfile="${dist}/VarLight-${plugin.version}-@{version}.jar" basedir="@{out-dir}">
+                    <zipgroupfileset dir="${lib-dir}">
+                        <include name="spigot-book-api-1.3.jar"/>
+                        <include name="annotations-17.0.0.jar"/>
+                    </zipgroupfileset>
+                </jar>
+            </sequential>
+        </macrodef>
 
-    <target name="build-v1_10_R1" depends="build-core">
-        <copy todir="${v1_10_R1-build}">
-            <fileset dir="${core-build}"/>
-        </copy>
+        <build version="Spigot-MC-1.8.8" src-dir="${v1_8_R3-src}" out-dir="${v1_8_R3-build}" api-version="1.13">
+            <libraries>
+                <include name="**/spigot-1.8.8.jar"/>
+            </libraries>
+        </build>
 
-        <replace file="${v1_10_R1-build}/plugin.yml" token="api.version" value="1.13"/>
+        <build version="Spigot-MC-1.9.4" src-dir="${v1_9_R2-src}" out-dir="${v1_9_R2-build}"
+               api-version="1.13">
+            <libraries>
+                <include name="**/spigot-1.9.4.jar"/>
+            </libraries>
+        </build>
 
-        <javac srcdir="${v1_10_R1-src}" destdir="${v1_10_R1-build}" compiler="modern">
-            <classpath>
-                <fileset dir="${lib-dir}">
-                    <include name="**/spigot-1.10.2.jar"/>
-                    <include name="**/annotations-17.0.0.jar"/>
-                </fileset>
+        <build version="Spigot-MC-1.10.2" src-dir="${v1_10_R1-src}" out-dir="${v1_10_R1-build}"
+               api-version="1.13">
+            <libraries>
+                <include name="**/spigot-1.10.2.jar"/>
+            </libraries>
+        </build>
 
-                <fileset dir="${core-build}">
-                    <include name="**/*.class"/>
-                </fileset>
-            </classpath>
-        </javac>
-    </target>
+        <build version="Spigot-MC-1.11.2" src-dir="${v1_11_R1-src}" out-dir="${v1_11_R1-build}"
+               api-version="1.13">
+            <libraries>
+                <include name="**/spigot-1.11.2.jar"/>
+            </libraries>
+        </build>
 
-    <target name="build-v1_11_R1" depends="build-core">
-        <copy todir="${v1_11_R1-build}">
-            <fileset dir="${core-build}"/>
-        </copy>
+        <build version="Spigot-MC-1.12.2" src-dir="${v1_12_R1-src}" out-dir="${v1_12_R1-build}"
+               api-version="1.13">
+            <libraries>
+                <include name="**/spigot-1.12.2.jar"/>
+            </libraries>
+        </build>
 
-        <replace file="${v1_11_R1-build}/plugin.yml" token="api.version" value="1.13"/>
+        <build version="Spigot-MC-1.13.2" src-dir="${v1_13_R2-src}" out-dir="${v1_13_R2-build}"
+               api-version="1.13">
+            <libraries>
+                <include name="**/spigot-1.13.2.jar"/>
+            </libraries>
+        </build>
 
-        <javac srcdir="${v1_11_R1-src}" destdir="${v1_11_R1-build}" compiler="modern">
-            <classpath>
-                <fileset dir="${lib-dir}">
-                    <include name="**/spigot-1.11.2.jar"/>
-                    <include name="**/annotations-17.0.0.jar"/>
-                </fileset>
+        <build version="Spigot-MC-1.14-1.14.1" src-dir="${pre_1_14_2_Spigot-src}" out-dir="${pre_1_14_2_Spigot-build}"
+               api-version="1.14">
+            <libraries>
+                <include name="**/spigot-1.14.jar"/>
+            </libraries>
+        </build>
 
-                <fileset dir="${core-build}">
-                    <include name="**/*.class"/>
-                </fileset>
-            </classpath>
-        </javac>
-    </target>
+        <build version="Spigot-MC-1.14.2-1.14.3" src-dir="${post_1_14_2_Spigot-src}"
+               out-dir="${post_1_14_2_Spigot-build}"
+               api-version="1.14">
+            <libraries>
+                <include name="**/spigot-1.14.2.jar"/>
+            </libraries>
+        </build>
 
-    <target name="build-v1_12_R1" depends="build-core">
-        <copy todir="${v1_12_R1-build}">
-            <fileset dir="${core-build}"/>
-        </copy>
+        <build version="Spigot-MC-1.14.4" src-dir="${post_1_14_4_Spigot-src}" out-dir="${post_1_14_4_Spigot-build}"
+               api-version="1.14">
+            <libraries>
+                <include name="**/spigot-1.14.4.jar"/>
+            </libraries>
+        </build>
 
-        <replace file="${v1_12_R1-build}/plugin.yml" token="api.version" value="1.13"/>
+        <build version="Paper-MC-1.14.4" src-dir="${post_1_14_4_Paper-src}" out-dir="${post_1_14_4_Paper-build}"
+               api-version="1.14">
+            <libraries>
+                <include name="**/paper-${paper-version}/paper-${paper-version}.jar"/>
+                <include name="**/paper-${paper-version}/patched_1.14.4.jar"/>
+            </libraries>
+        </build>
 
-        <javac srcdir="${v1_12_R1-src}" destdir="${v1_12_R1-build}" compiler="modern">
-            <classpath>
-                <fileset dir="${lib-dir}">
-                    <include name="**/spigot-1.12.2.jar"/>
-                    <include name="**/annotations-17.0.0.jar"/>
-                </fileset>
-
-                <fileset dir="${core-build}">
-                    <include name="**/*.class"/>
-                </fileset>
-            </classpath>
-        </javac>
-    </target>
-
-    <target name="build-v1_13_R2" depends="build-core">
-        <copy todir="${v1_13_R2-build}">
-            <fileset dir="${core-build}"/>
-        </copy>
-
-        <replace file="${v1_13_R2-build}/plugin.yml" token="api.version" value="1.13"/>
-
-        <javac srcdir="${v1_13_R2-src}" destdir="${v1_13_R2-build}" compiler="modern">
-            <classpath>
-                <fileset dir="${lib-dir}">
-                    <include name="**/spigot-1.13.2.jar"/>
-                    <include name="**/annotations-17.0.0.jar"/>
-                </fileset>
-
-                <fileset dir="${core-build}">
-                    <include name="**/*.class"/>
-                </fileset>
-            </classpath>
-        </javac>
-    </target>
-
-    <target name="build-pre_1_14_2_Spigot" depends="build-core">
-        <copy todir="${pre_1_14_2_Spigot-build}">
-            <fileset dir="${core-build}"/>
-        </copy>
-
-        <replace file="${pre_1_14_2_Spigot-build}/plugin.yml" token="api.version" value="1.14"/>
-
-        <javac srcdir="${pre_1_14_2_Spigot-src}" destdir="${pre_1_14_2_Spigot-build}" compiler="modern">
-            <classpath>
-                <fileset dir="${lib-dir}">
-                    <include name="**/spigot-1.14.jar"/>
-                    <include name="**/annotations-17.0.0.jar"/>
-                </fileset>
-
-                <fileset dir="${core-build}">
-                    <include name="**/*.class"/>
-                </fileset>
-            </classpath>
-        </javac>
-    </target>
-
-    <target name="build-post_1_14_2_Spigot" depends="build-core">
-        <copy todir="${post_1_14_2_Spigot-build}">
-            <fileset dir="${core-build}"/>
-        </copy>
-
-        <replace file="${post_1_14_2_Spigot-build}/plugin.yml" token="api.version" value="1.14"/>
-
-        <javac srcdir="${post_1_14_2_Spigot-src}" destdir="${post_1_14_2_Spigot-build}" compiler="modern">
-            <classpath>
-                <fileset dir="${lib-dir}">
-                    <include name="**/spigot-1.14.2.jar"/>
-                    <include name="**/annotations-17.0.0.jar"/>
-                </fileset>
-
-                <fileset dir="${core-build}">
-                    <include name="**/*.class"/>
-                </fileset>
-            </classpath>
-        </javac>
-    </target>
-
-    <target name="build-post_1_14_4_Spigot" depends="build-core">
-        <copy todir="${post_1_14_4_Spigot-build}">
-            <fileset dir="${core-build}"/>
-        </copy>
-
-        <replace file="${post_1_14_4_Spigot-build}/plugin.yml" token="api.version" value="1.14"/>
-
-        <javac srcdir="${post_1_14_4_Spigot-src}" destdir="${post_1_14_4_Spigot-build}" compiler="modern">
-            <classpath>
-                <fileset dir="${lib-dir}">
-                    <include name="**/spigot-1.14.4.jar"/>
-                    <include name="**/annotations-17.0.0.jar"/>
-                </fileset>
-
-                <fileset dir="${core-build}">
-                    <include name="**/*.class"/>
-                </fileset>
-            </classpath>
-        </javac>
-    </target>
-
-    <target name="build-post_1_14_4_Paper" depends="build-core">
-        <copy todir="${post_1_14_4_Paper-build}">
-            <fileset dir="${core-build}"/>
-        </copy>
-
-        <replace file="${post_1_14_4_Paper-build}/plugin.yml" token="api.version" value="1.14"/>
-
-        <javac srcdir="${post_1_14_4_Paper-src}" destdir="${post_1_14_4_Paper-build}" compiler="modern">
-            <classpath>
-                <fileset dir="${lib-dir}/paper-156">
-                    <include name="**/paper-156.jar"/>
-                    <include name="**/patched_1.14.4.jar"/>
-                </fileset>
-
-                <fileset dir="${lib-dir}">
-                    <include name="**/annotations-17.0.0.jar"/>
-                </fileset>
-
-                <fileset dir="${core-build}">
-                    <include name="**/*.class"/>
-                </fileset>
-            </classpath>
-        </javac>
-    </target>
-
-    <target name="build-v1_14_R1-LightAPI" depends="build-core">
-        <copy todir="${v1_14_R1-LightAPI-build}">
-            <fileset dir="${core-build}"/>
-        </copy>
-
-        <replace file="${v1_14_R1-LightAPI-build}/plugin.yml" token="api.version" value="1.14"/>
-
-        <javac srcdir="${v1_14_R1-LightAPI-src}" destdir="${v1_14_R1-LightAPI-build}" compiler="modern">
-            <classpath>
-                <fileset dir="${lib-dir}">
-                    <include name="**/spigot-1.14.4.jar"/>
-                    <include name="**/LightAPI-fork-3.3.2.jar"/>
-                    <include name="**/annotations-17.0.0.jar"/>
-                </fileset>
-
-                <fileset dir="${core-build}">
-                    <include name="**/*.class"/>
-                </fileset>
-            </classpath>
-        </javac>
-    </target>
-
-    <target name="jar-v1_8_R3" depends="build-v1_8_R3">
-        <jar destfile="${dist}/VarLight-${plugin.version}-Spigot-MC-1.8.8.jar" basedir="${v1_8_R3-build}">
-            <zipgroupfileset dir="${lib-dir}">
-                <include name="spigot-book-api-1.3.jar"/>
-                <include name="annotations-17.0.0.jar"/>
-            </zipgroupfileset>
-        </jar>
-    </target>
-
-    <target name="jar-v1_9_R2" depends="build-v1_9_R2">
-        <jar destfile="${dist}/VarLight-${plugin.version}-Spigot-MC-1.9.4.jar" basedir="${v1_9_R2-build}">
-            <zipgroupfileset dir="${lib-dir}">
-                <include name="spigot-book-api-1.3.jar"/>
-                <include name="annotations-17.0.0.jar"/>
-            </zipgroupfileset>
-        </jar>
-    </target>
-
-    <target name="jar-v1_10_R1" depends="build-v1_10_R1">
-        <jar destfile="${dist}/VarLight-${plugin.version}-Spigot-MC-1.10.2.jar" basedir="${v1_10_R1-build}">
-            <zipgroupfileset dir="${lib-dir}">
-                <include name="spigot-book-api-1.3.jar"/>
-                <include name="annotations-17.0.0.jar"/>
-            </zipgroupfileset>
-        </jar>
-    </target>
-
-    <target name="jar-v1_11_R1" depends="build-v1_11_R1">
-        <jar destfile="${dist}/VarLight-${plugin.version}-Spigot-MC-1.11.2.jar" basedir="${v1_11_R1-build}">
-            <zipgroupfileset dir="${lib-dir}">
-                <include name="spigot-book-api-1.3.jar"/>
-                <include name="annotations-17.0.0.jar"/>
-            </zipgroupfileset>
-        </jar>
-    </target>
-
-    <target name="jar-v1_12_R1" depends="build-v1_12_R1">
-        <jar destfile="${dist}/VarLight-${plugin.version}-Spigot-MC-1.12.2.jar" basedir="${v1_12_R1-build}">
-            <zipgroupfileset dir="${lib-dir}">
-                <include name="spigot-book-api-1.3.jar"/>
-                <include name="annotations-17.0.0.jar"/>
-            </zipgroupfileset>
-        </jar>
-    </target>
-
-    <target name="jar-v1_13_R2" depends="build-v1_13_R2">
-        <jar destfile="${dist}/VarLight-${plugin.version}-Spigot-MC-1.13.2.jar" basedir="${v1_13_R2-build}">
-            <zipgroupfileset dir="${lib-dir}">
-                <include name="spigot-book-api-1.3.jar"/>
-                <include name="annotations-17.0.0.jar"/>
-            </zipgroupfileset>
-        </jar>
-    </target>
-
-    <target name="jar-pre_1_14_2_Spigot" depends="build-pre_1_14_2_Spigot">
-        <jar destfile="${dist}/VarLight-${plugin.version}-Spigot-MC-1.14-1.14.1.jar"
-             basedir="${pre_1_14_2_Spigot-build}">
-            <zipgroupfileset dir="${lib-dir}">
-                <include name="spigot-book-api-1.3.jar"/>
-                <include name="annotations-17.0.0.jar"/>
-            </zipgroupfileset>
-        </jar>
-    </target>
-
-    <target name="jar-post_1_14_2_Spigot" depends="build-post_1_14_2_Spigot">
-        <jar destfile="${dist}/VarLight-${plugin.version}-Spigot-MC-1.14.2-1.14.3.jar"
-             basedir="${post_1_14_2_Spigot-build}">
-            <zipgroupfileset dir="${lib-dir}">
-                <include name="spigot-book-api-1.3.jar"/>
-                <include name="annotations-17.0.0.jar"/>
-            </zipgroupfileset>
-        </jar>
-    </target>
-
-    <target name="jar-post_1_14_4_Spigot" depends="build-post_1_14_4_Spigot">
-        <jar destfile="${dist}/VarLight-${plugin.version}-Spigot-MC-1.14.4.jar" basedir="${post_1_14_4_Spigot-build}">
-            <zipgroupfileset dir="${lib-dir}">
-                <include name="spigot-book-api-1.3.jar"/>
-                <include name="annotations-17.0.0.jar"/>
-            </zipgroupfileset>
-        </jar>
-    </target>
-
-    <target name="jar-post_1_14_4_Paper" depends="build-post_1_14_4_Paper">
-        <jar destfile="${dist}/VarLight-${plugin.version}-Paper-MC-1.14.4.jar" basedir="${post_1_14_4_Paper-build}">
-            <zipgroupfileset dir="${lib-dir}">
-                <include name="spigot-book-api-1.3.jar"/>
-                <include name="annotations-17.0.0.jar"/>
-            </zipgroupfileset>
-        </jar>
-    </target>
-
-    <target name="jar-v1_14_R1-LightAPI" depends="build-v1_14_R1-LightAPI">
-        <jar destfile="${dist}/VarLight-${plugin.version}-LightAPI-1.14.jar" basedir="${v1_14_R1-LightAPI-build}">
-            <zipgroupfileset dir="${lib-dir}">
-                <include name="spigot-book-api-1.3.jar"/>
-                <include name="annotations-17.0.0.jar"/>
-            </zipgroupfileset>
-        </jar>
-    </target>
-
-    <target name="master"
-            depends="build-core, jar-v1_8_R3, jar-v1_9_R2, jar-v1_10_R1, jar-v1_11_R1, jar-v1_12_R1, jar-v1_13_R2, jar-pre_1_14_2_Spigot, jar-post_1_14_2_Spigot, jar-post_1_14_4_Spigot, jar-post_1_14_4_Paper, jar-v1_14_R1-LightAPI">
+        <build version="LightAPI-1.14" src-dir="${v1_14_R1-LightAPI-src}" out-dir="${v1_14_R1-LightAPI-build}"
+               api-version="1.14">
+            <libraries>
+                <include name="**/spigot-1.14.4.jar"/>
+                <include name="**/LightAPI-fork-3.3.2.jar"/>
+            </libraries>
+        </build>
     </target>
 </project>
