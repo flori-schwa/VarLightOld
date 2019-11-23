@@ -4,6 +4,7 @@ import me.shawlaf.varlight.command.VarLightCommand;
 import me.shawlaf.varlight.event.LightUpdateEvent;
 import me.shawlaf.varlight.nms.*;
 import me.shawlaf.varlight.persistence.WorldLightSourceManager;
+import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.NumericMajorMinorVersion;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -13,11 +14,15 @@ import org.bukkit.block.Block;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.world.ChunkLoadEvent;
+import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
@@ -304,6 +309,43 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         nmsAdapter.setCooldown(player, lightUpdateItem, 5);
         displayMessage(player, LightUpdateResult.UPDATED);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onChunkLoad(ChunkLoadEvent e) {
+        WorldLightSourceManager manager = WorldLightSourceManager.getManager(this, e.getWorld());
+
+        if (manager != null) {
+            manager.loadChunk(e.getChunk());
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onChunkUnload(ChunkUnloadEvent e) {
+        WorldLightSourceManager manager = WorldLightSourceManager.getManager(this, e.getWorld());
+
+        if (manager != null) {
+            manager.unloadChunk(e.getChunk());
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onBlockBreak(BlockBreakEvent e) {
+        if (e.isCancelled()) {
+            return;
+        }
+
+        WorldLightSourceManager manager = WorldLightSourceManager.getManager(this, e.getBlock().getWorld());
+
+        if (manager == null) {
+            return;
+        }
+
+        IntPosition position = new IntPosition(e.getBlock().getLocation());
+
+        if (manager.getCustomLuminance(position, -1) > 0) {
+            manager.setCustomLuminance(position, 0); // Delete the light source
+        }
     }
 
     @EventHandler

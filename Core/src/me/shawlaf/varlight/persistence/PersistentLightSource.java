@@ -108,4 +108,16 @@ public class PersistentLightSource implements ICustomLightSource {
 
         return block.getLightFromBlocks() >= emittingLight;
     }
+
+    @Override
+    public String toString() {
+        return "PersistentLightSource{" +
+                "position=" + position +
+                ", type=" + type +
+                ", migrated=" + migrated +
+                ", world=" + world +
+                ", plugin=" + plugin +
+                ", emittingLight=" + emittingLight +
+                '}';
+    }
 }

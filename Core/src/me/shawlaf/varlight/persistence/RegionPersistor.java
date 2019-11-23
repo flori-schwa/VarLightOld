@@ -209,7 +209,10 @@ public abstract class RegionPersistor<L extends ICustomLightSource> {
             }
 
             list.removeIf(l -> l.getPosition().equals(lightSource.getPosition()));
-            list.add(lightSource);
+
+            if (lightSource.getEmittingLight() > 0) {
+                list.add(lightSource);
+            }
         }
     }
 

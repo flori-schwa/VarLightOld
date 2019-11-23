@@ -44,9 +44,12 @@
     <property name="v1_14_R1-LightAPI-build" location="${build}/v1_14_R1-LightAPI"/>
 
     <property name="paper-version" value="226"/>
-    <property name="use-compiler" value="javac1.8"/>
+    <property name="use-compiler" value="modern"/>
 
     <property name="lib-dir" location="lib"/>
+
+    <property name="javac-debug" value="off"/>
+    <property name="javac-debug-level" value="none"/>
 
     <target name="clean">
         <delete dir="${build}"/>
@@ -101,7 +104,9 @@
 
         <replace file="${core-build}/plugin.yml" token="plugin.version" value="${plugin.version}"/>
 
-        <javac srcdir="${core-src}" destdir="${core-build}" includeantruntime="false" compiler="${use-compiler}">
+        <echo message="Compiling with debug=${javac-debug} and debug-level=${javac-debug-level}"/>
+
+        <javac srcdir="${core-src}" destdir="${core-build}" includeantruntime="false" compiler="${use-compiler}" debug="${javac-debug}" debuglevel="${javac-debug-level}">
             <classpath>
                 <fileset dir="${lib-dir}">
                     <include name="**/spigot-1.13.2.jar"/>
@@ -131,7 +136,7 @@
 
                 <replace file="@{out-dir}/plugin.yml" token="api.version" value="@{api-version}"/>
 
-                <javac srcdir="@{src-dir}" destdir="@{out-dir}" includeantruntime="false" compiler="${use-compiler}">
+                <javac srcdir="@{src-dir}" destdir="@{out-dir}" includeantruntime="false" compiler="${use-compiler}" debug="${javac-debug}" debuglevel="${javac-debug-level}">
                     <classpath>
                         <fileset dir="${core-build}">
                             <include name="**/*.class"/>

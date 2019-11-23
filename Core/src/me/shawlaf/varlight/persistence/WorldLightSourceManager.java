@@ -5,10 +5,7 @@ import me.shawlaf.varlight.persistence.migrate.LightDatabaseMigrator;
 import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.RegionCoords;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.FixedMetadataValue;
@@ -111,12 +108,16 @@ public class WorldLightSourceManager {
             File varlightFolder = new File(world.getWorldFolder(), "varlight");
 
             if (!varlightFolder.exists()) {
-                if (varlightFolder.mkdir()) {
+                if (!varlightFolder.mkdir()) {
                     throw new LightPersistFailedException("Could not create varlight directory in world \"" + world.getName() + "\"");
                 }
             }
 
             new LightDatabaseMigrator(varlightFolder).runMigrations(plugin.getLogger());
+
+            for (Chunk chunk : world.getLoadedChunks()) {
+                loadChunk(chunk);
+            }
         }
     }
 
@@ -149,6 +150,22 @@ public class WorldLightSourceManager {
     public void setCustomLuminance(IntPosition position, int lightLevel) {
         createPersistentLightSource(position, lightLevel);
 //        getOrCreatePersistentLightSource(position).setEmittingLight(lightLevel);
+    }
+
+    public void loadChunk(Chunk chunk) {
+        try {
+            getRegionPersistor(new RegionCoords(chunk.getX() >> 5, chunk.getZ() >> 5)).loadChunk(new ChunkCoords(chunk.getX(), chunk.getZ()));
+        } catch (IOException e) {
+            throw new LightPersistFailedException(e);
+        }
+    }
+
+    public void unloadChunk(Chunk chunk) {
+        try {
+            getRegionPersistor(new RegionCoords(chunk.getX() >> 5, chunk.getZ() >> 5)).unloadChunk(new ChunkCoords(chunk.getX(), chunk.getZ()));
+        } catch (IOException e) {
+            throw new LightPersistFailedException(e);
+        }
     }
 
 //    @NotNull
@@ -227,7 +244,6 @@ public class WorldLightSourceManager {
                         throw new LightPersistFailedException("Could not delete file " + persistor.file.file.getAbsolutePath());
                     }
 
-                    regionsToUnload.add(new RegionCoords(persistor.regionX, persistor.regionZ));
                     continue;
                 } else {
                     persistedRegions++;
