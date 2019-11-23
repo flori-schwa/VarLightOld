@@ -21,7 +21,6 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -298,8 +297,8 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         int lightTo = lightUpdateEvent.getToLight();
 
-        manager.setCustomLuminance(clickedBlock.getLocation(), lightTo);
         nmsAdapter.updateBlockLight(clickedBlock.getLocation(), lightTo);
+        manager.setCustomLuminance(clickedBlock.getLocation(), lightTo);
 
         e.setCancelled(creative && e.getAction() == Action.LEFT_CLICK_BLOCK);
 
@@ -311,15 +310,15 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         displayMessage(player, LightUpdateResult.UPDATED);
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
-    public void onChunkLoad(ChunkLoadEvent e) {
-        WorldLightSourceManager manager = WorldLightSourceManager.getManager(this, e.getWorld());
-
-        if (manager != null) {
-            manager.loadChunk(e.getChunk());
-        }
-    }
-
+//    @EventHandler(priority = EventPriority.MONITOR)
+//    public void onChunkLoad(ChunkLoadEvent e) {
+//        WorldLightSourceManager manager = WorldLightSourceManager.getManager(this, e.getWorld());
+//
+//        if (manager != null) {
+//            manager.loadChunk(e.getChunk());
+//        }
+//    }
+//
     @EventHandler(priority = EventPriority.MONITOR)
     public void onChunkUnload(ChunkUnloadEvent e) {
         WorldLightSourceManager manager = WorldLightSourceManager.getManager(this, e.getWorld());

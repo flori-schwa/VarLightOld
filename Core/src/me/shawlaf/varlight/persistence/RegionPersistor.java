@@ -92,13 +92,12 @@ public abstract class RegionPersistor<L extends ICustomLightSource> {
     }
 
     @Nullable
-    public L getLightSource(IntPosition position) {
+    public L getLightSource(IntPosition position) throws IOException {
         ChunkCoords chunkCoords = position.toChunkCoords();
 
         synchronized (chunkCache) {
-
             if (!chunkCache.containsKey(chunkCoords)) {
-                return null;
+                loadChunk(chunkCoords);
             }
 
             for (L lightSource : chunkCache.get(chunkCoords)) {
@@ -115,13 +114,11 @@ public abstract class RegionPersistor<L extends ICustomLightSource> {
         ChunkCoords chunkCoords = lightSource.getPosition().toChunkCoords();
 
         synchronized (chunkCache) {
-            if (chunkCache.containsKey(chunkCoords)) {
-                putInternal(lightSource);
-            } else {
+            if (!chunkCache.containsKey(chunkCoords)) {
                 loadChunk(chunkCoords);
-                putInternal(lightSource);
-                unloadChunk(chunkCoords);
             }
+
+            putInternal(lightSource);
         }
     }
 
@@ -131,7 +128,7 @@ public abstract class RegionPersistor<L extends ICustomLightSource> {
         synchronized (chunkCache) {
 
             if (!chunkCache.containsKey(chunkCoords)) {
-                return;
+                loadChunk(chunkCoords);
             }
 
             if (chunkCache.get(chunkCoords).removeIf(l -> l.getPosition().equals(position))) {

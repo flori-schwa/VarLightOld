@@ -114,10 +114,9 @@ public class WorldLightSourceManager {
             }
 
             new LightDatabaseMigrator(varlightFolder).runMigrations(plugin.getLogger());
-
-            for (Chunk chunk : world.getLoadedChunks()) {
-                loadChunk(chunk);
-            }
+//            for (Chunk chunk : world.getLoadedChunks()) {
+//                loadChunk(chunk);
+//            }
         }
     }
 
@@ -152,14 +151,14 @@ public class WorldLightSourceManager {
 //        getOrCreatePersistentLightSource(position).setEmittingLight(lightLevel);
     }
 
-    public void loadChunk(Chunk chunk) {
-        try {
-            getRegionPersistor(new RegionCoords(chunk.getX() >> 5, chunk.getZ() >> 5)).loadChunk(new ChunkCoords(chunk.getX(), chunk.getZ()));
-        } catch (IOException e) {
-            throw new LightPersistFailedException(e);
-        }
-    }
-
+    //    public void loadChunk(Chunk chunk) {
+//        try {
+//            getRegionPersistor(new RegionCoords(chunk.getX() >> 5, chunk.getZ() >> 5)).loadChunk(new ChunkCoords(chunk.getX(), chunk.getZ()));
+//        } catch (IOException e) {
+//            throw new LightPersistFailedException(e);
+//        }
+//    }
+//
     public void unloadChunk(Chunk chunk) {
         try {
             getRegionPersistor(new RegionCoords(chunk.getX() >> 5, chunk.getZ() >> 5)).unloadChunk(new ChunkCoords(chunk.getX(), chunk.getZ()));
@@ -240,9 +239,11 @@ public class WorldLightSourceManager {
                 List<ChunkCoords> affected = persistor.getAffectedChunks();
 
                 if (affected.size() == 0) {
-                    if (!persistor.file.delete()) {
+                    if (persistor.file.file.exists() && !persistor.file.delete()) {
                         throw new LightPersistFailedException("Could not delete file " + persistor.file.file.getAbsolutePath());
                     }
+
+                    regionsToUnload.add(new RegionCoords(persistor.regionX, persistor.regionZ));
 
                     continue;
                 } else {
@@ -280,13 +281,25 @@ public class WorldLightSourceManager {
     private PersistentLightSource getPersistentLightSource(IntPosition intPosition) {
         RegionPersistor<PersistentLightSource> regionMap = getRegionPersistor(new RegionCoords(intPosition));
 
-        PersistentLightSource persistentLightSource = regionMap.getLightSource(intPosition);
+        PersistentLightSource persistentLightSource;
+
+        try {
+            persistentLightSource = regionMap.getLightSource(intPosition);
+        } catch (IOException e) {
+            throw new LightPersistFailedException(e);
+        }
 
         if (persistentLightSource != null) {
             persistentLightSource.update();
 
-            if (!persistentLightSource.isValid()) {
+            if (persistentLightSource.isInvalid()) {
                 persistentLightSource = null;
+
+                try {
+                    regionMap.removeLightSource(intPosition);
+                } catch (IOException e) {
+                    throw new LightPersistFailedException(e);
+                }
             }
         }
 

@@ -56,7 +56,7 @@ public class PersistentLightSource implements ICustomLightSource {
     @Override
     public int getEmittingLight() {
 
-        if (!isValid()) {
+        if (isInvalid()) {
             return 0;
         }
 
@@ -70,10 +70,6 @@ public class PersistentLightSource implements ICustomLightSource {
 
     public World getWorld() {
         return world;
-    }
-
-    public void setEmittingLight(int lightLevel) {
-        this.emittingLight = (lightLevel & 0xF);
     }
 
     public boolean needsMigration() {
@@ -91,22 +87,22 @@ public class PersistentLightSource implements ICustomLightSource {
         }
     }
 
-    public boolean isValid() {
+    public boolean isInvalid() {
         if (!world.isChunkLoaded(position.getChunkX(), position.getChunkZ())) {
-            return true; // Assume valid
+            return false; // Assume valid
         }
 
         Block block = position.toBlock(world);
 
         if (block.getType() != type) {
-            return false;
+            return true;
         }
 
         if (plugin.getNmsAdapter().isIllegalBlock(block)) {
-            return false;
+            return true;
         }
 
-        return block.getLightFromBlocks() >= emittingLight;
+        return block.getLightFromBlocks() < emittingLight;
     }
 
     @Override
