@@ -54,6 +54,10 @@ public class PersistentLightSource implements ICustomLightSource {
     }
 
     @Override
+    public int getCustomLuminance() {
+        return emittingLight & 0xF;
+    }
+
     public int getEmittingLight() {
 
         if (isInvalid()) {

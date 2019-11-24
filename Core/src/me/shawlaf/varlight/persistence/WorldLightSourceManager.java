@@ -1,15 +1,17 @@
 package me.shawlaf.varlight.persistence;
 
 import me.shawlaf.varlight.VarLightPlugin;
+import me.shawlaf.varlight.command.VarLightCommand;
 import me.shawlaf.varlight.persistence.migrate.LightDatabaseMigrator;
 import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.RegionCoords;
-import org.bukkit.*;
+import org.bukkit.Chunk;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.metadata.MetadataValue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,79 +24,11 @@ import java.util.stream.Stream;
 
 public class WorldLightSourceManager {
 
-    public static final String TAG_WORLD_LIGHT_SOURCE_PERSISTOR = "varlight:persistor";
-
     private final Map<RegionCoords, RegionPersistor<PersistentLightSource>> worldMap;
     private final VarLightPlugin plugin;
     private final World world;
 
-    // region static
-
-    public static List<WorldLightSourceManager> getAllManager(VarLightPlugin plugin) {
-        List<WorldLightSourceManager> list = new ArrayList<>();
-
-        for (World w : Bukkit.getWorlds()) {
-            WorldLightSourceManager persistor = getManager(plugin, w);
-
-            if (persistor != null) {
-                list.add(persistor);
-            }
-        }
-
-        return list;
-    }
-
-    public static WorldLightSourceManager createManager(VarLightPlugin plugin, World world) {
-        if (world.hasMetadata(TAG_WORLD_LIGHT_SOURCE_PERSISTOR)) {
-            for (MetadataValue m : world.getMetadata(TAG_WORLD_LIGHT_SOURCE_PERSISTOR)) {
-                if (m.getOwningPlugin().equals(plugin)) {
-                    return (WorldLightSourceManager) Optional.of(m).map(MetadataValue::value).orElse(null);
-                }
-            }
-
-            return (WorldLightSourceManager) Optional.<MetadataValue>empty().map(MetadataValue::value).orElse(null);
-        }
-
-        FixedMetadataValue fixedMetadataValue = new FixedMetadataValue(plugin, new WorldLightSourceManager(plugin, world));
-        world.setMetadata(TAG_WORLD_LIGHT_SOURCE_PERSISTOR, fixedMetadataValue);
-
-        return (WorldLightSourceManager) fixedMetadataValue.value();
-    }
-
-    public static boolean hasManager(VarLightPlugin plugin, World world) {
-        return getManager(plugin, world) != null;
-    }
-
-    @Nullable
-    public static WorldLightSourceManager getManager(VarLightPlugin plugin, World world) {
-        for (MetadataValue metadataValue : world.getMetadata(TAG_WORLD_LIGHT_SOURCE_PERSISTOR)) {
-            if (metadataValue.getOwningPlugin().equals(plugin)) {
-                return (WorldLightSourceManager) metadataValue.value();
-            }
-        }
-
-        return null;
-    }
-
-    public static int getLuminance(VarLightPlugin plugin, Location location) {
-        WorldLightSourceManager manager = getManager(plugin, location.getWorld());
-
-        if (manager == null) {
-            return plugin.getNmsAdapter().getEmittingLightLevel(location.getBlock());
-        }
-
-        PersistentLightSource lightSource = manager.getPersistentLightSource(location);
-
-        if (lightSource == null) {
-            return plugin.getNmsAdapter().getEmittingLightLevel(location.getBlock());
-        }
-
-        return lightSource.getEmittingLight();
-    }
-
-    // endregion
-
-    private WorldLightSourceManager(VarLightPlugin plugin, World world) {
+    public WorldLightSourceManager(VarLightPlugin plugin, World world) {
         Objects.requireNonNull(plugin);
         Objects.requireNonNull(world);
 
@@ -222,7 +156,7 @@ public class WorldLightSourceManager {
     }
 
     public void save(CommandSender commandSender) {
-        int persistedRegions = 0;
+        int modified = 0, deleted = 0;
         List<RegionCoords> regionsToUnload = new ArrayList<>();
 
         synchronized (worldMap) {
@@ -231,7 +165,6 @@ public class WorldLightSourceManager {
 
                 try {
                     persistor.flushAll();
-                    persistor.save();
                 } catch (IOException e) {
                     throw new LightPersistFailedException(e);
                 }
@@ -239,15 +172,28 @@ public class WorldLightSourceManager {
                 List<ChunkCoords> affected = persistor.getAffectedChunks();
 
                 if (affected.size() == 0) {
-                    if (persistor.file.file.exists() && !persistor.file.delete()) {
-                        throw new LightPersistFailedException("Could not delete file " + persistor.file.file.getAbsolutePath());
+                    if (persistor.file.file.exists()) {
+                        if (!persistor.file.delete()) {
+                            throw new LightPersistFailedException("Could not delete file " + persistor.file.file.getAbsolutePath());
+                        } else {
+                            if (plugin.getConfiguration().isLoggingPersist() || commandSender instanceof Player) {
+                                VarLightCommand.sendPrefixedMessage(commandSender, String.format("Deleted File %s", persistor.file.file.getName()));
+                            }
+
+                            deleted++;
+                        }
                     }
 
                     regionsToUnload.add(new RegionCoords(persistor.regionX, persistor.regionZ));
-
                     continue;
                 } else {
-                    persistedRegions++;
+                    try {
+                        if (persistor.save()) {
+                            modified++;
+                        }
+                    } catch (IOException e) {
+                        throw new LightPersistFailedException(e);
+                    }
                 }
 
                 for (ChunkCoords chunkCoords : affected) {
@@ -267,13 +213,13 @@ public class WorldLightSourceManager {
         }
 
         if (plugin.getConfiguration().isLoggingPersist() || commandSender instanceof Player) { // Players will still receive the message if manually triggering a save
-            commandSender.sendMessage(String.format("[VarLight] Light Sources persisted for World \"%s\", Files written: %d", world.getName(), persistedRegions));
+            commandSender.sendMessage(String.format("[VarLight] Light Sources persisted for World \"%s\", Files modified: %d, Files deleted: %d", world.getName(), modified, deleted));
         }
     }
 
     private void unloadRegion(RegionCoords key) {
         synchronized (worldMap) {
-            worldMap.remove(key);
+            worldMap.remove(key).unload();
         }
     }
 
@@ -289,30 +235,16 @@ public class WorldLightSourceManager {
             throw new LightPersistFailedException(e);
         }
 
-        if (persistentLightSource != null) {
-            persistentLightSource.update();
-
-            if (persistentLightSource.isInvalid()) {
-                persistentLightSource = null;
-
-                try {
-                    regionMap.removeLightSource(intPosition);
-                } catch (IOException e) {
-                    throw new LightPersistFailedException(e);
-                }
-            }
-        }
-
         return persistentLightSource;
     }
 
     @Nullable
-    private PersistentLightSource getPersistentLightSource(Location location) {
+    public PersistentLightSource getPersistentLightSource(Location location) {
         return getPersistentLightSource(new IntPosition(location));
     }
 
     @NotNull
-    private PersistentLightSource createPersistentLightSource(IntPosition intPosition, int emittingLight) {
+    public PersistentLightSource createPersistentLightSource(IntPosition intPosition, int emittingLight) {
         PersistentLightSource persistentLightSource = new PersistentLightSource(plugin, world, intPosition, emittingLight);
         persistentLightSource.migrated = plugin.getNmsAdapter().getMinecraftVersion().newerOrEquals(VarLightPlugin.MC1_14_2);
 
@@ -325,7 +257,8 @@ public class WorldLightSourceManager {
         return persistentLightSource;
     }
 
-    private RegionPersistor<PersistentLightSource> getRegionPersistor(RegionCoords regionCoords) {
+    @NotNull
+    public RegionPersistor<PersistentLightSource> getRegionPersistor(RegionCoords regionCoords) {
         synchronized (worldMap) {
             if (!worldMap.containsKey(regionCoords)) {
                 try {

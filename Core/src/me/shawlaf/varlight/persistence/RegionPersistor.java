@@ -13,10 +13,16 @@ import java.util.*;
 
 public abstract class RegionPersistor<L extends ICustomLightSource> {
 
+//    private static int count;
+
     public final int regionX, regionZ;
 
     public final VLDBFile<L> file;
     private final Map<ChunkCoords, List<L>> chunkCache = new HashMap<>();
+
+//    {
+//        count++;
+//    }
 
     public RegionPersistor(@NotNull File vldbRoot, int regionX, int regionZ) throws IOException {
         Objects.requireNonNull(vldbRoot);
@@ -77,7 +83,15 @@ public abstract class RegionPersistor<L extends ICustomLightSource> {
         }
     }
 
-    public void unloadChunk(ChunkCoords chunkCoords) throws IOException {
+    public boolean isChunkLoaded(@NotNull ChunkCoords chunkCoords) {
+        Objects.requireNonNull(chunkCoords);
+
+        synchronized (chunkCache) {
+            return chunkCache.containsKey(chunkCoords);
+        }
+    }
+
+    public void unloadChunk(@NotNull ChunkCoords chunkCoords) throws IOException {
         Objects.requireNonNull(chunkCoords);
 
         synchronized (chunkCache) {
@@ -91,8 +105,25 @@ public abstract class RegionPersistor<L extends ICustomLightSource> {
         }
     }
 
+    @NotNull
+    public List<L> getCache(@NotNull ChunkCoords chunkCoords) {
+        List<L> chunk;
+
+        synchronized (chunkCache) {
+            chunk = chunkCache.get(chunkCoords);
+        }
+
+        if (chunk == null) {
+            return new ArrayList<>();
+        }
+
+        return Collections.unmodifiableList(chunk);
+    }
+
     @Nullable
-    public L getLightSource(IntPosition position) throws IOException {
+    public L getLightSource(@NotNull IntPosition position) throws IOException {
+        Objects.requireNonNull(position);
+
         ChunkCoords chunkCoords = position.toChunkCoords();
 
         synchronized (chunkCache) {
@@ -110,7 +141,9 @@ public abstract class RegionPersistor<L extends ICustomLightSource> {
         return null;
     }
 
-    public void put(L lightSource) throws IOException {
+    public void put(@NotNull L lightSource) throws IOException {
+        Objects.requireNonNull(lightSource);
+
         ChunkCoords chunkCoords = lightSource.getPosition().toChunkCoords();
 
         synchronized (chunkCache) {
@@ -122,11 +155,12 @@ public abstract class RegionPersistor<L extends ICustomLightSource> {
         }
     }
 
-    public void removeLightSource(IntPosition position) throws IOException {
+    public void removeLightSource(@NotNull IntPosition position) throws IOException {
+        Objects.requireNonNull(position);
+
         ChunkCoords chunkCoords = position.toChunkCoords();
 
         synchronized (chunkCache) {
-
             if (!chunkCache.containsKey(chunkCoords)) {
                 loadChunk(chunkCoords);
             }
@@ -196,6 +230,8 @@ public abstract class RegionPersistor<L extends ICustomLightSource> {
     }
 
     private void putInternal(L lightSource) {
+        Objects.requireNonNull(lightSource);
+
         ChunkCoords chunkCoords = lightSource.getPosition().toChunkCoords();
 
         synchronized (chunkCache) {
@@ -207,7 +243,7 @@ public abstract class RegionPersistor<L extends ICustomLightSource> {
 
             list.removeIf(l -> l.getPosition().equals(lightSource.getPosition()));
 
-            if (lightSource.getEmittingLight() > 0) {
+            if (lightSource.getCustomLuminance() > 0) {
                 list.add(lightSource);
             }
         }
@@ -218,4 +254,16 @@ public abstract class RegionPersistor<L extends ICustomLightSource> {
 
     @NotNull
     protected abstract L createInstance(IntPosition position, int lightLevel, boolean migrated, String material);
+
+    public void unload() {
+        chunkCache.clear();
+
+        file.unload();
+    }
+
+//    @Override
+//    protected void finalize() throws Throwable {
+//        count--;
+//        super.finalize();
+//    }
 }

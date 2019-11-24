@@ -48,7 +48,7 @@ public class VarLightCommandSave extends VarLightSubCommand {
 
             Player player = (Player) sender;
 
-            WorldLightSourceManager manager = WorldLightSourceManager.getManager(plugin, player.getWorld());
+            WorldLightSourceManager manager = plugin.getManager(player.getWorld());
 
             if (manager != null) {
                 manager.save(player);
@@ -60,7 +60,10 @@ public class VarLightCommandSave extends VarLightSubCommand {
         }
 
         if ("all".equalsIgnoreCase(args.peek())) {
-            WorldLightSourceManager.getAllManager(plugin).forEach(persistor -> persistor.save(sender));
+            for (WorldLightSourceManager persistor : plugin.getAllManagers()) {
+                persistor.save(sender);
+            }
+
             return true;
         }
 
@@ -69,7 +72,7 @@ public class VarLightCommandSave extends VarLightSubCommand {
         if (world == null) {
             VarLightCommand.sendPrefixedMessage(sender, "Could not find a world with that name");
         } else {
-            WorldLightSourceManager manager = WorldLightSourceManager.getManager(plugin, world);
+            WorldLightSourceManager manager = plugin.getManager(world);
 
             if (manager == null) {
                 VarLightCommand.sendPrefixedMessage(sender, String.format("VarLight is not active in world \"%s\"", world.getName()));
@@ -90,7 +93,7 @@ public class VarLightCommandSave extends VarLightSubCommand {
         commandSuggestions
                 .addSuggestion("all")
                 .suggestChoices(Bukkit.getWorlds().stream()
-                        .filter(w -> WorldLightSourceManager.hasManager(plugin, w))
+                        .filter(plugin::hasManager)
                         .map(World::getName)
                         .collect(Collectors.toSet())
                 );

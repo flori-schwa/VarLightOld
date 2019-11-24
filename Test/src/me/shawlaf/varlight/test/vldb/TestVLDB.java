@@ -458,7 +458,7 @@ public class TestVLDB {
 
             // region testing bad input for editChunk
 
-            assertThrows(IllegalArgumentException.class, () -> vldbFile.editChunk(ChunkCoords.ORIGIN, new BasicCustomLightSource[0]));
+//            assertThrows(IllegalArgumentException.class, () -> vldbFile.editChunk(ChunkCoords.ORIGIN, new BasicCustomLightSource[0]));
 
             assertThrows(IllegalArgumentException.class,
                     () -> vldbFile.editChunk(new ChunkCoords(-1, -1), new BasicCustomLightSource[]{

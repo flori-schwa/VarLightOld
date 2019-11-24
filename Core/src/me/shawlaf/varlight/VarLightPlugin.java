@@ -25,10 +25,10 @@ import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class VarLightPlugin extends JavaPlugin implements Listener {
@@ -36,9 +36,11 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     public static final NumericMajorMinorVersion
             MC1_14_2 = new NumericMajorMinorVersion("1.14.2");
     public static final long TICK_RATE = 20L;
-    public static boolean DEBUG = false;
     private static String PACKAGE_VERSION;
+
     private final Map<UUID, Integer> stepSizes = new HashMap<>();
+    private final Map<UUID, WorldLightSourceManager> managers = new HashMap<>();
+
     private INmsAdapter nmsAdapter;
     private VarLightConfiguration configuration;
     private BukkitTask autosaveTask;
@@ -102,7 +104,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         }
 
         configuration = new VarLightConfiguration(this);
-        DEBUG = configuration.isDebug();
 
         configuration.getVarLightEnabledWorlds().forEach(this::enableInWorld);
 
@@ -164,7 +165,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         autosaveTask = Bukkit.getScheduler().runTaskTimer(this,
                 () -> {
-                    for (WorldLightSourceManager manager : WorldLightSourceManager.getAllManager(this)) {
+                    for (WorldLightSourceManager manager : getAllManagers()) {
                         manager.save(Bukkit.getConsoleSender());
                     }
                 },
@@ -182,7 +183,9 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         // If PersistOnSave is enabled, PersistOnWorldSaveHandler.onWorldSave will automatically save the Light Sources
         if (configuration.getAutosaveInterval() >= 0) {
-            WorldLightSourceManager.getAllManager(this).forEach(l -> l.save(Bukkit.getConsoleSender()));
+            for (WorldLightSourceManager l : getAllManagers()) {
+                l.save(Bukkit.getConsoleSender());
+            }
         }
     }
 
@@ -196,8 +199,26 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     }
 
     public void enableInWorld(World world) {
-        WorldLightSourceManager.createManager(this, world);
+        managers.put(
+                world.getUID(),
+                new WorldLightSourceManager(this, world)
+        );
+
         nmsAdapter.onWorldEnable(world);
+    }
+
+    public boolean hasManager(@NotNull World world) {
+        return managers.containsKey(Objects.requireNonNull(world).getUID());
+    }
+
+    @NotNull
+    public List<WorldLightSourceManager> getAllManagers() {
+        return Collections.unmodifiableList(new ArrayList<>(managers.values()));
+    }
+
+    @Nullable
+    public WorldLightSourceManager getManager(@NotNull World world) {
+        return managers.get(Objects.requireNonNull(world).getUID());
     }
 
     public VarLightConfiguration getConfiguration() {
@@ -230,7 +251,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
-        WorldLightSourceManager manager = WorldLightSourceManager.getManager(this, e.getPlayer().getWorld());
+        WorldLightSourceManager manager = getManager(e.getPlayer().getWorld());
 
         if (e.isCancelled() || e.getAction() != Action.RIGHT_CLICK_BLOCK && e.getAction() != Action.LEFT_CLICK_BLOCK || nmsAdapter.hasCooldown(e.getPlayer(), lightUpdateItem)) {
             return;
@@ -239,7 +260,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         if (manager == null && configuration.getVarLightEnabledWorldNames().contains(e.getPlayer().getWorld().getName())) {
             enableInWorld(e.getPlayer().getWorld());
 
-            manager = WorldLightSourceManager.getManager(this, e.getPlayer().getWorld());
+            manager = getManager(e.getPlayer().getWorld());
         }
 
         if (manager == null) {
@@ -306,11 +327,11 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             heldItem.setAmount(heldItem.getAmount() - 1);
         }
 
-        nmsAdapter.setCooldown(player, lightUpdateItem, 5);
+//        nmsAdapter.setCooldown(player, lightUpdateItem, 5);
         displayMessage(player, LightUpdateResult.UPDATED);
     }
 
-//    @EventHandler(priority = EventPriority.MONITOR)
+    //    @EventHandler(priority = EventPriority.MONITOR)
 //    public void onChunkLoad(ChunkLoadEvent e) {
 //        WorldLightSourceManager manager = WorldLightSourceManager.getManager(this, e.getWorld());
 //
@@ -321,7 +342,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 //
     @EventHandler(priority = EventPriority.MONITOR)
     public void onChunkUnload(ChunkUnloadEvent e) {
-        WorldLightSourceManager manager = WorldLightSourceManager.getManager(this, e.getWorld());
+        WorldLightSourceManager manager = getManager(e.getWorld());
 
         if (manager != null) {
             manager.unloadChunk(e.getChunk());
@@ -334,7 +355,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-        WorldLightSourceManager manager = WorldLightSourceManager.getManager(this, e.getBlock().getWorld());
+        WorldLightSourceManager manager = getManager(e.getBlock().getWorld());
 
         if (manager == null) {
             return;
@@ -354,18 +375,8 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     private void displayMessage(Player player, LightUpdateResult lightUpdateResult) {
         switch (lightUpdateResult) {
-
-            case CANCELLED: {
-                if (DEBUG) {
-                    nmsAdapter.sendActionBarMessage(player, "Cancelled");
-                }
-            }
-
+            case CANCELLED:
             case INVALID_BLOCK: {
-                if (DEBUG) {
-                    nmsAdapter.sendActionBarMessage(player, "Invalid Block.");
-                }
-
                 return;
             }
 

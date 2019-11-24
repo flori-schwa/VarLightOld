@@ -133,7 +133,7 @@ public class TestRegionPersistor {
                 assertNotNull(bcls);
 
                 assertEquals(pos, bcls.getPosition());
-                assertEquals(light, bcls.getEmittingLight());
+                assertEquals(light, bcls.getCustomLuminance());
                 assertEquals(migrated, bcls.isMigrated());
 //                assertFalse(regionPersistorBasic.save()); // TODO put in separate test
 //

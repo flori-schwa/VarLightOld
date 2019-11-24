@@ -9,8 +9,11 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 import xyz.upperlevel.spigot.book.BookUtil;
 
+import java.io.PrintWriter;
+import java.io.Writer;
 import java.util.*;
 
 public class VarLightCommand implements CommandExecutor, TabCompleter {
@@ -396,7 +399,7 @@ public class VarLightCommand implements CommandExecutor, TabCompleter {
     }
 
     @Override
-    public boolean onCommand(CommandSender commandSender, Command command, String label, String[] args) {
+    public boolean onCommand(final CommandSender commandSender, Command command, String label, String[] args) {
         if (!"varlight".equalsIgnoreCase(command.getName())) {
             return true; // How would this happen?
         }
@@ -415,12 +418,46 @@ public class VarLightCommand implements CommandExecutor, TabCompleter {
         }
 
         try {
-            if (!subCommand.execute(commandSender, arguments)) {
-                commandSender.sendMessage(subCommand.getCommandHelp());
-                return true;
+            try {
+                if (!subCommand.execute(commandSender, arguments)) {
+                    commandSender.sendMessage(subCommand.getCommandHelp());
+                    return true;
+                }
+            } catch (VarLightCommandException e) {
+                sendPrefixedMessage(commandSender, e.getMessage());
+
+                if (e.getCause() != null) {
+                    throw e.getCause();
+                }
             }
-        } catch (VarLightCommandException e) {
-            sendPrefixedMessage(commandSender, e.getMessage());
+        } catch (Throwable e) {
+            if (commandSender.hasPermission("varlight.admin")) {
+                e.printStackTrace(new PrintWriter(new Writer() {
+                    private StringBuffer buffer = new StringBuffer();
+
+                    @Override
+                    public void write(@NotNull char[] cbuf, int off, int len) {
+                        buffer.append(cbuf, off, len);
+                    }
+
+                    @Override
+                    public void flush() {
+                        String[] lines = buffer.toString().split("\n");
+
+                        commandSender.sendMessage(lines);
+                        buffer = new StringBuffer();
+                    }
+
+                    @Override
+                    public void close() {
+                        flush();
+
+                        buffer = null;
+                    }
+                }));
+
+                e.printStackTrace();
+            }
         }
 
         return true;

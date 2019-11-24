@@ -19,6 +19,9 @@ import static me.shawlaf.varlight.persistence.vldb.VLDBUtil.*;
 
 public abstract class VLDBFile<L extends ICustomLightSource> {
 
+//    private static int count;
+//    private static List<VLDBFile<?>> instances = new ArrayList<>();
+
     private final Object lock = new Object();
 
     public static String FILE_NAME_FORMAT = "r.%d.%d.vldb";
@@ -54,6 +57,11 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
         return true;
     }
 
+
+//    {
+//        count++;
+//        instances.add(this);
+//    }
 
     public VLDBFile(@NotNull File file, int regionX, int regionZ) throws IOException {
         this.file = requireNonNull(file);
@@ -191,7 +199,7 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
 
             Pair<ByteArrayOutputStream, VLDBOutputStream> out = outToMemory();
 
-            out.item2.writeChunk(chunkCoords, chunk);
+            out.item2.writeChunk(cx, cz, chunk);
             out.item2.close();
 
             final int oldHeaderSize = sizeofHeader(offsetTable.keySet().size());
@@ -216,7 +224,8 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
         requireNonNull(data);
 
         if (data.length == 0) {
-            throw new IllegalArgumentException("Array may not be empty!");
+            removeChunk(coords);
+            return;
         }
 
         final int cx = coords.x;
@@ -250,7 +259,7 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
                 Pair<ByteArrayOutputStream, VLDBOutputStream> newFileOut = outToMemory(fileContents.length);
 
                 newFileOut.item2.write(fileContents, 0, targetChunkOffset);
-                newFileOut.item2.writeChunk(coords, data);
+                newFileOut.item2.writeChunk(cx, cz, data);
                 newFileOut.item2.write(fileContents, targetChunkOffset + oldChunkSize, fileContents.length - (targetChunkOffset + oldChunkSize));
 
                 newFileOut.item2.close();
@@ -279,7 +288,7 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
 
                 newFileOut.item2.writeHeader(regionX, regionZ, newOffsetTable);
                 newFileOut.item2.write(fileContents, headerLength, (targetChunkOffset - headerLength));
-                newFileOut.item2.writeChunk(coords, data);
+                newFileOut.item2.writeChunk(cx, cz, data);
                 newFileOut.item2.write(fileContents, targetChunkOffset + oldChunkSize, fileContents.length - (targetChunkOffset + oldChunkSize));
 
                 newFileOut.item2.close();
@@ -439,4 +448,17 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
             return file.delete();
         }
     }
+
+    public void unload() {
+        fileContents = null;
+        offsetTable.clear();
+    }
+
+//    @Override
+//    protected void finalize() throws Throwable {
+//        count--;
+//        instances.remove(this);
+//
+//        super.finalize();
+//    }
 }

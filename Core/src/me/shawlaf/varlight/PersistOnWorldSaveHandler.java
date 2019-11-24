@@ -16,7 +16,7 @@ public class PersistOnWorldSaveHandler implements Listener {
 
     @EventHandler
     public void onWorldSave(WorldSaveEvent e) {
-        WorldLightSourceManager manager = WorldLightSourceManager.getManager(plugin, e.getWorld());
+        WorldLightSourceManager manager = plugin.getManager(e.getWorld());
 
         if (manager != null) {
             manager.save(Bukkit.getConsoleSender());

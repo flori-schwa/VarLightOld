@@ -8,6 +8,7 @@ import me.shawlaf.varlight.command.VarLightSubCommand;
 import me.shawlaf.varlight.command.exception.VarLightCommandException;
 import me.shawlaf.varlight.event.LightUpdateEvent;
 import me.shawlaf.varlight.persistence.WorldLightSourceManager;
+import me.shawlaf.varlight.util.IntPosition;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -83,7 +84,7 @@ public class VarLightCommandUpdate extends VarLightSubCommand {
         }
 
 
-        final WorldLightSourceManager worldLightSourceManager = WorldLightSourceManager.getManager(plugin, world);
+        final WorldLightSourceManager worldLightSourceManager = plugin.getManager(world);
 
         if (worldLightSourceManager == null) {
             VarLightCommand.sendPrefixedMessage(sender, "VarLight is not active in that world!");
@@ -91,7 +92,7 @@ public class VarLightCommandUpdate extends VarLightSubCommand {
         }
 
         final Location toUpdate = new Location(world, x, y, z);
-        final int fromLight = WorldLightSourceManager.getLuminance(plugin, toUpdate);
+        final int fromLight = worldLightSourceManager.getCustomLuminance(new IntPosition(toUpdate), 0);
 
         if (!world.isChunkLoaded(toUpdate.getBlockX() >> 4, toUpdate.getBlockZ() >> 4)) {
             VarLightCommand.sendPrefixedMessage(sender, "That part of the world is not loaded");
@@ -128,7 +129,7 @@ public class VarLightCommandUpdate extends VarLightSubCommand {
             suggestions.suggestChoices(IntStream.range(0, 16).mapToObj(String::valueOf).toArray(String[]::new));
         } else if (suggestions.getArgumentCount() == 5) {
             suggestions.suggestChoices(Bukkit.getWorlds().stream()
-                    .filter(w -> WorldLightSourceManager.hasManager(plugin, w))
+                    .filter(plugin::hasManager)
                     .map(World::getName)
                     .collect(Collectors.toSet())
             );

@@ -38,6 +38,10 @@ public class ArgumentIterator implements Iterator<String> {
         return arguments[position++];
     }
 
+    public int nextInt() {
+        return parseNext(Integer::parseInt);
+    }
+
     public boolean hasParameters(int required) {
         return (length - position) >= required;
     }

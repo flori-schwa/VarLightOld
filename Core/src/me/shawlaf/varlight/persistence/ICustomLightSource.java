@@ -11,6 +11,6 @@ public interface ICustomLightSource {
 
     boolean isMigrated();
 
-    int getEmittingLight();
+    int getCustomLuminance();
 
 }

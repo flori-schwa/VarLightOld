@@ -13,7 +13,7 @@ public class IntPosition implements Comparable<IntPosition> {
 
     public static final IntPosition ORIGIN = new IntPosition(0, 0, 0);
 
-    private final int x, y, z;
+    public final int x, y, z;
 
     public IntPosition(Location location) {
         this(location.getBlockX(), location.getBlockY(), location.getBlockZ());
@@ -29,16 +29,8 @@ public class IntPosition implements Comparable<IntPosition> {
         this.z = z;
     }
 
-    public int getX() {
-        return x;
-    }
-
-    public int getY() {
-        return y;
-    }
-
-    public int getZ() {
-        return z;
+    public IntPosition(Block block) {
+        this(block.getX(), block.getY(), block.getZ());
     }
 
     public int getChunkX() {

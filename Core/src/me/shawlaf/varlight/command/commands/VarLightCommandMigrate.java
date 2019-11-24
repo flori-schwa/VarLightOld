@@ -46,7 +46,7 @@ public class VarLightCommandMigrate extends VarLightSubCommand {
 
         VarLightCommand.broadcastResult(sender, "Starting migration...", node);
 
-        for (WorldLightSourceManager manager : WorldLightSourceManager.getAllManager(plugin)) {
+        for (WorldLightSourceManager manager : plugin.getAllManagers()) {
             int migrated = 0, skipped = 0;
 
             VarLightCommand.broadcastResult(sender, String.format("Migrating \"%s\"", manager.getWorld().getName()), node);

@@ -66,15 +66,15 @@ public class VLDBOutputStream implements Flushable, Closeable, AutoCloseable {
 
     public void writeLightSource(ICustomLightSource lightSource) throws IOException {
         baseStream.writeShort(
-                ((lightSource.getPosition().getX() & 0xF) << 12) |       // Encoded X
-                        ((lightSource.getPosition().getY()) << 4) |         // Encoded Y
-                        (lightSource.getPosition().getZ() & 0xF));          // Encoded Z
-        baseStream.writeByte(((lightSource.getEmittingLight() & 0xF) << 4) | (lightSource.isMigrated() ? 1 : 0));
+                ((lightSource.getPosition().x & 0xF) << 12) |       // Encoded X
+                        ((lightSource.getPosition().y) << 4) |         // Encoded Y
+                        (lightSource.getPosition().z & 0xF));          // Encoded Z
+        baseStream.writeByte(((lightSource.getCustomLuminance() & 0xF) << 4) | (lightSource.isMigrated() ? 1 : 0));
         writeASCII(lightSource.getType().name());
     }
 
-    public void writeChunk(ChunkCoords chunkCoords, ICustomLightSource[] lightSources) throws IOException {
-        baseStream.writeShort((chunkCoords.getRegionRelativeX()) << 8 | chunkCoords.getRegionRelativeZ());
+    public void writeChunk(int chunkX, int chunkZ, ICustomLightSource[] lightSources) throws IOException {
+        baseStream.writeShort((((chunkX % 32) + 32) % 32) << 8 | ((chunkZ % 32) + 32) % 32);
         writeUInt24(lightSources.length);
 
         for (ICustomLightSource lightSource : lightSources) {
@@ -118,7 +118,7 @@ public class VLDBOutputStream implements Flushable, Closeable, AutoCloseable {
             ChunkCoords chunkCoords = chunks[i];
 
             offsetTable.put(chunkCoords, headerSize + fileBodyBuffer.size());
-            bodyOutputStream.writeChunk(chunkCoords, chunkMap.get(chunkCoords).toArray(new ICustomLightSource[0]));
+            bodyOutputStream.writeChunk(chunkCoords.x, chunkCoords.z, chunkMap.get(chunkCoords).toArray(new ICustomLightSource[0]));
         }
 
         writeHeader(rx, rz, offsetTable);

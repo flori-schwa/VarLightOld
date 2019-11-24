@@ -34,7 +34,7 @@ public class BasicCustomLightSource implements ICustomLightSource {
     }
 
     @Override
-    public int getEmittingLight() {
+    public int getCustomLuminance() {
         return emittingLight;
     }
 
