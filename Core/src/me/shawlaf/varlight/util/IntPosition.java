@@ -6,7 +6,6 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.jetbrains.annotations.NotNull;
 
-import javax.swing.plaf.synth.Region;
 import java.util.Objects;
 
 public class IntPosition implements Comparable<IntPosition> {

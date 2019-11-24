@@ -22,46 +22,14 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
 //    private static int count;
 //    private static List<VLDBFile<?>> instances = new ArrayList<>();
 
-    private final Object lock = new Object();
-
     public static String FILE_NAME_FORMAT = "r.%d.%d.vldb";
-
     public final File file;
-    public byte[] fileContents;
-
+    private final Object lock = new Object();
     private final int regionX, regionZ;
+    public byte[] fileContents;
     private Map<ChunkCoords, Integer> offsetTable;
 
     private boolean modified = false;
-
-    public static String getFileName(ICustomLightSource[] region) {
-        final int rx = region[0].getPosition().getRegionX();
-        final int rz = region[0].getPosition().getRegionZ();
-
-        if (!allLightSourcesInRegion(rx, rz, region)) {
-            throw new IllegalArgumentException("Not all light sources are in the same region!");
-        }
-
-        return String.format(FILE_NAME_FORMAT, rx, rz);
-    }
-
-    public static boolean allLightSourcesInRegion(int rx, int rz, ICustomLightSource[] lightSources) {
-        for (ICustomLightSource iCustomLightSource : lightSources) {
-            IntPosition pos = iCustomLightSource.getPosition();
-
-            if (pos.getRegionX() != rx || pos.getRegionZ() != rz) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-
-//    {
-//        count++;
-//        instances.add(this);
-//    }
 
     public VLDBFile(@NotNull File file, int regionX, int regionZ) throws IOException {
         this.file = requireNonNull(file);
@@ -98,6 +66,35 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
 
             headerReader.close();
         }
+    }
+
+
+//    {
+//        count++;
+//        instances.add(this);
+//    }
+
+    public static String getFileName(ICustomLightSource[] region) {
+        final int rx = region[0].getPosition().getRegionX();
+        final int rz = region[0].getPosition().getRegionZ();
+
+        if (!allLightSourcesInRegion(rx, rz, region)) {
+            throw new IllegalArgumentException("Not all light sources are in the same region!");
+        }
+
+        return String.format(FILE_NAME_FORMAT, rx, rz);
+    }
+
+    public static boolean allLightSourcesInRegion(int rx, int rz, ICustomLightSource[] lightSources) {
+        for (ICustomLightSource iCustomLightSource : lightSources) {
+            IntPosition pos = iCustomLightSource.getPosition();
+
+            if (pos.getRegionX() != rx || pos.getRegionZ() != rz) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public Map<ChunkCoords, Integer> getOffsetTable() {

@@ -23,22 +23,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class TestRegionPersistor {
 
-    private static class RegionPersistorBasic extends RegionPersistor<BasicCustomLightSource> {
-        public RegionPersistorBasic(@NotNull File vldbRoot, int regionX, int regionZ) throws IOException {
-            super(vldbRoot, regionX, regionZ);
-        }
-
-        @Override
-        protected BasicCustomLightSource[] createArray(int size) {
-            return new BasicCustomLightSource[size];
-        }
-
-        @Override
-        protected BasicCustomLightSource createInstance(IntPosition position, int lightLevel, boolean migrated, String material) {
-            return new BasicCustomLightSource(position, lightLevel, migrated, material);
-        }
-    }
-
     private File tempDir;
 
     @BeforeEach
@@ -152,6 +136,22 @@ public class TestRegionPersistor {
             new Test(-1, -1);
         } catch (IOException e) {
             fail(e);
+        }
+    }
+
+    private static class RegionPersistorBasic extends RegionPersistor<BasicCustomLightSource> {
+        public RegionPersistorBasic(@NotNull File vldbRoot, int regionX, int regionZ) throws IOException {
+            super(vldbRoot, regionX, regionZ);
+        }
+
+        @Override
+        protected BasicCustomLightSource[] createArray(int size) {
+            return new BasicCustomLightSource[size];
+        }
+
+        @Override
+        protected BasicCustomLightSource createInstance(IntPosition position, int lightLevel, boolean migrated, String material) {
+            return new BasicCustomLightSource(position, lightLevel, migrated, material);
         }
     }
 
