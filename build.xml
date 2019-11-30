@@ -28,25 +28,16 @@
     <property name="v1_13_R2-src" location="v1_13_R2/src"/>
     <property name="v1_13_R2-build" location="${build}/v1_13_R2"/>
 
-    <property name="pre_1_14_2_Spigot-src" location="pre_1_14_2_Spigot/src"/>
-    <property name="pre_1_14_2_Spigot-build" location="${build}/pre_1_14_2_Spigot"/>
-
-    <property name="post_1_14_2_Spigot-src" location="post_1_14_2_Spigot/src"/>
-    <property name="post_1_14_2_Spigot-build" location="${build}/post_1_14_2_Spigot"/>
-
-    <property name="post_1_14_4_Spigot-src" location="post_1_14_4_Spigot/src"/>
-    <property name="post_1_14_4_Spigot-build" location="${build}/post_1_14_4_Spigot"/>
-
-    <property name="post_1_14_4_Paper-src" location="post_1_14_4_Paper/src"/>
-    <property name="post_1_14_4_Paper-build" location="${build}/post_1_14_4_Paper"/>
-
     <property name="v1_14_R1-LightAPI-src" location="v1_14_R1-LightAPI/src"/>
     <property name="v1_14_R1-LightAPI-build" location="${build}/v1_14_R1-LightAPI"/>
 
     <property name="paper-version" value="226"/>
-    <property name="use-compiler" value="javac1.8"/>
+    <property name="use-compiler" value="modern"/>
 
     <property name="lib-dir" location="lib"/>
+
+    <property name="javac-debug" value="off"/>
+    <property name="javac-debug-level" value="none"/>
 
     <target name="clean">
         <delete dir="${build}"/>
@@ -62,10 +53,6 @@
         <mkdir dir="${v1_11_R1-build}"/>
         <mkdir dir="${v1_12_R1-build}"/>
         <mkdir dir="${v1_13_R2-build}"/>
-        <mkdir dir="${pre_1_14_2_Spigot-build}"/>
-        <mkdir dir="${post_1_14_2_Spigot-build}"/>
-        <mkdir dir="${post_1_14_4_Spigot-build}"/>
-        <mkdir dir="${post_1_14_4_Paper-build}"/>
         <mkdir dir="${v1_14_R1-LightAPI-build}"/>
         <mkdir dir="${dist}"/>
     </target>
@@ -101,7 +88,10 @@
 
         <replace file="${core-build}/plugin.yml" token="plugin.version" value="${plugin.version}"/>
 
-        <javac srcdir="${core-src}" destdir="${core-build}" includeantruntime="false" compiler="${use-compiler}">
+        <echo message="Compiling with debug=${javac-debug} and debug-level=${javac-debug-level}"/>
+
+        <javac srcdir="${core-src}" destdir="${core-build}" includeantruntime="false" compiler="${use-compiler}"
+               debug="${javac-debug}" debuglevel="${javac-debug-level}">
             <classpath>
                 <fileset dir="${lib-dir}">
                     <include name="**/spigot-1.13.2.jar"/>
@@ -131,7 +121,8 @@
 
                 <replace file="@{out-dir}/plugin.yml" token="api.version" value="@{api-version}"/>
 
-                <javac srcdir="@{src-dir}" destdir="@{out-dir}" includeantruntime="false" compiler="${use-compiler}">
+                <javac srcdir="@{src-dir}" destdir="@{out-dir}" includeantruntime="false" compiler="${use-compiler}"
+                       debug="${javac-debug}" debuglevel="${javac-debug-level}">
                     <classpath>
                         <fileset dir="${core-build}">
                             <include name="**/*.class"/>
@@ -153,82 +144,52 @@
             </sequential>
         </macrodef>
 
-        <build version="Spigot-MC-1.8.8" src-dir="${v1_8_R3-src}" out-dir="${v1_8_R3-build}" api-version="1.13">
+        <build version="MC-1.8.8" src-dir="${v1_8_R3-src}" out-dir="${v1_8_R3-build}" api-version="1.13">
             <libraries>
                 <include name="**/spigot-1.8.8.jar"/>
             </libraries>
         </build>
 
-        <build version="Spigot-MC-1.9.4" src-dir="${v1_9_R2-src}" out-dir="${v1_9_R2-build}"
+        <build version="MC-1.9.4" src-dir="${v1_9_R2-src}" out-dir="${v1_9_R2-build}"
                api-version="1.13">
             <libraries>
                 <include name="**/spigot-1.9.4.jar"/>
             </libraries>
         </build>
 
-        <build version="Spigot-MC-1.10.2" src-dir="${v1_10_R1-src}" out-dir="${v1_10_R1-build}"
+        <build version="MC-1.10.2" src-dir="${v1_10_R1-src}" out-dir="${v1_10_R1-build}"
                api-version="1.13">
             <libraries>
                 <include name="**/spigot-1.10.2.jar"/>
             </libraries>
         </build>
 
-        <build version="Spigot-MC-1.11.2" src-dir="${v1_11_R1-src}" out-dir="${v1_11_R1-build}"
+        <build version="MC-1.11.2" src-dir="${v1_11_R1-src}" out-dir="${v1_11_R1-build}"
                api-version="1.13">
             <libraries>
                 <include name="**/spigot-1.11.2.jar"/>
             </libraries>
         </build>
 
-        <build version="Spigot-MC-1.12.2" src-dir="${v1_12_R1-src}" out-dir="${v1_12_R1-build}"
+        <build version="MC-1.12.2" src-dir="${v1_12_R1-src}" out-dir="${v1_12_R1-build}"
                api-version="1.13">
             <libraries>
                 <include name="**/spigot-1.12.2.jar"/>
             </libraries>
         </build>
 
-        <build version="Spigot-MC-1.13.2" src-dir="${v1_13_R2-src}" out-dir="${v1_13_R2-build}"
+        <build version="MC-1.13.2" src-dir="${v1_13_R2-src}" out-dir="${v1_13_R2-build}"
                api-version="1.13">
             <libraries>
                 <include name="**/spigot-1.13.2.jar"/>
             </libraries>
         </build>
 
-        <build version="Spigot-MC-1.14-1.14.1" src-dir="${pre_1_14_2_Spigot-src}" out-dir="${pre_1_14_2_Spigot-build}"
-               api-version="1.14">
-            <libraries>
-                <include name="**/spigot-1.14.jar"/>
-            </libraries>
-        </build>
-
-        <build version="Spigot-MC-1.14.2-1.14.3" src-dir="${post_1_14_2_Spigot-src}"
-               out-dir="${post_1_14_2_Spigot-build}"
-               api-version="1.14">
-            <libraries>
-                <include name="**/spigot-1.14.2.jar"/>
-            </libraries>
-        </build>
-
-        <build version="Spigot-MC-1.14.4" src-dir="${post_1_14_4_Spigot-src}" out-dir="${post_1_14_4_Spigot-build}"
+        <build version="MC-1.14+" src-dir="${v1_14_R1-LightAPI-src}" out-dir="${v1_14_R1-LightAPI-build}"
                api-version="1.14">
             <libraries>
                 <include name="**/spigot-1.14.4.jar"/>
-            </libraries>
-        </build>
-
-        <build version="Paper-MC-1.14.4" src-dir="${post_1_14_4_Paper-src}" out-dir="${post_1_14_4_Paper-build}"
-               api-version="1.14">
-            <libraries>
-                <include name="**/paper-${paper-version}/paper-${paper-version}.jar"/>
-                <include name="**/paper-${paper-version}/patched_1.14.4.jar"/>
-            </libraries>
-        </build>
-
-        <build version="LightAPI-1.14" src-dir="${v1_14_R1-LightAPI-src}" out-dir="${v1_14_R1-LightAPI-build}"
-               api-version="1.14">
-            <libraries>
-                <include name="**/spigot-1.14.4.jar"/>
-                <include name="**/LightAPI-fork-3.3.2.jar"/>
+                <include name="**/LightAPI-fork-3.4.1.jar"/>
             </libraries>
         </build>
     </target>

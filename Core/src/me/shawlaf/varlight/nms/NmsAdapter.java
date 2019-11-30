@@ -3,7 +3,6 @@ package me.shawlaf.varlight.nms;
 import me.shawlaf.varlight.VarLightPlugin;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -42,16 +41,6 @@ public class NmsAdapter implements INmsAdapter {
 
     @Override
     public void sendActionBarMessage(Player player, String message) {
-        throw new AbstractMethodError();
-    }
-
-    @Override
-    public void setCooldown(Player player, Material material, int ticks) {
-        throw new AbstractMethodError();
-    }
-
-    @Override
-    public boolean hasCooldown(Player player, Material material) {
         throw new AbstractMethodError();
     }
 

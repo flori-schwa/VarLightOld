@@ -1,8 +1,5 @@
 package me.shawlaf.varlight.persistence;
 
-import com.google.gson.Gson;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonWriter;
 import me.shawlaf.varlight.VarLightPlugin;
 import me.shawlaf.varlight.util.IntPosition;
 import org.bukkit.Material;
@@ -11,7 +8,7 @@ import org.bukkit.block.Block;
 
 import java.util.Objects;
 
-public class PersistentLightSource {
+public class PersistentLightSource implements ICustomLightSource {
 
     private final IntPosition position;
     private final Material type;
@@ -32,45 +29,66 @@ public class PersistentLightSource {
         this.emittingLight = (emittingLight & 0xF);
     }
 
-    static PersistentLightSource read(Gson gson, JsonReader jsonReader) {
-        return gson.fromJson(jsonReader, PersistentLightSource.class);
+    PersistentLightSource(IntPosition position, Material type, boolean migrated, World world, VarLightPlugin plugin, int emittingLight) {
+        Objects.requireNonNull(position);
+        Objects.requireNonNull(type);
+        Objects.requireNonNull(world);
+        Objects.requireNonNull(plugin);
+
+        this.position = position;
+        this.type = type;
+        this.migrated = migrated;
+        this.world = world;
+        this.plugin = plugin;
+        this.emittingLight = emittingLight;
     }
 
-    public World getWorld() {
-        return world;
-    }
-
+    @Override
     public IntPosition getPosition() {
         return position;
     }
 
+    @Override
     public Material getType() {
         return type;
     }
 
+    @Override
+    public int getCustomLuminance() {
+        return emittingLight & 0xF;
+    }
+
     public int getEmittingLight() {
 
-        if (!isValid()) {
+        if (isInvalid()) {
             return 0;
         }
 
         return emittingLight & 0xF;
     }
 
-    public void setEmittingLight(int lightLevel) {
-        this.emittingLight = (lightLevel & 0xF);
+    @Override
+    public boolean isMigrated() {
+        return migrated;
+    }
+
+    public World getWorld() {
+        return world;
     }
 
     public boolean needsMigration() {
         return plugin.getNmsAdapter().getMinecraftVersion().newerOrEquals(VarLightPlugin.MC1_14_2) && !isMigrated();
     }
 
-    public boolean isMigrated() {
-        return migrated;
-    }
-
     public void migrate() {
+        WorldLightSourceManager manager = plugin.getManager(world);
+
+        if (manager == null) {
+            return;
+        }
+
         plugin.getNmsAdapter().updateBlockLight(position.toLocation(world), emittingLight);
+        manager.createPersistentLightSource(position, emittingLight);
         migrated = true;
     }
 
@@ -80,32 +98,37 @@ public class PersistentLightSource {
         }
     }
 
-    public boolean isValid() {
+    public boolean isInvalid() {
         if (!world.isChunkLoaded(position.getChunkX(), position.getChunkZ())) {
-            return true; // Assume valid
+            return false; // Assume valid
+        }
+
+        if (plugin.getNmsAdapter().getMinecraftVersion().newerOrEquals(VarLightPlugin.MC1_14_2) && !migrated) {
+            return false; // Assume valid
         }
 
         Block block = position.toBlock(world);
 
         if (block.getType() != type) {
-            return false;
+            return true;
         }
 
         if (plugin.getNmsAdapter().isIllegalBlock(block)) {
-            return false;
+            return true;
         }
 
-        return block.getLightFromBlocks() >= emittingLight;
+        return block.getLightFromBlocks() < emittingLight;
     }
 
-    void initialize(World world, VarLightPlugin plugin) {
-        this.world = world;
-        this.plugin = plugin;
+    @Override
+    public String toString() {
+        return "PersistentLightSource{" +
+                "position=" + position +
+                ", type=" + type +
+                ", migrated=" + migrated +
+                ", world=" + world +
+                ", plugin=" + plugin +
+                ", emittingLight=" + emittingLight +
+                '}';
     }
-
-    void write(Gson gson, JsonWriter jsonWriter) {
-        gson.toJson(this, PersistentLightSource.class, jsonWriter);
-    }
-
-
 }

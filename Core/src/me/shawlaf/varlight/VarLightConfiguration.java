@@ -58,10 +58,6 @@ public class VarLightConfiguration {
         return plugin.getConfig().getBoolean(CONFIG_KEY_LOG_PERSIST, true);
     }
 
-    public boolean isDebug() {
-        return plugin.getConfig().getBoolean("debug", false);
-    }
-
     public int getAutosaveInterval() {
         return plugin.getConfig().getInt(CONFIG_KEY_AUTOSAVE, AUTOSAVE_DEFAULT);
     }

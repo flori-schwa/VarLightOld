@@ -166,16 +166,6 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public void setCooldown(Player player, Material material, int ticks) {
-        // Ignore
-    }
-
-    @Override
-    public boolean hasCooldown(Player player, Material material) {
-        return false;
-    }
-
-    @Override
     public Block getTargetBlockExact(Player player, int maxDistance) {
         return player.getTargetBlock(new HashSet<Material>(), maxDistance);
     }

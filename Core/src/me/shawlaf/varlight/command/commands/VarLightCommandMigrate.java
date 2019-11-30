@@ -5,8 +5,8 @@ import me.shawlaf.varlight.command.ArgumentIterator;
 import me.shawlaf.varlight.command.VarLightCommand;
 import me.shawlaf.varlight.command.VarLightSubCommand;
 import me.shawlaf.varlight.command.exception.VarLightCommandException;
-import me.shawlaf.varlight.persistence.LightSourcePersistor;
 import me.shawlaf.varlight.persistence.PersistentLightSource;
+import me.shawlaf.varlight.persistence.WorldLightSourceManager;
 import org.bukkit.command.CommandSender;
 
 public class VarLightCommandMigrate extends VarLightSubCommand {
@@ -42,41 +42,40 @@ public class VarLightCommandMigrate extends VarLightSubCommand {
             throw new VarLightCommandException("You may only migrate AFTER Minecraft 1.14.2!");
         }
 
-        class IntContainer {
-            int i = 0;
-        }
-
-        IntContainer totalMigrated = new IntContainer(), totalSkipped = new IntContainer();
+        int totalMigrated = 0, totalSkipped = 0;
 
         VarLightCommand.broadcastResult(sender, "Starting migration...", node);
 
-        LightSourcePersistor.getAllPersistors(plugin).forEach((p) -> {
+        for (WorldLightSourceManager manager : plugin.getAllManagers()) {
+            int migrated = 0, skipped = 0;
 
-            IntContainer migrated = new IntContainer(), skipped = new IntContainer();
+            VarLightCommand.broadcastResult(sender, String.format("Migrating \"%s\"", manager.getWorld().getName()), node);
 
-            VarLightCommand.broadcastResult(sender, String.format("Migrating \"%s\"", p.getWorld().getName()), node);
+            for (PersistentLightSource lightSource : manager.getAllLightSources()) {
 
-            p.getAllLightSources().filter(PersistentLightSource::needsMigration).forEach(lightSource -> {
-                if (!lightSource.getPosition().isChunkLoaded(lightSource.getWorld())) {
-                    if (lightSource.getPosition().loadChunk(lightSource.getWorld(), false)) {
-                        lightSource.update();
-                        migrated.i++;
+                if (lightSource.needsMigration()) {
+                    if (!lightSource.getPosition().isChunkLoaded(lightSource.getWorld())) {
+                        if (lightSource.getPosition().loadChunk(lightSource.getWorld(), false)) {
+                            lightSource.update();
+                            migrated++;
+                        } else {
+                            skipped++;
+                        }
                     } else {
-                        skipped.i++;
+                        lightSource.update();
+                        migrated++;
                     }
-                } else {
-                    lightSource.update();
-                    migrated.i++;
                 }
-            });
 
-            VarLightCommand.broadcastResult(sender, String.format("Migrated Light sources in world \"%s\" (migrated: %d, skipped: %d)", p.getWorld().getName(), migrated.i, skipped.i), node);
+            }
 
-            totalMigrated.i += migrated.i;
-            totalSkipped.i += skipped.i;
-        });
+            VarLightCommand.broadcastResult(sender, String.format("Migrated Light sources in world \"%s\" (migrated: %d, skipped: %d)", manager.getWorld().getName(), migrated, skipped), node);
 
-        VarLightCommand.broadcastResult(sender, String.format("All Light sources migrated (total migrated: %d, skipped: %d)", totalMigrated.i, totalSkipped.i), node);
+            totalMigrated += migrated;
+            totalSkipped += skipped;
+        }
+
+        VarLightCommand.broadcastResult(sender, String.format("All Light sources migrated (total migrated: %d, skipped: %d)", totalMigrated, totalSkipped), node);
 
         return true;
     }

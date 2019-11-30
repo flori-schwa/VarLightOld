@@ -7,7 +7,7 @@ import me.shawlaf.varlight.command.VarLightCommand;
 import me.shawlaf.varlight.command.VarLightSubCommand;
 import me.shawlaf.varlight.command.exception.VarLightCommandException;
 import me.shawlaf.varlight.event.LightUpdateEvent;
-import me.shawlaf.varlight.persistence.LightSourcePersistor;
+import me.shawlaf.varlight.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.util.IntPosition;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -84,15 +84,15 @@ public class VarLightCommandUpdate extends VarLightSubCommand {
         }
 
 
-        final LightSourcePersistor lightSourcePersistor = LightSourcePersistor.getPersistor(plugin, world);
+        final WorldLightSourceManager worldLightSourceManager = plugin.getManager(world);
 
-        if (lightSourcePersistor == null) {
+        if (worldLightSourceManager == null) {
             VarLightCommand.sendPrefixedMessage(sender, "VarLight is not active in that world!");
             return true;
         }
 
         final Location toUpdate = new Location(world, x, y, z);
-        final int fromLight = LightSourcePersistor.getEmittingLightLevel(plugin, toUpdate);
+        final int fromLight = worldLightSourceManager.getCustomLuminance(new IntPosition(toUpdate), 0);
 
         if (!world.isChunkLoaded(toUpdate.getBlockX() >> 4, toUpdate.getBlockZ() >> 4)) {
             VarLightCommand.sendPrefixedMessage(sender, "That part of the world is not loaded");
@@ -112,10 +112,9 @@ public class VarLightCommandUpdate extends VarLightSubCommand {
             return true;
         }
 
-        lightSourcePersistor.getOrCreatePersistentLightSource(new IntPosition(toUpdate))
-                .setEmittingLight(lightUpdateEvent.getToLight());
-
+        worldLightSourceManager.setCustomLuminance(toUpdate, lightUpdateEvent.getToLight());
         plugin.getNmsAdapter().updateBlockLight(toUpdate, lightUpdateEvent.getToLight());
+
         VarLightCommand.broadcastResult(sender, String.format("Updated Light level at [%d, %d, %d] in world \"%s\" from %d to %d",
                 toUpdate.getBlockX(), toUpdate.getBlockY(), toUpdate.getBlockZ(), world.getName(), lightUpdateEvent.getFromLight(), lightUpdateEvent.getToLight()), "varlight.admin");
 
@@ -130,7 +129,7 @@ public class VarLightCommandUpdate extends VarLightSubCommand {
             suggestions.suggestChoices(IntStream.range(0, 16).mapToObj(String::valueOf).toArray(String[]::new));
         } else if (suggestions.getArgumentCount() == 5) {
             suggestions.suggestChoices(Bukkit.getWorlds().stream()
-                    .filter(w -> LightSourcePersistor.hasPersistor(plugin, w))
+                    .filter(plugin::hasManager)
                     .map(World::getName)
                     .collect(Collectors.toSet())
             );

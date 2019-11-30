@@ -1,7 +1,5 @@
 package me.shawlaf.varlight.util;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -91,7 +89,7 @@ public class NumericMajorMinorVersion implements Comparable<NumericMajorMinorVer
     }
 
     @Override
-    public int compareTo(@NotNull NumericMajorMinorVersion o) {
+    public int compareTo(NumericMajorMinorVersion o) {
         Objects.requireNonNull(o);
 
         int parts = Math.min(length(), o.length());

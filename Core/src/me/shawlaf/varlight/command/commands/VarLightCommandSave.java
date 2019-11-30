@@ -5,7 +5,7 @@ import me.shawlaf.varlight.command.ArgumentIterator;
 import me.shawlaf.varlight.command.CommandSuggestions;
 import me.shawlaf.varlight.command.VarLightCommand;
 import me.shawlaf.varlight.command.VarLightSubCommand;
-import me.shawlaf.varlight.persistence.LightSourcePersistor;
+import me.shawlaf.varlight.persistence.WorldLightSourceManager;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
@@ -48,10 +48,10 @@ public class VarLightCommandSave extends VarLightSubCommand {
 
             Player player = (Player) sender;
 
-            LightSourcePersistor persistor = LightSourcePersistor.getPersistor(plugin, player.getWorld());
+            WorldLightSourceManager manager = plugin.getManager(player.getWorld());
 
-            if (persistor != null) {
-                persistor.save(player);
+            if (manager != null) {
+                manager.save(player);
             } else {
                 VarLightCommand.sendPrefixedMessage(player, String.format("No custom Light sources present in world \"%s\"", player.getWorld().getName()));
             }
@@ -60,7 +60,10 @@ public class VarLightCommandSave extends VarLightSubCommand {
         }
 
         if ("all".equalsIgnoreCase(args.peek())) {
-            LightSourcePersistor.getAllPersistors(plugin).forEach(persistor -> persistor.save(sender));
+            for (WorldLightSourceManager persistor : plugin.getAllManagers()) {
+                persistor.save(sender);
+            }
+
             return true;
         }
 
@@ -69,12 +72,12 @@ public class VarLightCommandSave extends VarLightSubCommand {
         if (world == null) {
             VarLightCommand.sendPrefixedMessage(sender, "Could not find a world with that name");
         } else {
-            LightSourcePersistor persistor = LightSourcePersistor.getPersistor(plugin, world);
+            WorldLightSourceManager manager = plugin.getManager(world);
 
-            if (persistor == null) {
+            if (manager == null) {
                 VarLightCommand.sendPrefixedMessage(sender, String.format("VarLight is not active in world \"%s\"", world.getName()));
             } else {
-                persistor.save(sender);
+                manager.save(sender);
             }
         }
 
@@ -90,7 +93,7 @@ public class VarLightCommandSave extends VarLightSubCommand {
         commandSuggestions
                 .addSuggestion("all")
                 .suggestChoices(Bukkit.getWorlds().stream()
-                        .filter(w -> LightSourcePersistor.hasPersistor(plugin, w))
+                        .filter(plugin::hasManager)
                         .map(World::getName)
                         .collect(Collectors.toSet())
                 );
