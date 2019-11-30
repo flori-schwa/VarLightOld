@@ -189,7 +189,7 @@
                api-version="1.14">
             <libraries>
                 <include name="**/spigot-1.14.4.jar"/>
-                <include name="**/LightAPI-fork-3.3.2.jar"/>
+                <include name="**/LightAPI-fork-3.4.1.jar"/>
             </libraries>
         </build>
     </target>
