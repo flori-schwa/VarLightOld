@@ -45,7 +45,6 @@ public class TestJSONToVLDB {
         }
 
         assertTrue(new JsonToVLDBMigration().test(jsonFile));
-        assertTrue(jsonFile.delete());
 
         VLDBFile<BasicCustomLightSource> file = new VLDBFile<BasicCustomLightSource>(new File(tempDir, String.format(VLDBFile.FILE_NAME_FORMAT, regionX, regionZ))) {
             @NotNull
