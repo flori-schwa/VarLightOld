@@ -253,7 +253,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     public void onInteract(PlayerInteractEvent e) {
         WorldLightSourceManager manager = getManager(e.getPlayer().getWorld());
 
-        if (e.isCancelled() || e.getAction() != Action.RIGHT_CLICK_BLOCK && e.getAction() != Action.LEFT_CLICK_BLOCK || nmsAdapter.hasCooldown(e.getPlayer(), lightUpdateItem)) {
+        if (e.isCancelled() || e.getAction() != Action.RIGHT_CLICK_BLOCK && e.getAction() != Action.LEFT_CLICK_BLOCK) {
             return;
         }
 

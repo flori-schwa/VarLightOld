@@ -37,10 +37,6 @@ public interface INmsAdapter {
 
     }
 
-    default boolean isLightApiAllowed() {
-        return true;
-    }
-
     boolean isBlockTransparent(@NotNull Block block);
 
     void updateBlockLight(@NotNull Location at, int lightLevel);
@@ -56,10 +52,6 @@ public interface INmsAdapter {
     boolean isIllegalBlock(@NotNull Block block);
 
     void sendActionBarMessage(Player player, String message);
-
-    void setCooldown(Player player, Material material, int ticks);
-
-    boolean hasCooldown(Player player, Material material);
 
     @Nullable
     Block getTargetBlockExact(Player player, int maxDistance);
