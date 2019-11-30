@@ -52,7 +52,7 @@ public class VarLightCommandDebug extends VarLightSubCommand {
             /vl debug list (-r [regionX] [regionZ])|(-c [chunkX] [chunkZ])
          */
 
-        if (args.hasNext() && "list".equalsIgnoreCase(args.peek())) {
+        if (args.hasParameters(2) && "list".equalsIgnoreCase(args.peek())) {
             args.next(); // Consume the peeked "list"
 
             if (!(sender instanceof Entity)) {
