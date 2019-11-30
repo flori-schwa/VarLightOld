@@ -50,6 +50,38 @@ public class WorldLightSourceManager {
         }
     }
 
+    public static File getVarLightSaveDirectory(World world) {
+        File varlightDir = new File(getRegionRoot(world), "varlight");
+
+        if (!varlightDir.exists()) {
+            if (!varlightDir.mkdir()) {
+                throw new LightPersistFailedException();
+            }
+        }
+
+        return varlightDir;
+    }
+
+    public static File getRegionRoot(World world) {
+        switch (world.getEnvironment()) {
+            case NORMAL: {
+                return world.getWorldFolder();
+            }
+
+            case NETHER: {
+                return new File(world.getWorldFolder(), "DIM-1");
+            }
+
+            case THE_END: {
+                return new File(world.getWorldFolder(), "DIM1");
+            }
+
+            default: {
+                throw new IllegalStateException("wot");
+            }
+        }
+    }
+
     public VarLightPlugin getPlugin() {
         return plugin;
     }
@@ -76,6 +108,17 @@ public class WorldLightSourceManager {
         setCustomLuminance(new IntPosition(location), lightLevel);
     }
 
+//    @NotNull
+//    private PersistentLightSource getOrCreatePersistentLightSource(IntPosition position) {
+//        PersistentLightSource persistentLightSource = getPersistentLightSource(position);
+//
+//        if (persistentLightSource == null) {
+//            persistentLightSource = createPersistentLightSource(position, 0);
+//        }
+//
+//        return persistentLightSource;
+//    }
+
     public void setCustomLuminance(IntPosition position, int lightLevel) {
         createPersistentLightSource(position, lightLevel);
 //        getOrCreatePersistentLightSource(position).setEmittingLight(lightLevel);
@@ -96,17 +139,6 @@ public class WorldLightSourceManager {
             throw new LightPersistFailedException(e);
         }
     }
-
-//    @NotNull
-//    private PersistentLightSource getOrCreatePersistentLightSource(IntPosition position) {
-//        PersistentLightSource persistentLightSource = getPersistentLightSource(position);
-//
-//        if (persistentLightSource == null) {
-//            persistentLightSource = createPersistentLightSource(position, 0);
-//        }
-//
-//        return persistentLightSource;
-//    }
 
     @NotNull
     public List<PersistentLightSource> getAllLightSources() {
@@ -291,38 +323,6 @@ public class WorldLightSourceManager {
             }
 
             return worldMap.get(regionCoords);
-        }
-    }
-
-    public static File getVarLightSaveDirectory(World world) {
-        File varlightDir = new File(getRegionRoot(world), "varlight");
-
-        if (!varlightDir.exists()) {
-            if (!varlightDir.mkdir()) {
-                throw new LightPersistFailedException();
-            }
-        }
-
-        return varlightDir;
-    }
-
-    public static File getRegionRoot(World world) {
-        switch (world.getEnvironment()) {
-            case NORMAL: {
-                return world.getWorldFolder();
-            }
-
-            case NETHER: {
-                return new File(world.getWorldFolder(), "DIM-1");
-            }
-
-            case THE_END: {
-                return new File(world.getWorldFolder(), "DIM1");
-            }
-
-            default: {
-                throw new IllegalStateException("wot");
-            }
         }
     }
 }

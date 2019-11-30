@@ -310,6 +310,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         LightUpdateResult.UPDATED.displayMessage(this, player, lightTo);
     }
+
     @EventHandler(priority = EventPriority.MONITOR)
     public void onChunkUnload(ChunkUnloadEvent e) {
         WorldLightSourceManager manager = getManager(e.getWorld());
