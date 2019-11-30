@@ -6,10 +6,7 @@ import me.shawlaf.varlight.persistence.migrate.LightDatabaseMigrator;
 import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.RegionCoords;
-import org.bukkit.Chunk;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -39,18 +36,15 @@ public class WorldLightSourceManager {
         this.world = world;
 
         synchronized (worldMap) {
-            File varlightFolder = new File(world.getWorldFolder(), "varlight");
+            File varlightFolder = getVarLightSaveDirectory(world);
+
+            new LightDatabaseMigrator(world).runMigrations(plugin.getLogger());
 
             if (!varlightFolder.exists()) {
                 if (!varlightFolder.mkdir()) {
                     throw new LightPersistFailedException("Could not create varlight directory in world \"" + world.getName() + "\"");
                 }
             }
-
-            new LightDatabaseMigrator(varlightFolder).runMigrations(plugin.getLogger());
-//            for (Chunk chunk : world.getLoadedChunks()) {
-//                loadChunk(chunk);
-//            }
         }
     }
 
@@ -114,7 +108,7 @@ public class WorldLightSourceManager {
 
     @NotNull
     public List<PersistentLightSource> getAllLightSources() {
-        File[] files = getSaveDirectory().listFiles();
+        File[] files = getVarLightSaveDirectory(world).listFiles();
 
         if (files == null) {
             synchronized (worldMap) {
@@ -262,7 +256,7 @@ public class WorldLightSourceManager {
         synchronized (worldMap) {
             if (!worldMap.containsKey(regionCoords)) {
                 try {
-                    worldMap.put(regionCoords, new RegionPersistor<PersistentLightSource>(getSaveDirectory(), regionCoords.x, regionCoords.z) {
+                    worldMap.put(regionCoords, new RegionPersistor<PersistentLightSource>(getVarLightSaveDirectory(world), regionCoords.x, regionCoords.z) {
                         @NotNull
                         @Override
                         protected PersistentLightSource[] createArray(int size) {
@@ -284,8 +278,8 @@ public class WorldLightSourceManager {
         }
     }
 
-    private File getSaveDirectory() {
-        File varlightDir = new File(world.getWorldFolder(), "varlight");
+    public static File getVarLightSaveDirectory(World world) {
+        File varlightDir = new File(getRegionRoot(world), "varlight");
 
         if (!varlightDir.exists()) {
             if (!varlightDir.mkdir()) {
@@ -294,5 +288,25 @@ public class WorldLightSourceManager {
         }
 
         return varlightDir;
+    }
+
+    public static File getRegionRoot(World world) {
+        switch (world.getEnvironment()) {
+            case NORMAL: {
+                return world.getWorldFolder();
+            }
+
+            case NETHER: {
+                return new File(world.getWorldFolder(), "DIM-1");
+            }
+
+            case THE_END: {
+                return new File(world.getWorldFolder(), "DIM1");
+            }
+
+            default: {
+                throw new IllegalStateException("wot");
+            }
+        }
     }
 }

@@ -1,4 +1,4 @@
-package me.shawlaf.varlight.persistence.migrate;
+package me.shawlaf.varlight.persistence.migrate.data;
 
 import com.google.gson.Gson;
 import me.shawlaf.varlight.persistence.BasicCustomLightSource;
@@ -52,6 +52,10 @@ public class JsonToVLDBMigration implements Predicate<File> {
             gzipOut.close();
         } catch (IOException e) {
             throw new RuntimeException("Failed to migrate \"" + jsonFile.getAbsolutePath() + "\"", e);
+        }
+
+        if (!jsonFile.delete()) {
+            throw new RuntimeException("Failed to run migrations, could not delete File \"" + jsonFile.getAbsolutePath() + "\"");
         }
 
         return true;

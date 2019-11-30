@@ -2,7 +2,7 @@ package me.shawlaf.varlight.test.vldb;
 
 import com.google.gson.Gson;
 import me.shawlaf.varlight.persistence.BasicCustomLightSource;
-import me.shawlaf.varlight.persistence.migrate.JsonToVLDBMigration;
+import me.shawlaf.varlight.persistence.migrate.data.JsonToVLDBMigration;
 import me.shawlaf.varlight.persistence.vldb.VLDBFile;
 import me.shawlaf.varlight.util.IntPosition;
 import org.jetbrains.annotations.NotNull;
