@@ -7,10 +7,7 @@ import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.server.v1_14_R1.IBlockData;
 import net.minecraft.server.v1_14_R1.MinecraftServer;
-import org.bukkit.Bukkit;
-import org.bukkit.Chunk;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.AnaloguePowerable;
@@ -29,6 +26,7 @@ import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.jetbrains.annotations.NotNull;
 import ru.beykerykt.lightapi.LightAPI;
+import ru.beykerykt.lightapi.LightType;
 import ru.beykerykt.lightapi.chunks.ChunkInfo;
 
 import java.util.ArrayList;
@@ -89,20 +87,29 @@ public class NmsAdapter implements INmsAdapter, Listener {
         final int sectionY = at.getBlockY() >> 4;
 
         for (Chunk chunk : chunksToUpdate) {
-            chunkSectionsToUpdate.add(new ChunkInfo(at.getWorld(), chunk.getX(), sectionY, chunk.getZ(), at.getWorld().getPlayers()));
+            final int chunkX = chunk.getX(), chunkZ = chunk.getZ();
+
+            chunkSectionsToUpdate.add(toChunkInfo(at.getWorld(), chunkX, sectionY, chunkZ));
+//            chunkSectionsToUpdate.add(new ChunkInfo(at.getWorld(), chunk.getX(), sectionY, chunk.getZ(), at.getWorld().getPlayers()));
 
             if (sectionY < 16) {
-                chunkSectionsToUpdate.add(new ChunkInfo(at.getWorld(), chunk.getX(), sectionY + 1, chunk.getZ(), at.getWorld().getPlayers()));
+                chunkSectionsToUpdate.add(toChunkInfo(at.getWorld(), chunkX, sectionY + 1, chunkZ));
+//                chunkSectionsToUpdate.add(new ChunkInfo(at.getWorld(), chunk.getX(), sectionY + 1, chunk.getZ(), at.getWorld().getPlayers()));
             }
 
             if (sectionY > 0) {
-                chunkSectionsToUpdate.add(new ChunkInfo(at.getWorld(), chunk.getX(), sectionY - 1, chunk.getZ(), at.getWorld().getPlayers()));
+                chunkSectionsToUpdate.add(toChunkInfo(at.getWorld(), chunkX, sectionY - 1, chunkZ));
+//                chunkSectionsToUpdate.add(new ChunkInfo(at.getWorld(), chunk.getX(), sectionY - 1, chunk.getZ(), at.getWorld().getPlayers()));
             }
         }
 
         for (ChunkInfo chunkInfo : chunkSectionsToUpdate) {
-            LightAPI.updateChunk(chunkInfo);
+            LightAPI.updateChunk(chunkInfo, LightType.BLOCK);
         }
+    }
+
+    private ChunkInfo toChunkInfo(World world, int x, int sectionY, int z) {
+        return new ChunkInfo(world, x, sectionY * 16, z, world.getPlayers());
     }
 
     @Override
