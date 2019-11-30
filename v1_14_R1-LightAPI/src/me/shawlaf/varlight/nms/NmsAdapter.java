@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Objects;
 
 @SuppressWarnings("deprecation")
-@ForMinecraft(version = "Spigot 1.14 + LightAPI")
+@ForMinecraft(version = "1.14+")
 public class NmsAdapter implements INmsAdapter, Listener {
 
     private static final BlockFace[] CHECK_FACES = new BlockFace[]{
@@ -54,7 +54,7 @@ public class NmsAdapter implements INmsAdapter, Listener {
         this.plugin = plugin;
 
         if (!plugin.isLightApiInstalled()) {
-            throw new VarLightInitializationException("LightAPI not installed!");
+            throw new VarLightInitializationException("LightAPI required!");
         }
     }
 
@@ -73,9 +73,15 @@ public class NmsAdapter implements INmsAdapter, Listener {
         Objects.requireNonNull(at);
         Objects.requireNonNull(at.getWorld());
 
-        LightAPI.deleteLight(at, false);
+        if (!LightAPI.deleteLight(at, false)) {
+            throw new LightUpdateFailedException("LightAPI not enabled or deleteLight Event cancelled!");
+        }
 
-        LightAPI.createLight(at, lightLevel, false);
+        if (lightLevel > 0) {
+            if (!LightAPI.createLight(at, lightLevel, false)) {
+                throw new LightUpdateFailedException("LightAPI not enabled or createLight Event cancelled!");
+            }
+        }
 
         List<Chunk> chunksToUpdate = collectChunksToUpdate(at);
         List<ChunkInfo> chunkSectionsToUpdate = new ArrayList<>();
