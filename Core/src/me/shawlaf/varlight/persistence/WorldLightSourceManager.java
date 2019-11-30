@@ -25,6 +25,8 @@ public class WorldLightSourceManager {
     private final VarLightPlugin plugin;
     private final World world;
 
+    private long lastMigrateNotice = 0;
+
     public WorldLightSourceManager(VarLightPlugin plugin, World world) {
         Objects.requireNonNull(plugin);
         Objects.requireNonNull(world);
@@ -227,6 +229,20 @@ public class WorldLightSourceManager {
             persistentLightSource = regionMap.getLightSource(intPosition);
         } catch (IOException e) {
             throw new LightPersistFailedException(e);
+        }
+
+        if (persistentLightSource != null &&
+                !persistentLightSource.migrated &&
+                plugin.getNmsAdapter().getMinecraftVersion().newerOrEquals(VarLightPlugin.MC1_14_2)) {
+            if ((System.currentTimeMillis() - lastMigrateNotice) > 30_000) {
+
+                Bukkit.broadcast(
+                        VarLightCommand.getPrefixedMessage(String.format("There are non-migrated Light sources present in world \"%s\", please run /varlight migrate!", world.getName())),
+                        "varlight.admin"
+                );
+
+                lastMigrateNotice = System.currentTimeMillis();
+            }
         }
 
         return persistentLightSource;

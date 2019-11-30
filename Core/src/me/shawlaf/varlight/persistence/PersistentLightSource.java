@@ -81,7 +81,14 @@ public class PersistentLightSource implements ICustomLightSource {
     }
 
     public void migrate() {
+        WorldLightSourceManager manager = plugin.getManager(world);
+
+        if (manager == null) {
+            return;
+        }
+
         plugin.getNmsAdapter().updateBlockLight(position.toLocation(world), emittingLight);
+        manager.createPersistentLightSource(position, emittingLight);
         migrated = true;
     }
 
@@ -93,6 +100,10 @@ public class PersistentLightSource implements ICustomLightSource {
 
     public boolean isInvalid() {
         if (!world.isChunkLoaded(position.getChunkX(), position.getChunkZ())) {
+            return false; // Assume valid
+        }
+
+        if (plugin.getNmsAdapter().getMinecraftVersion().newerOrEquals(VarLightPlugin.MC1_14_2) && !migrated) {
             return false; // Assume valid
         }
 
