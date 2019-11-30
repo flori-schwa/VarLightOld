@@ -36,7 +36,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     public static final NumericMajorMinorVersion
             MC1_14_2 = new NumericMajorMinorVersion("1.14.2");
     public static final long TICK_RATE = 20L;
-    private static String PACKAGE_VERSION;
 
     private final Map<UUID, Integer> stepSizes = new HashMap<>();
     private final Map<UUID, WorldLightSourceManager> managers = new HashMap<>();
@@ -48,20 +47,10 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     private PersistOnWorldSaveHandler persistOnWorldSaveHandler;
     private Material lightUpdateItem;
 
-    public static String getPackageVersion() {
-        return PACKAGE_VERSION;
-    }
-
-    private void unsupportedShutdown(String message) {
+    private void unsupportedOperation(String message) {
         getLogger().severe("------------------------------------------------------");
         getLogger().severe(message);
-        getLogger().severe("");
-        getLogger().severe("VarLight will shutdown the server!");
-        getLogger().severe("Keeping the server running in this state");
-        getLogger().severe("will result in countless bugs and errors in the console!");
         getLogger().severe("------------------------------------------------------");
-
-        Bukkit.shutdown();
 
         doLoad = false;
     }
@@ -69,12 +58,9 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     @Override
     public void onLoad() {
         if ((int) ReflectionHelper.get(Bukkit.getServer(), "reloadCount") > 0) {
-            unsupportedShutdown("VarLight does not support /reload!");
+            unsupportedOperation("VarLight does not support /reload!");
             return;
         }
-
-        PACKAGE_VERSION = Bukkit.getServer().getClass().getPackage().getName();
-        PACKAGE_VERSION = PACKAGE_VERSION.substring(PACKAGE_VERSION.lastIndexOf('.') + 1);
 
         final String version;
 
@@ -82,14 +68,8 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             version = NmsAdapter.class.getAnnotation(ForMinecraft.class).version();
             this.nmsAdapter = new NmsAdapter(this);
         } catch (Throwable e) { // Catch anything that goes wrong while initializing
-            e.printStackTrace();
-            unsupportedShutdown(String.format("Failed to initialize VarLight for Minecraft Version \"%s\": %s", Bukkit.getVersion(), e.getMessage()));
-            return;
-        }
-
-        if (isLightApiInstalled() && !nmsAdapter.isLightApiAllowed()) {
-            unsupportedShutdown(String.format("LightAPI is not allowed (%s)", version));
-            return;
+            unsupportedOperation(String.format("Failed to initialize VarLight for Minecraft Version \"%s\": %s", Bukkit.getVersion(), e.getMessage()));
+            throw e;
         }
 
         getLogger().info(String.format("Loading VarLight for Minecraft version \"%s\"", version));
@@ -110,10 +90,10 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         try {
             nmsAdapter.onEnable();
         } catch (VarLightInitializationException e) {
-            getLogger().throwing(getClass().getName(), "onEnable", e);
-            Bukkit.getPluginManager().disablePlugin(this);
             doLoad = false;
-            return;
+            Bukkit.getPluginManager().disablePlugin(this);
+
+            throw e;
         }
 
         loadLightUpdateItem();
