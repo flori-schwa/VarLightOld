@@ -1,11 +1,14 @@
 package me.shawlaf.varlight.command;
 
 import me.shawlaf.varlight.VarLightPlugin;
+import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -81,17 +84,34 @@ public class CommandSuggestions {
             return this;
         }
 
-        Player player = (Player) commandSender;
+        return suggestCoords(completedCoordinates, checkArgument, getCoordinatesLookingAt(((Player) commandSender)));
+    }
 
-        final int[] coords = getCoordinatesLookingAt(player);
+    public CommandSuggestions suggestChunkPosition(int completedCoords, boolean checkArgument) {
+        if (!(commandSender instanceof Player)) {
+            return this;
+        }
 
+        return suggestCoords(completedCoords, checkArgument, getChunkCoords(((Player) commandSender).getLocation()));
+    }
+
+    public CommandSuggestions suggestRegionPosition(int completedCoords, boolean checkArgument) {
+        if (!(commandSender instanceof Player)) {
+            return this;
+        }
+
+        return suggestCoords(completedCoords, checkArgument, getRegionCoords(((Player) commandSender).getLocation()));
+    }
+
+    @NotNull
+    private CommandSuggestions suggestCoords(int completedCoords, boolean checkArgument, int[] coords) {
         if (coords.length == 0) {
             return this;
         }
 
-        final int[] toSuggest = new int[3 - completedCoordinates];
+        final int[] toSuggest = new int[coords.length - completedCoords];
 
-        System.arraycopy(coords, completedCoordinates, toSuggest, 0, toSuggest.length);
+        System.arraycopy(coords, completedCoords, toSuggest, 0, toSuggest.length);
 
         for (int i = 0; i < toSuggest.length; i++) {
             StringBuilder builder = new StringBuilder();
@@ -119,5 +139,29 @@ public class CommandSuggestions {
                 targetBlock.getY(),
                 targetBlock.getZ()
         };
+    }
+
+    private int[] getChunkCoords(Location location) {
+        return new int[]{
+                location.getBlockX() >> 4,
+                location.getBlockZ() >> 4
+        };
+    }
+
+    private int[] getRegionCoords(Location location) {
+        return new int[]{
+                location.getBlockX() >> 4 >> 5,
+                location.getBlockZ() >> 4 >> 5
+        };
+    }
+
+    @Override
+    public String toString() {
+        return "CommandSuggestions{" +
+                "plugin=" + plugin +
+                ", commandSender=" + commandSender +
+                ", args=" + Arrays.toString(args) + " (size: " + args.length + ")" +
+                ", suggestions=" + suggestions +
+                '}';
     }
 }

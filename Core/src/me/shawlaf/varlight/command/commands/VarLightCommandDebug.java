@@ -18,6 +18,7 @@ import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.IOException;
@@ -50,21 +51,6 @@ public class VarLightCommandDebug extends VarLightSubCommand {
         /*
             /vl debug list (-r [regionX] [regionZ])|(-c [chunkX] [chunkZ])
          */
-
-        if (args.hasNext() && "gc".equalsIgnoreCase(args.peek())) {
-            VarLightCommand.assertPermission(sender, "varlight.admin");
-
-            VarLightCommand.sendPrefixedMessage(sender, "Scheduling a gc");
-
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    Runtime.getRuntime().gc();
-                }
-            }.runTask(plugin);
-
-            return true;
-        }
 
         if (args.hasNext() && "list".equalsIgnoreCase(args.peek())) {
             args.next(); // Consume the peeked "list"
@@ -197,41 +183,36 @@ public class VarLightCommandDebug extends VarLightSubCommand {
 
     @Override
     public void tabComplete(CommandSuggestions commandSuggestions) {
-        if (!(commandSuggestions.getCommandSender() instanceof Entity)) {
+        if (!(commandSuggestions.getCommandSender() instanceof Player)) {
             return;
         }
 
-        Entity sender = (Entity) commandSuggestions.getCommandSender();
+        if (commandSuggestions.getArgumentCount() == 1) {
+            commandSuggestions.suggestChoices("list");
 
-        if (commandSuggestions.getArgumentCount() >= 2 && "list".equalsIgnoreCase(commandSuggestions.getArgs()[1])) {
+            return;
+        }
+
+        if (commandSuggestions.getArgumentCount() >= 2 && "list".equalsIgnoreCase(commandSuggestions.getArgs()[0])) {
             switch (commandSuggestions.getArgumentCount()) {
                 case 2: {
                     commandSuggestions.suggestChoices("-r", "-c");
                     return;
                 }
 
-                case 3: {
-                    suggestCoordinate(commandSuggestions, sender.getLocation().getBlockX() >> 4);
-                    return;
-                }
-
+                case 3:
                 case 4: {
-                    suggestCoordinate(commandSuggestions, sender.getLocation().getBlockZ() >> 4);
+                    switch (commandSuggestions.getArgs()[1]) {
+                        case "-r": {
+                            commandSuggestions.suggestRegionPosition(commandSuggestions.getArgumentCount() - 3, true);
+                            return;
+                        }
+
+                        case "-c": {
+                            commandSuggestions.suggestChunkPosition(commandSuggestions.getArgumentCount() - 3, true);
+                        }
+                    }
                 }
-            }
-        }
-    }
-
-    private void suggestCoordinate(CommandSuggestions commandSuggestions, int chunkCoordinate) {
-        switch (commandSuggestions.getArgs()[1]) {
-            case "-r": {
-                commandSuggestions.addSuggestion(String.valueOf(chunkCoordinate >> 5));
-                return;
-            }
-
-            case "-c": {
-                commandSuggestions.addSuggestion(String.valueOf(chunkCoordinate));
-                return;
             }
         }
     }
