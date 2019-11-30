@@ -299,12 +299,13 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         final boolean creative = player.getGameMode() == GameMode.CREATIVE;
 
         if (nmsAdapter.isIllegalBlock(clickedBlock)) {
-            displayMessage(player, LightUpdateResult.INVALID_BLOCK);
+            LightUpdateResult.INVALID_BLOCK.displayMessage(this, player, -1); // INVALID_BLOCK does not use the newLight Parameter
             return;
         }
 
         if (!canModifyBlockLight(clickedBlock, mod)) {
-            displayMessage(player, mod < 0 ? LightUpdateResult.ZERO_REACHED : LightUpdateResult.FIFTEEN_REACHED);
+            (mod < 0 ? LightUpdateResult.ZERO_REACHED : LightUpdateResult.FIFTEEN_REACHED)
+                    .displayMessage(this, player, -1); // Both do not use the newLight Parameter
             return;
         }
 
@@ -312,7 +313,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         Bukkit.getPluginManager().callEvent(lightUpdateEvent);
 
         if (lightUpdateEvent.isCancelled()) {
-            displayMessage(player, LightUpdateResult.CANCELLED);
+            LightUpdateResult.CANCELLED.displayMessage(this, player, -1); // CANCELLED does not use the newLight Parameter
             return;
         }
 
@@ -327,19 +328,8 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             heldItem.setAmount(heldItem.getAmount() - 1);
         }
 
-//        nmsAdapter.setCooldown(player, lightUpdateItem, 5);
-        displayMessage(player, LightUpdateResult.UPDATED);
+        LightUpdateResult.UPDATED.displayMessage(this, player, lightTo);
     }
-
-    //    @EventHandler(priority = EventPriority.MONITOR)
-//    public void onChunkLoad(ChunkLoadEvent e) {
-//        WorldLightSourceManager manager = WorldLightSourceManager.getManager(this, e.getWorld());
-//
-//        if (manager != null) {
-//            manager.loadChunk(e.getChunk());
-//        }
-//    }
-//
     @EventHandler(priority = EventPriority.MONITOR)
     public void onChunkUnload(ChunkUnloadEvent e) {
         WorldLightSourceManager manager = getManager(e.getWorld());
@@ -396,10 +386,37 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     }
 
     private enum LightUpdateResult {
-        INVALID_BLOCK,
-        ZERO_REACHED,
-        FIFTEEN_REACHED,
-        CANCELLED,
-        UPDATED
+        INVALID_BLOCK {
+            @Override
+            public void displayMessage(VarLightPlugin plugin, Player player, int newLight) {
+                // Ignore
+            }
+        },
+        CANCELLED {
+            @Override
+            public void displayMessage(VarLightPlugin plugin, Player player, int newLight) {
+                // Ignore
+            }
+        },
+        ZERO_REACHED {
+            @Override
+            public void displayMessage(VarLightPlugin plugin, Player player, int newLight) {
+                plugin.getNmsAdapter().sendActionBarMessage(player, "Cannot decrease light level below 0.");
+            }
+        },
+        FIFTEEN_REACHED {
+            @Override
+            public void displayMessage(VarLightPlugin plugin, Player player, int newLight) {
+                plugin.getNmsAdapter().sendActionBarMessage(player, "Cannot increase light level beyond 15.");
+            }
+        },
+        UPDATED {
+            @Override
+            public void displayMessage(VarLightPlugin plugin, Player player, int newLight) {
+                plugin.getNmsAdapter().sendActionBarMessage(player, String.format("Updated Light level to %d", newLight));
+            }
+        };
+
+        public abstract void displayMessage(VarLightPlugin plugin, Player player, int newLight);
     }
 }
