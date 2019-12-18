@@ -38,7 +38,7 @@
 
     <property name="javac-debug" value="off"/>
     <property name="javac-debug-level" value="none"/>
-    <property name="javac-src-lvl" value="13"/>
+    <property name="javac-src-lvl" value="8"/>
     <property name="javac-target-lvl" value="8"/>
 
     <target name="clean">
