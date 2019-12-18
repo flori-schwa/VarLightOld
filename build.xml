@@ -38,6 +38,8 @@
 
     <property name="javac-debug" value="off"/>
     <property name="javac-debug-level" value="none"/>
+    <property name="javac-src-lvl" value="13"/>
+    <property name="javac-target-lvl" value="8"/>
 
     <target name="clean">
         <delete dir="${build}"/>
@@ -90,8 +92,14 @@
 
         <echo message="Compiling with debug=${javac-debug} and debug-level=${javac-debug-level}"/>
 
-        <javac srcdir="${core-src}" destdir="${core-build}" includeantruntime="false" compiler="${use-compiler}"
-               debug="${javac-debug}" debuglevel="${javac-debug-level}">
+        <javac srcdir="${core-src}"
+               destdir="${core-build}"
+               includeantruntime="false"
+               compiler="${use-compiler}"
+               debug="${javac-debug}"
+               debuglevel="${javac-debug-level}"
+               source="${javac-src-lvl}"
+               target="${javac-src-lvl}">
             <classpath>
                 <fileset dir="${lib-dir}">
                     <include name="**/spigot-1.13.2.jar"/>
@@ -121,8 +129,14 @@
 
                 <replace file="@{out-dir}/plugin.yml" token="api.version" value="@{api-version}"/>
 
-                <javac srcdir="@{src-dir}" destdir="@{out-dir}" includeantruntime="false" compiler="${use-compiler}"
-                       debug="${javac-debug}" debuglevel="${javac-debug-level}">
+                <javac srcdir="@{src-dir}"
+                       destdir="@{out-dir}"
+                       includeantruntime="false"
+                       compiler="${use-compiler}"
+                       debug="${javac-debug}"
+                       debuglevel="${javac-debug-level}"
+                       source="${javac-src-lvl}"
+                       target="${javac-src-lvl}">
                     <classpath>
                         <fileset dir="${core-build}">
                             <include name="**/*.class"/>
