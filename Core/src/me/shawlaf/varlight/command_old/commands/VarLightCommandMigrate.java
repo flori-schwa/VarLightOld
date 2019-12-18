@@ -1,14 +1,15 @@
-package me.shawlaf.varlight.command.commands;
+package me.shawlaf.varlight.command_old.commands;
 
 import me.shawlaf.varlight.VarLightPlugin;
-import me.shawlaf.varlight.command.ArgumentIterator;
-import me.shawlaf.varlight.command.VarLightCommand;
-import me.shawlaf.varlight.command.VarLightSubCommand;
-import me.shawlaf.varlight.command.exception.VarLightCommandException;
+import me.shawlaf.varlight.command_old.ArgumentIterator;
+import me.shawlaf.varlight.command_old.VarLightCommand;
+import me.shawlaf.varlight.command_old.VarLightSubCommand;
+import me.shawlaf.varlight.command_old.exception.VarLightCommandException;
 import me.shawlaf.varlight.persistence.PersistentLightSource;
 import me.shawlaf.varlight.persistence.WorldLightSourceManager;
 import org.bukkit.command.CommandSender;
 
+@Deprecated
 public class VarLightCommandMigrate extends VarLightSubCommand {
 
     private final VarLightPlugin plugin;

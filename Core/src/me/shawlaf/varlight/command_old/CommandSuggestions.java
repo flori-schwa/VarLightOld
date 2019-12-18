@@ -1,4 +1,4 @@
-package me.shawlaf.varlight.command;
+package me.shawlaf.varlight.command_old;
 
 import me.shawlaf.varlight.VarLightPlugin;
 import org.bukkit.Location;
@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+@Deprecated
 public class CommandSuggestions {
 
     private final VarLightPlugin plugin;

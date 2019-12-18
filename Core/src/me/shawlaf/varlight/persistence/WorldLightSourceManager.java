@@ -1,7 +1,7 @@
 package me.shawlaf.varlight.persistence;
 
 import me.shawlaf.varlight.VarLightPlugin;
-import me.shawlaf.varlight.command.VarLightCommand;
+import me.shawlaf.varlight.command_old.VarLightCommand;
 import me.shawlaf.varlight.persistence.migrate.LightDatabaseMigrator;
 import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;

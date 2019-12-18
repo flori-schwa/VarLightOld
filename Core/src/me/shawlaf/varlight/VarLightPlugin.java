@@ -1,6 +1,6 @@
 package me.shawlaf.varlight;
 
-import me.shawlaf.varlight.command.VarLightCommand;
+import me.shawlaf.varlight.command_old.VarLightCommand;
 import me.shawlaf.varlight.event.LightUpdateEvent;
 import me.shawlaf.varlight.nms.*;
 import me.shawlaf.varlight.persistence.WorldLightSourceManager;

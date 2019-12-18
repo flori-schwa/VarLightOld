@@ -1,11 +1,11 @@
-package me.shawlaf.varlight.command.commands;
+package me.shawlaf.varlight.command_old.commands;
 
 import me.shawlaf.varlight.VarLightPlugin;
-import me.shawlaf.varlight.command.ArgumentIterator;
-import me.shawlaf.varlight.command.CommandSuggestions;
-import me.shawlaf.varlight.command.VarLightCommand;
-import me.shawlaf.varlight.command.VarLightSubCommand;
-import me.shawlaf.varlight.command.exception.VarLightCommandException;
+import me.shawlaf.varlight.command_old.ArgumentIterator;
+import me.shawlaf.varlight.command_old.CommandSuggestions;
+import me.shawlaf.varlight.command_old.VarLightCommand;
+import me.shawlaf.varlight.command_old.VarLightSubCommand;
+import me.shawlaf.varlight.command_old.exception.VarLightCommandException;
 import me.shawlaf.varlight.event.LightUpdateEvent;
 import me.shawlaf.varlight.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.util.IntPosition;
@@ -18,6 +18,7 @@ import org.bukkit.entity.Player;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+@Deprecated
 public class VarLightCommandUpdate extends VarLightSubCommand {
 
     private final VarLightPlugin plugin;
