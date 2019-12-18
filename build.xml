@@ -110,6 +110,7 @@
                     <include name="**/spigot-book-api-1.3.jar"/>
                     <include name="**/lightapi-3.2.9.jar"/>
                     <include name="**/annotations-17.0.0.jar"/>
+                    <include name="**/SpigotCommandApi-1.1.jar"/>
                 </fileset>
             </classpath>
         </javac>
@@ -157,6 +158,7 @@
                     <zipgroupfileset dir="${lib-dir}">
                         <include name="spigot-book-api-1.3.jar"/>
                         <include name="annotations-17.0.0.jar"/>
+                        <include name="SpigotCommandApi-1.1.jar"/>
                     </zipgroupfileset>
                 </jar>
             </sequential>
