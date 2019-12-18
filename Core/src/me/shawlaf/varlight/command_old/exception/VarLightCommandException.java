@@ -1,5 +1,6 @@
-package me.shawlaf.varlight.command.exception;
+package me.shawlaf.varlight.command_old.exception;
 
+@Deprecated
 public class VarLightCommandException extends RuntimeException {
 
     public VarLightCommandException() {

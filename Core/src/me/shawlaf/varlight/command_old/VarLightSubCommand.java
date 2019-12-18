@@ -1,8 +1,9 @@
-package me.shawlaf.varlight.command;
+package me.shawlaf.varlight.command_old;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 
+@Deprecated
 public abstract class VarLightSubCommand {
 
     public abstract String getName();

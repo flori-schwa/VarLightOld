@@ -1,9 +1,9 @@
-package me.shawlaf.varlight.command;
+package me.shawlaf.varlight.command_old;
 
 import me.shawlaf.varlight.VarLightConfiguration;
 import me.shawlaf.varlight.VarLightPlugin;
-import me.shawlaf.varlight.command.commands.*;
-import me.shawlaf.varlight.command.exception.VarLightCommandException;
+import me.shawlaf.varlight.command_old.commands.*;
+import me.shawlaf.varlight.command_old.exception.VarLightCommandException;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.*;
@@ -16,6 +16,7 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.*;
 
+@Deprecated
 public class VarLightCommand implements CommandExecutor, TabCompleter {
 
     private final Map<String, VarLightSubCommand> subCommands = new HashMap<>();
