@@ -1,6 +1,7 @@
 package me.shawlaf.varlight;
 
-import me.shawlaf.varlight.command_old.VarLightCommand;
+//import me.shawlaf.varlight.command_old.VarLightCommand;
+import me.shawlaf.varlight.command.VarLightCommand;
 import me.shawlaf.varlight.event.LightUpdateEvent;
 import me.shawlaf.varlight.nms.*;
 import me.shawlaf.varlight.persistence.WorldLightSourceManager;
@@ -101,11 +102,11 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         Bukkit.getPluginManager().registerEvents(this, this);
 
-        final VarLightCommand handler = new VarLightCommand(this);
-        final PluginCommand varlightPluginCommand = getCommand("varlight");
-
-        varlightPluginCommand.setExecutor(handler);
-        varlightPluginCommand.setTabCompleter(handler);
+        new VarLightCommand(this);
+//        final PluginCommand varlightPluginCommand = getCommand("varlight");
+//
+//        varlightPluginCommand.setExecutor(handler);
+//        varlightPluginCommand.setTabCompleter(handler);
     }
 
     public boolean isLightApiInstalled() {
