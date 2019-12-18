@@ -31,6 +31,9 @@
     <property name="v1_14_R1-LightAPI-src" location="v1_14_R1-LightAPI/src"/>
     <property name="v1_14_R1-LightAPI-build" location="${build}/v1_14_R1-LightAPI"/>
 
+    <property name="v1_15_R1-src" location="v1_15_R1/src"/>
+    <property name="v1_15_R1-build" location="${build}/v1_15_R1"/>
+
     <property name="paper-version" value="226"/>
     <property name="use-compiler" value="modern"/>
 
@@ -56,6 +59,7 @@
         <mkdir dir="${v1_12_R1-build}"/>
         <mkdir dir="${v1_13_R2-build}"/>
         <mkdir dir="${v1_14_R1-LightAPI-build}"/>
+        <mkdir dir="${v1_15_R1-build}"/>
         <mkdir dir="${dist}"/>
     </target>
 
@@ -203,7 +207,15 @@
                api-version="1.14">
             <libraries>
                 <include name="**/spigot-1.14.4.jar"/>
-                <include name="**/LightAPI-fork-3.4.1.jar"/>
+                <include name="**/LightAPI-fork-3.4.2.jar"/>
+            </libraries>
+        </build>
+
+        <build version="MC-1.15.1" src-dir="${v1_15_R1-src}" out-dir="${v1_15_R1-build}"
+               api-version="1.14">
+            <libraries>
+                <include name="**/spigot-1.15.1.jar"/>
+                <include name="**/LightAPI-fork-3.4.2.jar"/>
             </libraries>
         </build>
     </target>
