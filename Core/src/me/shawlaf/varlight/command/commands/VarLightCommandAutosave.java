@@ -19,9 +19,23 @@ public class VarLightCommandAutosave extends VarLightSubCommand {
     }
 
     @Override
+    public String getRequiredPermission() {
+        return "varlight.admin.save";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Adjust the autosave interval";
+    }
+
+    @Override
+    public String getSyntax() {
+        return " <new interval>";
+    }
+
+    @Override
     protected LiteralArgumentBuilder<CommandSender> buildCommand(LiteralArgumentBuilder<CommandSender> literalArgumentBuilder) {
         return literalArgumentBuilder
-                .requires(s -> s.hasPermission("varlight.admin.save"))
                 .then(
                         RequiredArgumentBuilder.<CommandSender, Integer>argument("newInterval", IntegerArgumentType.integer()).executes(context -> {
                             int newInterval = context.getArgument("newInterval", Integer.class);

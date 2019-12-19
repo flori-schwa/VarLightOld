@@ -5,6 +5,7 @@ import me.florian.command.brigadier.BrigadierCommand;
 import me.florian.command.exception.CommandException;
 import me.shawlaf.varlight.VarLightPlugin;
 import me.shawlaf.varlight.command.commands.VarLightCommandAutosave;
+import me.shawlaf.varlight.command.commands.VarLightCommandHelp;
 import org.bukkit.command.CommandSender;
 
 import java.lang.reflect.InvocationTargetException;
@@ -43,8 +44,12 @@ public class VarLightCommand extends BrigadierCommand<CommandSender, VarLightPlu
             throw CommandException.severeException("Failed to register command " + subCommandClass.getSimpleName(), e);
         }
 
+        registerSubCommand(subCommand, root);
+    }
+
+    private void registerSubCommand(VarLightSubCommand subCommand, LiteralArgumentBuilder<CommandSender> root) {
         if (subCommands == null) {
-             subCommands = new VarLightSubCommand[SUB_COMMANDS.length];
+            subCommands = new VarLightSubCommand[SUB_COMMANDS.length];
         }
 
         subCommands[counter++] = subCommand;
@@ -63,6 +68,17 @@ public class VarLightCommand extends BrigadierCommand<CommandSender, VarLightPlu
             registerSubCommand(clazz, builder);
         }
 
+        VarLightCommandHelp helpCommand = new VarLightCommandHelp(plugin, this);
+
+        LiteralArgumentBuilder<CommandSender> subCommandRoot = LiteralArgumentBuilder.literal(helpCommand.getSubCommandName());
+
+        helpCommand.buildFrom(subCommandRoot);
+        builder.then(subCommandRoot);
+
         return builder;
+    }
+
+    public VarLightSubCommand[] getSubCommands() {
+        return subCommands;
     }
 }
