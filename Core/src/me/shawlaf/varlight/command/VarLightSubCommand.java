@@ -13,4 +13,6 @@ public abstract class VarLightSubCommand extends BrigadierCommand<CommandSender,
     protected final LiteralArgumentBuilder<CommandSender> buildFrom(LiteralArgumentBuilder<CommandSender> node) {
         return buildCommand(node);
     }
+
+    public abstract String getSubCommandName();
 }
