@@ -61,6 +61,7 @@ public class NmsAdapter implements INmsAdapter {
             e.printStackTrace();
         }
     }
+    
 
     private Object getPlayerChunk(Chunk chunk) throws IllegalAccessException {
         long encoded = (long) chunk.getX() + 2147483647L | (long) chunk.getZ() + 2147483647L << 32;
@@ -73,6 +74,11 @@ public class NmsAdapter implements INmsAdapter {
 
     private BlockPosition toBlockPosition(Location location) {
         return new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+    }
+
+    @Override
+    public boolean isInvalidLightUpdateItem(Material material) {
+        return material.isBlock();
     }
 
     @Override
