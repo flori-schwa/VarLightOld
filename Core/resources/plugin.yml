@@ -12,10 +12,9 @@ softdepend:
 permissions:
   varlight.admin:
     description: "Provides access to the varlight admin commands"
+    default: op
     children:
-      varlight.admin.save:
-        description: "Provides access to the varlight save command"
-      varlight.admin.perm:
-        description: "Provides access to the varlight permission command"
-      varlight.admin.world:
-        description: "Provides access to the varlight whitelist/blacklist commands"
+      varlight.admin.debug: true
+      varlight.admin.save: true
+      varlight.admin.perm: true
+      varlight.admin.world: true

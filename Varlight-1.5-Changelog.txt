@@ -1,0 +1,7 @@
+COMMANDS:
+ - Refactored Commands
+    - Added /varlight-<command> commands
+
+PERMISSIONS:
+ - Added varlight.admin.debug:
+    - Provides access to /varlight debug
