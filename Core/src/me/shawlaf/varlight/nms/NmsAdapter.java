@@ -3,6 +3,7 @@ package me.shawlaf.varlight.nms;
 import me.shawlaf.varlight.VarLightPlugin;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -11,6 +12,11 @@ import org.jetbrains.annotations.NotNull;
 public class NmsAdapter implements INmsAdapter {
 
     public NmsAdapter(VarLightPlugin plugin) {
+        throw new AbstractMethodError();
+    }
+
+    @Override
+    public boolean isInvalidLightUpdateItem(Material material) {
         throw new AbstractMethodError();
     }
 

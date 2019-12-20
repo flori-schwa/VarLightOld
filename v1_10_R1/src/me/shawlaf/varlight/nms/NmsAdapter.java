@@ -55,6 +55,11 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
+    public boolean isInvalidLightUpdateItem(Material material) {
+        return material.isBlock();
+    }
+
+    @Override
     public boolean isBlockTransparent(@NotNull Block block) {
         return !getNmsWorld(block.getWorld()).getType(toBlockPosition(block.getLocation())).getMaterial().blocksLight();
     }
