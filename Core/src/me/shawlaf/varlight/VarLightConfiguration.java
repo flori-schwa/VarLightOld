@@ -45,7 +45,7 @@ public class VarLightConfiguration {
             return material;
         }
 
-        if (material.isBlock() || !material.isItem()) {
+        if (plugin.getNmsAdapter().isInvalidLightUpdateItem(material)) {
             plugin.getLogger().warning(String.format("\"%s\" cannot be used as the Light update item. Defaulting to \"%s\"", material.name(), Material.GLOWSTONE_DUST.name()));
 
             return Material.GLOWSTONE_DUST;

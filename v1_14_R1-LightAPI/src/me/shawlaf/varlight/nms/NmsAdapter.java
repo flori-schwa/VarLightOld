@@ -62,6 +62,11 @@ public class NmsAdapter implements INmsAdapter, Listener {
     }
 
     @Override
+    public boolean isInvalidLightUpdateItem(Material material) {
+        return material.isBlock() || !material.isItem();
+    }
+
+    @Override
     public boolean isBlockTransparent(@NotNull Block block) {
         throw new RuntimeException("Not used in combination with LightAPI");
     }
