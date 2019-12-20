@@ -125,6 +125,7 @@
             <attribute name="src-dir"/>
 
             <element name="libraries"/>
+            <element name="shaded" optional="true"/>
 
             <sequential>
 
@@ -160,6 +161,8 @@
                         <include name="annotations-17.0.0.jar"/>
                         <include name="SpigotCommandApi-1.2.jar"/>
                     </zipgroupfileset>
+
+                    <shaded/>
                 </jar>
             </sequential>
         </macrodef>
@@ -168,6 +171,12 @@
             <libraries>
                 <include name="**/spigot-1.8.8.jar"/>
             </libraries>
+
+            <shaded>
+                <zipgroupfileset dir="${lib-dir}">
+                    <include name="brigadier.jar"/>
+                </zipgroupfileset>
+            </shaded>
         </build>
 
         <build version="MC-1.9.4" src-dir="${v1_9_R2-src}" out-dir="${v1_9_R2-build}"
@@ -175,6 +184,12 @@
             <libraries>
                 <include name="**/spigot-1.9.4.jar"/>
             </libraries>
+
+            <shaded>
+                <zipgroupfileset dir="${lib-dir}">
+                    <include name="brigadier.jar"/>
+                </zipgroupfileset>
+            </shaded>
         </build>
 
         <build version="MC-1.10.2" src-dir="${v1_10_R1-src}" out-dir="${v1_10_R1-build}"
@@ -182,6 +197,12 @@
             <libraries>
                 <include name="**/spigot-1.10.2.jar"/>
             </libraries>
+
+            <shaded>
+                <zipgroupfileset dir="${lib-dir}">
+                    <include name="brigadier.jar"/>
+                </zipgroupfileset>
+            </shaded>
         </build>
 
         <build version="MC-1.11.2" src-dir="${v1_11_R1-src}" out-dir="${v1_11_R1-build}"
@@ -189,6 +210,12 @@
             <libraries>
                 <include name="**/spigot-1.11.2.jar"/>
             </libraries>
+
+            <shaded>
+                <zipgroupfileset dir="${lib-dir}">
+                    <include name="brigadier.jar"/>
+                </zipgroupfileset>
+            </shaded>
         </build>
 
         <build version="MC-1.12.2" src-dir="${v1_12_R1-src}" out-dir="${v1_12_R1-build}"
@@ -196,6 +223,12 @@
             <libraries>
                 <include name="**/spigot-1.12.2.jar"/>
             </libraries>
+
+            <shaded>
+                <zipgroupfileset dir="${lib-dir}">
+                    <include name="brigadier.jar"/>
+                </zipgroupfileset>
+            </shaded>
         </build>
 
         <build version="MC-1.13.2" src-dir="${v1_13_R2-src}" out-dir="${v1_13_R2-build}"
