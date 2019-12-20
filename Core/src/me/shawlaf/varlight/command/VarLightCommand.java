@@ -5,6 +5,7 @@ import me.florian.command.brigadier.BrigadierCommand;
 import me.florian.command.exception.CommandException;
 import me.shawlaf.varlight.VarLightPlugin;
 import me.shawlaf.varlight.command.commands.VarLightCommandAutosave;
+import me.shawlaf.varlight.command.commands.VarLightCommandDebug;
 import me.shawlaf.varlight.command.commands.VarLightCommandHelp;
 import org.bukkit.command.CommandSender;
 
@@ -18,7 +19,8 @@ public class VarLightCommand extends BrigadierCommand<CommandSender, VarLightPlu
     static {
         SUB_COMMANDS = new Class[]{
                 // Register sub commands here
-                VarLightCommandAutosave.class
+                VarLightCommandAutosave.class,
+                VarLightCommandDebug.class
 
         };
     }

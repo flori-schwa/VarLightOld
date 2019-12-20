@@ -30,7 +30,7 @@ public class VarLightCommandAutosave extends VarLightSubCommand {
 
     @Override
     public String getSyntax() {
-        return " <new interval>";
+        return "<new interval>";
     }
 
     @Override
@@ -38,7 +38,7 @@ public class VarLightCommandAutosave extends VarLightSubCommand {
         return literalArgumentBuilder
                 .then(
                         RequiredArgumentBuilder.<CommandSender, Integer>argument("newInterval", IntegerArgumentType.integer()).executes(context -> {
-                            int newInterval = context.getArgument("newInterval", Integer.class);
+                            int newInterval = context.getArgument("newInterval", int.class);
 
                             if (newInterval > 0) {
                                 successBroadcast(String.format("Updated Autosave interval to %d Minutes", newInterval), "varlight.admin.save").finish(context.getSource());

@@ -35,7 +35,7 @@ public class VarLightCommandHelp extends VarLightSubCommand {
 
     @Override
     public String getSyntax() {
-        return " [command|page]";
+        return "[command|page]";
     }
 
     @Override
@@ -55,7 +55,7 @@ public class VarLightCommandHelp extends VarLightSubCommand {
         literalArgumentBuilder.then(
                 RequiredArgumentBuilder.<CommandSender, Integer>argument("page", IntegerArgumentType.integer())
                         .executes(context -> {
-                            int page = Math.max(1, context.getArgument("page", Integer.class));
+                            int page = Math.max(1, context.getArgument("page", int.class));
 
                             showHelp(context.getSource(), page);
                             return 0;
