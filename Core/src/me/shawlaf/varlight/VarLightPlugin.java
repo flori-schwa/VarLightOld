@@ -1,6 +1,7 @@
 package me.shawlaf.varlight;
 
 //import me.shawlaf.varlight.command_old.VarLightCommand;
+
 import me.shawlaf.varlight.command.VarLightCommand;
 import me.shawlaf.varlight.event.LightUpdateEvent;
 import me.shawlaf.varlight.nms.*;
@@ -12,7 +13,6 @@ import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
