@@ -9,9 +9,13 @@ import me.shawlaf.varlight.command.VarLightSubCommand;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 
+import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
+import static com.mojang.brigadier.builder.RequiredArgumentBuilder.argument;
 import static me.shawlaf.command.result.CommandResult.successBroadcast;
 
 public class VarLightCommandAutosave extends VarLightSubCommand {
+
+    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_NEW_INTERVAL = argument("newInterval", integer());
 
     public VarLightCommandAutosave(VarLightPlugin varLightPlugin) {
         super(varLightPlugin, "autosave");
@@ -40,8 +44,8 @@ public class VarLightCommandAutosave extends VarLightSubCommand {
     public LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> literalArgumentBuilder) {
         return literalArgumentBuilder
                 .then(
-                        RequiredArgumentBuilder.<CommandSender, Integer>argument("newInterval", IntegerArgumentType.integer()).executes(context -> {
-                            int newInterval = context.getArgument("newInterval", int.class);
+                        ARG_NEW_INTERVAL.executes(context -> {
+                            int newInterval = context.getArgument(ARG_NEW_INTERVAL.getName(), int.class);
 
                             if (newInterval > 0) {
                                 successBroadcast(this, context.getSource(), String.format("Updated Autosave interval to %d Minutes", newInterval));

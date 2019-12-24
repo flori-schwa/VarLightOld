@@ -1,5 +1,6 @@
 package me.shawlaf.varlight.command.commands;
 
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -9,13 +10,14 @@ import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 
 import static com.mojang.brigadier.arguments.StringArgumentType.word;
+import static com.mojang.brigadier.builder.RequiredArgumentBuilder.argument;
 import static me.shawlaf.command.result.CommandResult.info;
 import static me.shawlaf.command.result.CommandResult.successBroadcast;
 import static me.shawlaf.varlight.command.VarLightCommand.SUCCESS;
 
 public class VarLightCommandPermission extends VarLightSubCommand {
 
-    private static final String PARAM_NEW_NODE = "node";
+    private static final RequiredArgumentBuilder<CommandSender, String> ARG_NEW_NODE = argument("node", word());
 
     public VarLightCommandPermission(VarLightPlugin plugin) {
         super(plugin, "perm");
@@ -47,10 +49,7 @@ public class VarLightCommandPermission extends VarLightSubCommand {
 
         node.then(
                 LiteralArgumentBuilder.<CommandSender>literal("set")
-                        .then(
-                                RequiredArgumentBuilder.<CommandSender, String>argument(PARAM_NEW_NODE, word())
-                                        .executes(this::set)
-                        )
+                        .then(ARG_NEW_NODE.executes(this::set))
         );
 
         node.then(
@@ -67,7 +66,7 @@ public class VarLightCommandPermission extends VarLightSubCommand {
     }
 
     private int set(CommandContext<CommandSender> context) {
-        String newNode = context.getArgument(PARAM_NEW_NODE, String.class);
+        String newNode = context.getArgument(ARG_NEW_NODE.getName(), String.class);
         String oldNode = plugin.getConfiguration().getRequiredPermissionNode();
 
         plugin.getConfiguration().setRequiredPermissionNode(newNode);

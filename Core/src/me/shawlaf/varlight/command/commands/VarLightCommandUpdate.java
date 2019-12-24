@@ -18,6 +18,7 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
+import static com.mojang.brigadier.builder.RequiredArgumentBuilder.argument;
 import static me.shawlaf.command.brigadier.argument.PositionArgumentType.position;
 import static me.shawlaf.command.brigadier.argument.WorldArgumentType.world;
 import static me.shawlaf.command.result.CommandResult.failure;
@@ -27,9 +28,9 @@ import static me.shawlaf.varlight.command.VarLightCommand.SUCCESS;
 
 public class VarLightCommandUpdate extends VarLightSubCommand {
 
-    private static final String PARAM_POSITION = "position";
-    private static final String PARAM_LIGHT_LEVEL = "light level";
-    private static final String PARAM_WORLD = "world";
+    private static final RequiredArgumentBuilder<CommandSender, ICoordinates> ARG_POSITION = argument("position", position());
+    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_LIGHT_LEVEL = argument("light level", integer(0, 15));
+    private static final RequiredArgumentBuilder<CommandSender, World> ARG_WORLD = argument("world", world());
 
     public VarLightCommandUpdate(VarLightPlugin plugin) {
         super(plugin, "update");
@@ -56,16 +57,11 @@ public class VarLightCommandUpdate extends VarLightSubCommand {
     @Override
     public LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> node) {
 
-        node.then(
-                RequiredArgumentBuilder.<CommandSender, ICoordinates>argument(PARAM_POSITION, position())
-                        .then(
-                                RequiredArgumentBuilder.<CommandSender, Integer>argument(PARAM_LIGHT_LEVEL, integer(0, 15))
-                                        .executes(this::updateImplicit)
-                                        .then(
-                                                RequiredArgumentBuilder.<CommandSender, World>argument(PARAM_WORLD, world())
-                                                        .executes(this::updateExplicit)
-                                        )
-                        )
+        node.then(ARG_POSITION.then(
+                ARG_LIGHT_LEVEL
+                        .executes(this::updateImplicit)
+                        .then(ARG_WORLD.executes(this::updateExplicit))
+                )
         );
 
         return node;
@@ -78,8 +74,8 @@ public class VarLightCommandUpdate extends VarLightSubCommand {
             return FAILURE;
         }
 
-        Location position = context.getArgument(PARAM_POSITION, ICoordinates.class).toLocation(context.getSource());
-        int lightLevel = context.getArgument(PARAM_LIGHT_LEVEL, int.class);
+        Location position = context.getArgument(ARG_POSITION.getName(), ICoordinates.class).toLocation(context.getSource());
+        int lightLevel = context.getArgument(ARG_LIGHT_LEVEL.getName(), int.class);
 
         position.setWorld(((Player) context.getSource()).getWorld());
 
@@ -87,9 +83,9 @@ public class VarLightCommandUpdate extends VarLightSubCommand {
     }
 
     private int updateExplicit(CommandContext<CommandSender> context) throws CommandSyntaxException {
-        Location position = context.getArgument(PARAM_POSITION, ICoordinates.class).toLocation(context.getSource());
-        int lightLevel = context.getArgument(PARAM_LIGHT_LEVEL, int.class);
-        World world = context.getArgument(PARAM_WORLD, World.class);
+        Location position = context.getArgument(ARG_POSITION.getName(), ICoordinates.class).toLocation(context.getSource());
+        int lightLevel = context.getArgument(ARG_LIGHT_LEVEL.getName(), int.class);
+        World world = context.getArgument(ARG_WORLD.getName(), World.class);
 
         position.setWorld(world);
 

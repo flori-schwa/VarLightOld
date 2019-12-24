@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
+import static com.mojang.brigadier.builder.RequiredArgumentBuilder.argument;
 import static me.shawlaf.command.result.CommandResult.failure;
 import static me.shawlaf.command.result.CommandResult.success;
 import static me.shawlaf.varlight.command.VarLightCommand.FAILURE;
@@ -17,7 +18,7 @@ import static me.shawlaf.varlight.command.VarLightCommand.SUCCESS;
 
 public class VarLightCommandStepSize extends VarLightSubCommand {
 
-    private static final String PARAM_STEPSIZE = "stepsize";
+    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_STEPSIZE = argument("stepsize", integer(1, 15));
 
     public VarLightCommandStepSize(VarLightPlugin plugin) {
         super(plugin, "stepsize");
@@ -43,11 +44,7 @@ public class VarLightCommandStepSize extends VarLightSubCommand {
     @NotNull
     @Override
     public LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> node) {
-
-        node.then(
-                RequiredArgumentBuilder.<CommandSender, Integer>argument(PARAM_STEPSIZE, integer(1, 15))
-                        .executes(this::update)
-        );
+        node.then(ARG_STEPSIZE.executes(this::update));
 
         return node;
     }
@@ -61,7 +58,7 @@ public class VarLightCommandStepSize extends VarLightSubCommand {
 
         Player player = (Player) context.getSource();
 
-        int newStepSize = context.getArgument(PARAM_STEPSIZE, int.class);
+        int newStepSize = context.getArgument(ARG_STEPSIZE.getName(), int.class);
 
         plugin.setStepSize(player, newStepSize); // Brigadier automatically filters all inputs < 1 and > 15
 
