@@ -6,6 +6,9 @@ import me.shawlaf.varlight.command.VarLightSubCommand;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 
+import static me.shawlaf.command.result.CommandResult.successBroadcast;
+import static me.shawlaf.varlight.command.VarLightCommand.SUCCESS;
+
 public class VarLightCommandReload extends VarLightSubCommand {
     public VarLightCommandReload(VarLightPlugin plugin) {
         super(plugin, "reload");
@@ -31,6 +34,17 @@ public class VarLightCommandReload extends VarLightSubCommand {
     @NotNull
     @Override
     public LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> node) {
+        node.executes(
+                context -> {
+                    plugin.reloadConfig();
+                    plugin.loadLightUpdateItem();
+
+                    successBroadcast(this, context.getSource(), "Configuration reloaded!");
+
+                    return SUCCESS;
+                }
+        );
+
         return node;
     }
 }
