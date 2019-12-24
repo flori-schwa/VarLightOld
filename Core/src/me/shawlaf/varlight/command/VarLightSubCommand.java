@@ -1,30 +1,59 @@
 package me.shawlaf.varlight.command;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import me.florian.command.brigadier.BrigadierCommand;
+import me.florian.command.ICommandAccess;
 import me.shawlaf.varlight.VarLightPlugin;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
+import org.jetbrains.annotations.NotNull;
 
-public abstract class VarLightSubCommand extends BrigadierCommand<CommandSender, VarLightPlugin> {
+public abstract class VarLightSubCommand implements ICommandAccess<VarLightPlugin> {
 
-    public VarLightSubCommand(VarLightPlugin plugin, String s, boolean lateBuild) {
-        super(plugin, s, CommandSender.class, lateBuild);
+    protected final VarLightPlugin plugin;
+    private final String name;
+
+    public VarLightSubCommand(VarLightPlugin plugin, String name) {
+        this.plugin = plugin;
+        this.name = name;
     }
 
-    public VarLightSubCommand(VarLightPlugin varLightPlugin, String s) {
-        this(varLightPlugin, s, false);
+    protected abstract LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> node);
+
+    @Override
+    public final @NotNull VarLightPlugin getPlugin() {
+        return plugin;
     }
 
-    protected final LiteralArgumentBuilder<CommandSender> buildFrom(LiteralArgumentBuilder<CommandSender> node) {
-        return buildCommand(node);
+    @Override
+    public final @NotNull String getName() {
+        return name;
     }
 
-    public abstract String getSubCommandName();
+    @Override
+    public @NotNull String getSyntax() {
+        return "";
+    }
 
-    public String getCommandHelp() {
-        if (getSyntax() == null || getDescription() == null) {
-            return null;
+
+    @Override
+    public @NotNull String getDescription() {
+        return "";
+    }
+
+    @Override
+    public @NotNull String getRequiredPermission() {
+        return "";
+    }
+
+    @Override
+    public @NotNull String[] getAliases() {
+        return new String[0];
+    }
+
+    @Override
+    public @NotNull String getUsageString() {
+        if (getSyntax().isEmpty() || getDescription().isEmpty()) {
+            return "";
         }
 
         return ChatColor.GOLD + "/varlight " + getName() + getSyntax() + ": " + ChatColor.RESET + getDescription();

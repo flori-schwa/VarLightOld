@@ -44,6 +44,13 @@
     <property name="javac-src-lvl" value="8"/>
     <property name="javac-target-lvl" value="8"/>
 
+    <property name="lib-book-api" value="spigot-book-api-1.3.jar"/>
+    <property name="lib-light-api" value="lightapi-3.2.9.jar"/>
+    <property name="lib-annotations" value="annotations-17.0.01.jar"/>
+    <property name="lib-command-api" value="SpigotCommandApi-1.3.jar"/>
+    <property name="lib-brigadier" value="brigadier.jar"/>
+
+
     <target name="clean">
         <delete dir="${build}"/>
         <delete dir="${dist}"/>
@@ -107,10 +114,10 @@
             <classpath>
                 <fileset dir="${lib-dir}">
                     <include name="**/spigot-1.13.2.jar"/>
-                    <include name="**/spigot-book-api-1.3.jar"/>
-                    <include name="**/lightapi-3.2.9.jar"/>
-                    <include name="**/annotations-17.0.0.jar"/>
-                    <include name="**/SpigotCommandApi-1.2.jar"/>
+                    <include name="**/${lib-book-api}"/>
+                    <include name="**/${lib-light-api}"/>
+                    <include name="**/${lib-annotations}"/>
+                    <include name="**/${lib-command-api}"/>
                 </fileset>
             </classpath>
         </javac>
@@ -149,7 +156,7 @@
                         </fileset>
 
                         <fileset dir="${lib-dir}">
-                            <include name="**/annotations-17.0.0.jar"/>
+                            <include name="**/${lib-annotations}"/>
                             <libraries/>
                         </fileset>
                     </classpath>
@@ -157,9 +164,9 @@
 
                 <jar destfile="${dist}/VarLight-${plugin.version}-@{version}.jar" basedir="@{out-dir}">
                     <zipgroupfileset dir="${lib-dir}">
-                        <include name="spigot-book-api-1.3.jar"/>
-                        <include name="annotations-17.0.0.jar"/>
-                        <include name="SpigotCommandApi-1.2.jar"/>
+                        <include name="${lib-book-api}"/>
+                        <include name="${lib-annotations}"/>
+                        <include name="${lib-command-api}"/>
                     </zipgroupfileset>
 
                     <shaded/>
@@ -174,7 +181,7 @@
 
             <shaded>
                 <zipgroupfileset dir="${lib-dir}">
-                    <include name="brigadier.jar"/>
+                    <include name="${lib-brigadier}"/>
                 </zipgroupfileset>
             </shaded>
         </build>
@@ -187,7 +194,7 @@
 
             <shaded>
                 <zipgroupfileset dir="${lib-dir}">
-                    <include name="brigadier.jar"/>
+                    <include name="${lib-brigadier}"/>
                 </zipgroupfileset>
             </shaded>
         </build>
@@ -200,7 +207,7 @@
 
             <shaded>
                 <zipgroupfileset dir="${lib-dir}">
-                    <include name="brigadier.jar"/>
+                    <include name="${lib-brigadier}"/>
                 </zipgroupfileset>
             </shaded>
         </build>
@@ -213,7 +220,7 @@
 
             <shaded>
                 <zipgroupfileset dir="${lib-dir}">
-                    <include name="brigadier.jar"/>
+                    <include name="${lib-brigadier}"/>
                 </zipgroupfileset>
             </shaded>
         </build>
@@ -226,7 +233,7 @@
 
             <shaded>
                 <zipgroupfileset dir="${lib-dir}">
-                    <include name="brigadier.jar"/>
+                    <include name="${lib-brigadier}"/>
                 </zipgroupfileset>
             </shaded>
         </build>
@@ -242,7 +249,7 @@
                api-version="1.14">
             <libraries>
                 <include name="**/spigot-1.14.4.jar"/>
-                <include name="**/LightAPI-fork-3.4.2.jar"/>
+                <include name="**/${lib-light-api}"/>
             </libraries>
         </build>
 
@@ -250,7 +257,7 @@
                api-version="1.14">
             <libraries>
                 <include name="**/spigot-1.15.1.jar"/>
-                <include name="**/LightAPI-fork-3.4.2.jar"/>
+                <include name="**/${lib-light-api}"/>
             </libraries>
         </build>
     </target>

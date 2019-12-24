@@ -60,7 +60,7 @@ public class VarLightCommand extends BrigadierCommand<CommandSender, VarLightPlu
 
         LiteralArgumentBuilder<CommandSender> subCommandRoot = LiteralArgumentBuilder.literal(subCommand.getSubCommandName());
 
-        subCommand.buildFrom(subCommandRoot);
+        subCommand.build(subCommandRoot);
         root.then(subCommandRoot);
     }
 
@@ -74,7 +74,7 @@ public class VarLightCommand extends BrigadierCommand<CommandSender, VarLightPlu
 
         LiteralArgumentBuilder<CommandSender> subCommandRoot = LiteralArgumentBuilder.literal(helpCommand.getSubCommandName());
 
-        helpCommand.buildFrom(subCommandRoot);
+        helpCommand.build(subCommandRoot);
         builder.then(subCommandRoot);
 
         return builder;

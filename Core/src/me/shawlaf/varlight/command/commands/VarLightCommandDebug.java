@@ -3,6 +3,7 @@ package me.shawlaf.varlight.command.commands;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import me.florian.command.exception.CommandException;
+import me.florian.command.result.CommandResult;
 import me.shawlaf.varlight.VarLightPlugin;
 import me.shawlaf.varlight.command.VarLightSubCommand;
 import me.shawlaf.varlight.persistence.PersistentLightSource;
@@ -16,41 +17,41 @@ import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.List;
 
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
+import static me.florian.command.result.CommandResult.*;
 
 @SuppressWarnings("DuplicatedCode")
 public class VarLightCommandDebug extends VarLightSubCommand {
 
     public VarLightCommandDebug(VarLightPlugin plugin) {
-        super(plugin, "varlight-debug", false);
+        super(plugin, "debug");
     }
 
-    @Override
-    public String getSubCommandName() {
-        return "debug";
-    }
-
+    @NotNull
     @Override
     public String getRequiredPermission() {
         return "varlight.admin.debug";
     }
 
+    @NotNull
     @Override
     public String getDescription() {
         return "Lists all custom Light sources in a region or chunk";
     }
 
+    @NotNull
     @Override
     public String getSyntax() {
         return "-r|-c [regionX|chunkX] [regionZ|chunkZ]";
     }
 
     @Override
-    protected LiteralArgumentBuilder<CommandSender> buildCommand(LiteralArgumentBuilder<CommandSender> literalArgumentBuilder) {
+    protected LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> literalArgumentBuilder) {
         return literalArgumentBuilder.then(
                 LiteralArgumentBuilder.<CommandSender>literal("list")
                         .requires(sender -> sender instanceof Player)
@@ -135,7 +136,7 @@ public class VarLightCommandDebug extends VarLightSubCommand {
         WorldLightSourceManager manager = plugin.getManager(player.getWorld());
 
         if (manager == null) {
-            success("Varlight is not active in your current world!").finish(player);
+            success(this, player, "Varlight is not active in your current world!");
             return;
         }
 
@@ -156,7 +157,7 @@ public class VarLightCommandDebug extends VarLightSubCommand {
         WorldLightSourceManager manager = plugin.getManager(player.getWorld());
 
         if (manager == null) {
-            success("Varlight is not active in your current world!").finish(player);
+            success(this, player, "Varlight is not active in your current world!");
             return;
         }
 

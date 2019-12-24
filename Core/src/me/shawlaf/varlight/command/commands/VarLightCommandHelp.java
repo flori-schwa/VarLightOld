@@ -9,44 +9,43 @@ import me.shawlaf.varlight.command.VarLightSubCommand;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.util.ChatPaginator;
-
-import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
 
 public class VarLightCommandHelp extends VarLightSubCommand {
 
     private VarLightCommand rootCommand;
 
     public VarLightCommandHelp(VarLightPlugin varLightPlugin, VarLightCommand rootCommand) {
-        super(varLightPlugin, "varlight-help", true);
+        super(varLightPlugin, "help");
 
         this.rootCommand = rootCommand;
-        build();
     }
 
-    @Override
-    public String getSubCommandName() {
-        return "help";
-    }
-
+    @NotNull
     @Override
     public String getDescription() {
         return "Displays all VarLight sub commands";
     }
 
+    @NotNull
     @Override
     public String getSyntax() {
         return "[command|page]";
     }
 
     @Override
-    protected LiteralArgumentBuilder<CommandSender> buildCommand(LiteralArgumentBuilder<CommandSender> literalArgumentBuilder) {
+    protected LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> literalArgumentBuilder) {
 
         for (VarLightSubCommand subCommand : rootCommand.getSubCommands()) {
+            if (subCommand.getUsageString().isEmpty()) {
+                continue;
+            }
+
             literalArgumentBuilder.then(
-                    LiteralArgumentBuilder.<CommandSender>literal(subCommand.getSubCommandName())
-                            .requires(sender -> sender.hasPermission(Optional.ofNullable(subCommand.getRequiredPermission()).orElse("")))
+                    LiteralArgumentBuilder.<CommandSender>literal(subCommand.getName())
+                            .requires(sender -> sender.hasPermission(subCommand.getRequiredPermission()))
                             .executes(context -> {
-                                context.getSource().sendMessage(subCommand.getCommandHelp());
+                                context.getSource().sendMessage(subCommand.getUsageString());
                                 return 0;
                             })
             );
@@ -76,9 +75,9 @@ public class VarLightCommandHelp extends VarLightSubCommand {
         StringBuilder builder = new StringBuilder();
 
         for (VarLightSubCommand subCommand : rootCommand.getSubCommands()) {
-            String help = subCommand.getCommandHelp();
+            String help = subCommand.getUsageString();
 
-            if (help != null && commandSender.hasPermission(Optional.ofNullable(subCommand.getRequiredPermission()).orElse(""))) {
+            if (!help.isEmpty() && commandSender.hasPermission(subCommand.getRequiredPermission())) {
                 builder.append(help).append('\n');
             }
         }
