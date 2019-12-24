@@ -1,5 +1,7 @@
 package me.shawlaf.varlight;
 
+//import me.shawlaf.varlight.command_old.VarLightCommand;
+
 import me.shawlaf.varlight.command.VarLightCommand;
 import me.shawlaf.varlight.event.LightUpdateEvent;
 import me.shawlaf.varlight.nms.*;
@@ -11,7 +13,6 @@ import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -46,6 +47,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     private boolean doLoad = true;
     private PersistOnWorldSaveHandler persistOnWorldSaveHandler;
     private Material lightUpdateItem;
+    private VarLightCommand command;
 
     private void unsupportedOperation(String message) {
         getLogger().severe("------------------------------------------------------");
@@ -101,11 +103,15 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         Bukkit.getPluginManager().registerEvents(this, this);
 
-        final VarLightCommand handler = new VarLightCommand(this);
-        final PluginCommand varlightPluginCommand = getCommand("varlight");
+        command = new VarLightCommand(this);
+//        final PluginCommand varlightPluginCommand = getCommand("varlight");
+//
+//        varlightPluginCommand.setExecutor(handler);
+//        varlightPluginCommand.setTabCompleter(handler);
+    }
 
-        varlightPluginCommand.setExecutor(handler);
-        varlightPluginCommand.setTabCompleter(handler);
+    public VarLightCommand getCommand() {
+        return command;
     }
 
     public boolean isLightApiInstalled() {

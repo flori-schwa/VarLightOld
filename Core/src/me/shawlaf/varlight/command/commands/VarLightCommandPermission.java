@@ -1,81 +1,87 @@
 package me.shawlaf.varlight.command.commands;
 
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
 import me.shawlaf.varlight.VarLightPlugin;
-import me.shawlaf.varlight.command.ArgumentIterator;
-import me.shawlaf.varlight.command.CommandSuggestions;
-import me.shawlaf.varlight.command.VarLightCommand;
 import me.shawlaf.varlight.command.VarLightSubCommand;
 import org.bukkit.command.CommandSender;
+import org.jetbrains.annotations.NotNull;
+
+import static com.mojang.brigadier.arguments.StringArgumentType.word;
+import static me.shawlaf.command.result.CommandResult.info;
+import static me.shawlaf.command.result.CommandResult.successBroadcast;
+import static me.shawlaf.varlight.command.VarLightCommand.SUCCESS;
 
 public class VarLightCommandPermission extends VarLightSubCommand {
 
-    private final VarLightPlugin plugin;
+    private static final String PARAM_NEW_NODE = "node";
 
     public VarLightCommandPermission(VarLightPlugin plugin) {
-        this.plugin = plugin;
+        super(plugin, "perm");
     }
 
     @Override
-    public String getName() {
-        return "perm";
+    public @NotNull String getRequiredPermission() {
+        return "varlight.admin.perm";
     }
 
+    @NotNull
     @Override
     public String getSyntax() {
         return " get/set/unset [new permission]";
     }
 
+    @NotNull
     @Override
     public String getDescription() {
         return "Gets/Sets/Unsets the permission node that is required to use the plugin's functionality";
     }
 
+    @NotNull
     @Override
-    public boolean execute(CommandSender sender, ArgumentIterator args) {
-        VarLightCommand.assertPermission(sender, "varlight.admin.perm");
+    public LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> node) {
+        node.then(
+                LiteralArgumentBuilder.<CommandSender>literal("get").executes(this::get)
+        );
 
-        if (!args.hasNext()) {
-            return false;
-        }
+        node.then(
+                LiteralArgumentBuilder.<CommandSender>literal("set")
+                        .then(
+                                RequiredArgumentBuilder.<CommandSender, String>argument(PARAM_NEW_NODE, word())
+                                        .executes(this::set)
+                        )
+        );
 
-        switch (args.next().toLowerCase()) {
-            case "get": {
-                VarLightCommand.sendPrefixedMessage(sender, String.format("The current required permission node is \"%s\".", plugin.getConfiguration().getRequiredPermissionNode()));
-                return true;
-            }
+        node.then(
+                LiteralArgumentBuilder.<CommandSender>literal("unset").executes(this::unset)
+        );
 
-            case "set": {
-                if (!args.hasNext()) {
-                    return false;
-                }
-
-                final String newNode = args.next();
-                final String oldNode = plugin.getConfiguration().getRequiredPermissionNode();
-
-                plugin.getConfiguration().setRequiredPermissionNode(newNode);
-
-                VarLightCommand.broadcastResult(sender, String.format("The required permission node has been updated from \"%s\" to \"%s\".", oldNode, newNode), "varlight.admin.perm");
-                return true;
-            }
-
-            case "unset": {
-                plugin.getConfiguration().setRequiredPermissionNode("");
-                VarLightCommand.broadcastResult(sender, "The required permission node has been un-set.", "varlight.admin.perm");
-                return true;
-            }
-
-            default: {
-                return false;
-            }
-        }
+        return node;
     }
 
-    @Override
-    public void tabComplete(CommandSuggestions commandSuggestions) {
-        if (commandSuggestions.getArgumentCount() != 1) {
-            return;
-        }
+    private int get(CommandContext<CommandSender> context) {
+        info(this, context.getSource(), String.format("The current required permission node is \"%s\".", plugin.getConfiguration().getRequiredPermissionNode()));
 
-        commandSuggestions.suggestChoices("get", "set", "unset");
+        return SUCCESS;
+    }
+
+    private int set(CommandContext<CommandSender> context) {
+        String newNode = context.getArgument(PARAM_NEW_NODE, String.class);
+        String oldNode = plugin.getConfiguration().getRequiredPermissionNode();
+
+        plugin.getConfiguration().setRequiredPermissionNode(newNode);
+
+        successBroadcast(this, context.getSource(), String.format("The required permission node has been updated from \"%s\" to \"%s\".", oldNode, newNode));
+
+        return SUCCESS;
+    }
+
+    private int unset(CommandContext<CommandSender> context) {
+        plugin.getConfiguration().setRequiredPermissionNode("");
+
+        successBroadcast(this, context.getSource(), "The required permission node has been un-set.");
+
+        return SUCCESS;
     }
 }

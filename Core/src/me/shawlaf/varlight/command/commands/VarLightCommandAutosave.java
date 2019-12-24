@@ -1,62 +1,59 @@
 package me.shawlaf.varlight.command.commands;
 
+import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import me.shawlaf.varlight.VarLightPlugin;
-import me.shawlaf.varlight.command.ArgumentIterator;
 import me.shawlaf.varlight.command.VarLightCommand;
 import me.shawlaf.varlight.command.VarLightSubCommand;
-import me.shawlaf.varlight.command.exception.VarLightCommandException;
 import org.bukkit.command.CommandSender;
+import org.jetbrains.annotations.NotNull;
+
+import static me.shawlaf.command.result.CommandResult.successBroadcast;
 
 public class VarLightCommandAutosave extends VarLightSubCommand {
 
-    private final VarLightPlugin plugin;
-
-    public VarLightCommandAutosave(VarLightPlugin plugin) {
-        this.plugin = plugin;
+    public VarLightCommandAutosave(VarLightPlugin varLightPlugin) {
+        super(varLightPlugin, "autosave");
     }
 
+    @NotNull
     @Override
-    public String getName() {
-        return "autosave";
+    public String getRequiredPermission() {
+        return "varlight.admin.save";
     }
 
-    @Override
-    public String getSyntax() {
-        return " <new interval>";
-    }
-
+    @NotNull
     @Override
     public String getDescription() {
-        return "Sets the new autosave interval (0: disable, negative: save on world save)";
+        return "Adjust the autosave interval";
     }
 
+    @NotNull
     @Override
-    public boolean execute(CommandSender sender, ArgumentIterator args) {
-        VarLightCommand.assertPermission(sender, "varlight.admin.save");
+    public String getSyntax() {
+        return "<new interval>";
+    }
 
-        if (!args.hasNext()) {
-            return false;
-        }
+    @NotNull
+    @Override
+    public LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> literalArgumentBuilder) {
+        return literalArgumentBuilder
+                .then(
+                        RequiredArgumentBuilder.<CommandSender, Integer>argument("newInterval", IntegerArgumentType.integer()).executes(context -> {
+                            int newInterval = context.getArgument("newInterval", int.class);
 
-        int newInterval;
-
-        try {
-            newInterval = args.parseNext(Integer::parseInt);
-        } catch (NumberFormatException e) {
-            throw new VarLightCommandException(String.format("Malformed input: %s", e.getMessage()), e);
-        }
-
-        plugin.getConfiguration().setAutosaveInterval(newInterval);
-        plugin.initAutosave();
-
-        if (newInterval > 0) {
-            VarLightCommand.broadcastResult(sender, String.format("Updated Autosave interval to %d Minutes", newInterval), "varlight.admin.save");
-        } else if (newInterval == 0) {
-            VarLightCommand.broadcastResult(sender, "Disabled Autosave", "varlight.admin.save");
-        } else {
-            VarLightCommand.broadcastResult(sender, "Enabled Persist On Save", "varlight.admin.save");
-        }
-
-        return true;
+                            if (newInterval > 0) {
+                                successBroadcast(this, context.getSource(), String.format("Updated Autosave interval to %d Minutes", newInterval));
+                                return VarLightCommand.SUCCESS;
+                            } else if (newInterval == 0) {
+                                successBroadcast(this, context.getSource(), "Disabled Autosave");
+                                return VarLightCommand.SUCCESS;
+                            } else {
+                                successBroadcast(this, context.getSource(), "Enabled Persist On Save");
+                                return VarLightCommand.SUCCESS;
+                            }
+                        })
+                );
     }
 }

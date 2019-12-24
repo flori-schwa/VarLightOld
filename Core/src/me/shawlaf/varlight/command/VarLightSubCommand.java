@@ -1,38 +1,60 @@
 package me.shawlaf.varlight.command;
 
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import me.shawlaf.command.ICommandAccess;
+import me.shawlaf.varlight.VarLightPlugin;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
+import org.jetbrains.annotations.NotNull;
 
-public abstract class VarLightSubCommand {
+public abstract class VarLightSubCommand implements ICommandAccess<VarLightPlugin> {
 
-    public abstract String getName();
+    protected final VarLightPlugin plugin;
+    private final String name;
 
-    /**
-     * @return The remaining syntax after "/varlight [subcommand]"
-     */
-    public String getSyntax() {
-        return null;
+    public VarLightSubCommand(VarLightPlugin plugin, String name) {
+        this.plugin = plugin;
+        this.name = name;
     }
 
-    /**
-     * @return A short description to be rendered after "/varlight [subcommand] [syntax]:"
-     */
-    public String getDescription() {
-        return null;
+    public abstract @NotNull LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> node);
+
+    @Override
+    public final @NotNull VarLightPlugin getPlugin() {
+        return plugin;
     }
 
-    public String getCommandHelp() {
-        if (getSyntax() == null || getDescription() == null) {
-            return null;
+    @Override
+    public final @NotNull String getName() {
+        return name;
+    }
+
+    @Override
+    public @NotNull String getSyntax() {
+        return "";
+    }
+
+    @Override
+    public @NotNull String getDescription() {
+        return "";
+    }
+
+    @Override
+    public @NotNull String getRequiredPermission() {
+        return "";
+    }
+
+    @Override
+    public final @NotNull String[] getAliases() {
+        return new String[0];
+    }
+
+    @Override
+    public @NotNull String getUsageString() {
+        if (getSyntax().isEmpty() || getDescription().isEmpty()) {
+            return "";
         }
 
         return ChatColor.GOLD + "/varlight " + getName() + getSyntax() + ": " + ChatColor.RESET + getDescription();
     }
-
-    public abstract boolean execute(CommandSender sender, ArgumentIterator args);
-
-    public void tabComplete(CommandSuggestions commandSuggestions) {
-
-    }
-
 }
