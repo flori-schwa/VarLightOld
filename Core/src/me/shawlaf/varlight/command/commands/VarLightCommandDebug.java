@@ -49,8 +49,9 @@ public class VarLightCommandDebug extends VarLightSubCommand {
         return "-r|-c [regionX|chunkX] [regionZ|chunkZ]";
     }
 
+    @NotNull
     @Override
-    protected LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> literalArgumentBuilder) {
+    public LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> literalArgumentBuilder) {
         return literalArgumentBuilder.then(
                 LiteralArgumentBuilder.<CommandSender>literal("list")
                         .requires(sender -> sender instanceof Player)

@@ -33,8 +33,9 @@ public class VarLightCommandHelp extends VarLightSubCommand {
         return "[command|page]";
     }
 
+    @NotNull
     @Override
-    protected LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> literalArgumentBuilder) {
+    public LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> literalArgumentBuilder) {
 
         for (VarLightSubCommand subCommand : rootCommand.getSubCommands()) {
             if (subCommand.getUsageString().isEmpty()) {

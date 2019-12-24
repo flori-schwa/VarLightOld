@@ -34,8 +34,9 @@ public class VarLightCommandAutosave extends VarLightSubCommand {
         return "<new interval>";
     }
 
+    @NotNull
     @Override
-    protected LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> literalArgumentBuilder) {
+    public LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> literalArgumentBuilder) {
         return literalArgumentBuilder
                 .then(
                         RequiredArgumentBuilder.<CommandSender, Integer>argument("newInterval", IntegerArgumentType.integer()).executes(context -> {

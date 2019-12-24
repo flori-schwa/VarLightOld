@@ -4,9 +4,9 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import me.florian.command.brigadier.BrigadierCommand;
 import me.florian.command.exception.CommandException;
 import me.shawlaf.varlight.VarLightPlugin;
-import me.shawlaf.varlight.command.commands.VarLightCommandAutosave;
-import me.shawlaf.varlight.command.commands.VarLightCommandDebug;
-import me.shawlaf.varlight.command.commands.VarLightCommandHelp;
+import me.shawlaf.varlight.command.commands.*;
+import me.shawlaf.varlight.command.commands.world.VarLightCommandBlacklist;
+import me.shawlaf.varlight.command.commands.world.VarLightCommandWhitelist;
 import org.bukkit.command.CommandSender;
 
 import java.lang.reflect.InvocationTargetException;
@@ -20,8 +20,16 @@ public class VarLightCommand extends BrigadierCommand<CommandSender, VarLightPlu
         SUB_COMMANDS = new Class[]{
                 // Register sub commands here
                 VarLightCommandAutosave.class,
-                VarLightCommandDebug.class
-
+                VarLightCommandDebug.class,
+                VarLightCommandHelp.class,
+                VarLightCommandMigrate.class,
+                VarLightCommandPermission.class,
+                VarLightCommandReload.class,
+                VarLightCommandSave.class,
+                VarLightCommandStepSize.class,
+                VarLightCommandSuggest.class,
+                VarLightCommandWhitelist.class,
+                VarLightCommandBlacklist.class,
         };
     }
 
@@ -58,7 +66,7 @@ public class VarLightCommand extends BrigadierCommand<CommandSender, VarLightPlu
 
         // Constructor registers sub Command as separate command
 
-        LiteralArgumentBuilder<CommandSender> subCommandRoot = LiteralArgumentBuilder.literal(subCommand.getSubCommandName());
+        LiteralArgumentBuilder<CommandSender> subCommandRoot = LiteralArgumentBuilder.literal(subCommand.getName());
 
         subCommand.build(subCommandRoot);
         root.then(subCommandRoot);
@@ -72,7 +80,7 @@ public class VarLightCommand extends BrigadierCommand<CommandSender, VarLightPlu
 
         VarLightCommandHelp helpCommand = new VarLightCommandHelp(plugin, this);
 
-        LiteralArgumentBuilder<CommandSender> subCommandRoot = LiteralArgumentBuilder.literal(helpCommand.getSubCommandName());
+        LiteralArgumentBuilder<CommandSender> subCommandRoot = LiteralArgumentBuilder.literal(helpCommand.getName());
 
         helpCommand.build(subCommandRoot);
         builder.then(subCommandRoot);

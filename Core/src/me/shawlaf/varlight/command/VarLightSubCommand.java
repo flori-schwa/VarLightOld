@@ -17,7 +17,7 @@ public abstract class VarLightSubCommand implements ICommandAccess<VarLightPlugi
         this.name = name;
     }
 
-    protected abstract LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> node);
+    public abstract @NotNull LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> node);
 
     @Override
     public final @NotNull VarLightPlugin getPlugin() {
@@ -34,7 +34,6 @@ public abstract class VarLightSubCommand implements ICommandAccess<VarLightPlugi
         return "";
     }
 
-
     @Override
     public @NotNull String getDescription() {
         return "";
@@ -46,7 +45,7 @@ public abstract class VarLightSubCommand implements ICommandAccess<VarLightPlugi
     }
 
     @Override
-    public @NotNull String[] getAliases() {
+    public final @NotNull String[] getAliases() {
         return new String[0];
     }
 
