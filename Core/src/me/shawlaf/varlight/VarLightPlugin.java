@@ -47,6 +47,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     private boolean doLoad = true;
     private PersistOnWorldSaveHandler persistOnWorldSaveHandler;
     private Material lightUpdateItem;
+    private VarLightCommand command;
 
     private void unsupportedOperation(String message) {
         getLogger().severe("------------------------------------------------------");
@@ -102,11 +103,15 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         Bukkit.getPluginManager().registerEvents(this, this);
 
-        new VarLightCommand(this);
+        command = new VarLightCommand(this);
 //        final PluginCommand varlightPluginCommand = getCommand("varlight");
 //
 //        varlightPluginCommand.setExecutor(handler);
 //        varlightPluginCommand.setTabCompleter(handler);
+    }
+
+    public VarLightCommand getCommand() {
+        return command;
     }
 
     public boolean isLightApiInstalled() {

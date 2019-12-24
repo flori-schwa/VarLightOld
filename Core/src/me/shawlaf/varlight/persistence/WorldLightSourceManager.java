@@ -1,7 +1,7 @@
 package me.shawlaf.varlight.persistence;
 
+import me.shawlaf.command.result.CommandResult;
 import me.shawlaf.varlight.VarLightPlugin;
-import me.shawlaf.varlight.command_old.VarLightCommand;
 import me.shawlaf.varlight.persistence.migrate.LightDatabaseMigrator;
 import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
@@ -205,7 +205,7 @@ public class WorldLightSourceManager {
                             throw new LightPersistFailedException("Could not delete file " + persistor.file.file.getAbsolutePath());
                         } else {
                             if (plugin.getConfiguration().isLoggingPersist() || commandSender instanceof Player) {
-                                VarLightCommand.sendPrefixedMessage(commandSender, String.format("Deleted File %s", persistor.file.file.getName()));
+                                CommandResult.info(plugin.getCommand(), commandSender, String.format("Deleted File %s", persistor.file.file.getName()));
                             }
 
                             deleted++;
@@ -269,8 +269,8 @@ public class WorldLightSourceManager {
             if ((System.currentTimeMillis() - lastMigrateNotice) > 30_000) {
 
                 Bukkit.broadcast(
-                        VarLightCommand.getPrefixedMessage(String.format("There are non-migrated Light sources present in world \"%s\", please run /varlight migrate!", world.getName())),
-                        "varlight.admin"
+                        String.format(ChatColor.RED + "[VarLight] There are non-migrated Light sources present in world \"%s\", please run /varlight migrate!", world.getName()),
+                        "varlight.admin.migrate"
                 );
 
                 lastMigrateNotice = System.currentTimeMillis();
