@@ -1,7 +1,7 @@
 package me.shawlaf.varlight.command;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import me.florian.command.ICommandAccess;
+import me.shawlaf.command.ICommandAccess;
 import me.shawlaf.varlight.VarLightPlugin;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;

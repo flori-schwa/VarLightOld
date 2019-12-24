@@ -1,8 +1,8 @@
 package me.shawlaf.varlight.command;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import me.florian.command.brigadier.BrigadierCommand;
-import me.florian.command.exception.CommandException;
+import me.shawlaf.command.brigadier.BrigadierCommand;
+import me.shawlaf.command.exception.CommandException;
 import me.shawlaf.varlight.VarLightPlugin;
 import me.shawlaf.varlight.command.commands.*;
 import me.shawlaf.varlight.command.commands.world.VarLightCommandBlacklist;
@@ -21,7 +21,6 @@ public class VarLightCommand extends BrigadierCommand<CommandSender, VarLightPlu
                 // Register sub commands here
                 VarLightCommandAutosave.class,
                 VarLightCommandDebug.class,
-                VarLightCommandHelp.class,
                 VarLightCommandMigrate.class,
                 VarLightCommandPermission.class,
                 VarLightCommandReload.class,

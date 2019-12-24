@@ -2,7 +2,7 @@ package me.shawlaf.varlight.command.commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
-import me.florian.command.exception.CommandException;
+import me.shawlaf.command.exception.CommandException;
 import me.shawlaf.varlight.VarLightPlugin;
 import me.shawlaf.varlight.command.VarLightSubCommand;
 import me.shawlaf.varlight.persistence.PersistentLightSource;
@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.util.List;
 
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
-import static me.florian.command.result.CommandResult.success;
+import static me.shawlaf.command.result.CommandResult.success;
 
 @SuppressWarnings("DuplicatedCode")
 public class VarLightCommandDebug extends VarLightSubCommand {

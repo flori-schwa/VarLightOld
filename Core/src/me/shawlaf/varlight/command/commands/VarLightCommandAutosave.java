@@ -8,7 +8,7 @@ import me.shawlaf.varlight.command.VarLightSubCommand;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 
-import static me.florian.command.result.CommandResult.successBroadcast;
+import static me.shawlaf.command.result.CommandResult.successBroadcast;
 
 public class VarLightCommandAutosave extends VarLightSubCommand {
 

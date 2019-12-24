@@ -47,7 +47,7 @@
     <property name="lib-book-api" value="spigot-book-api-1.3.jar"/>
     <property name="lib-light-api" value="LightAPI-fork-3.4.2.jar"/>
     <property name="lib-annotations" value="annotations-17.0.01.jar"/>
-    <property name="lib-command-api" value="SpigotCommandApi-1.3.jar"/>
+    <property name="lib-command-api" value="SpigotCommandApi-1.4.jar"/>
     <property name="lib-brigadier" value="brigadier.jar"/>
 
 
