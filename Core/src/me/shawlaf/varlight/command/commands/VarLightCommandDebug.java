@@ -55,7 +55,7 @@ public class VarLightCommandDebug extends VarLightSubCommand {
     @NotNull
     @Override
     public String getSyntax() {
-        return "-r|-c [regionX|chunkX] [regionZ|chunkZ]";
+        return " -r|-c [regionX|chunkX] [regionZ|chunkZ]";
     }
 
     @NotNull

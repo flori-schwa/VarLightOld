@@ -34,7 +34,7 @@ public class VarLightCommandHelp extends VarLightSubCommand {
     @NotNull
     @Override
     public String getSyntax() {
-        return "[command|page]";
+        return " [command|page]";
     }
 
     @NotNull

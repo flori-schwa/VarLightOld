@@ -36,7 +36,7 @@ public class VarLightCommandAutosave extends VarLightSubCommand {
     @NotNull
     @Override
     public String getSyntax() {
-        return "<new interval>";
+        return " <new interval>";
     }
 
     @NotNull

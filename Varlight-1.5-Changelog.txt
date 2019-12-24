@@ -2,5 +2,13 @@ COMMANDS:
  - Refactored Commands
 
 PERMISSIONS:
- - Added varlight.admin.debug:
-    - Provides access to /varlight debug
+ - Permissions have been refactored
+ - /varlight autosave: Still requires permission node "varlight.admin.save"
+ - /varlight debug: required permission node changed from "varlight.debug" to "varlight.admin.debug"
+ - /varlight migrate: required permission node changed from "varlight.admin" to "varlight.admin.migrate"
+ - /varlight perm: Still requires permission node "varlight.admin.perm"
+ - /varlight reload: required permission node changed from "varlight.admin" to "varlight.admin.perm"
+ - /varlight save: Still requires permission node "varlight.admin.save"
+ - /varlight stepsize: required permission node changed from "varlight.admin" to "varlight.stepsize"
+ - /varlight update: required permission node changed from "varlight.admin" to "varlight.admin.update"
+ - /varlight blacklist|whitelist: Still requires permission node "varlight.admin.world"

@@ -28,7 +28,7 @@ public class VarLightCommandSave extends VarLightSubCommand {
     @NotNull
     @Override
     public String getSyntax() {
-        return " [all/<world>]";
+        return " [all|<world>]";
     }
 
     @NotNull

@@ -31,7 +31,7 @@ public class VarLightCommandPermission extends VarLightSubCommand {
     @NotNull
     @Override
     public String getSyntax() {
-        return " get/set/unset [new permission]";
+        return " get|set|unset [new permission]";
     }
 
     @NotNull

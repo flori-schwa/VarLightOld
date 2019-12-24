@@ -8,11 +8,18 @@ import me.shawlaf.varlight.command.commands.*;
 import me.shawlaf.varlight.command.commands.world.VarLightCommandBlacklist;
 import me.shawlaf.varlight.command.commands.world.VarLightCommandWhitelist;
 import org.bukkit.command.CommandSender;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.InvocationTargetException;
 
 @SuppressWarnings("rawtypes")
 public class VarLightCommand extends BrigadierCommand<CommandSender, VarLightPlugin> {
+
+    /*
+        // TODO:
+            - Hide commands without permission from brigadier auto completion
+            - Give proper no permission messages instead of "Incorrect argument..."
+     */
 
     public static final int SUCCESS = 0;
     public static final int FAILURE = 1;
@@ -71,7 +78,18 @@ public class VarLightCommand extends BrigadierCommand<CommandSender, VarLightPlu
 
         LiteralArgumentBuilder<CommandSender> subCommandRoot = LiteralArgumentBuilder.literal(subCommand.getName());
 
+        subCommandRoot.requires(sender -> {
+            String required = subCommand.getRequiredPermission();
+
+            if (required.isEmpty()) {
+                return true;
+            }
+
+            return sender.hasPermission(required);
+        });
+
         subCommand.build(subCommandRoot);
+
         root.then(subCommandRoot);
     }
 
@@ -82,13 +100,17 @@ public class VarLightCommand extends BrigadierCommand<CommandSender, VarLightPlu
         }
 
         VarLightCommandHelp helpCommand = new VarLightCommandHelp(plugin, this);
-
         LiteralArgumentBuilder<CommandSender> subCommandRoot = LiteralArgumentBuilder.literal(helpCommand.getName());
-
         helpCommand.build(subCommandRoot);
+
         builder.then(subCommandRoot);
 
         return builder;
+    }
+
+    @Override
+    public @Nullable String getRequiredPermission() {
+        return "";
     }
 
     public VarLightSubCommand[] getSubCommands() {
