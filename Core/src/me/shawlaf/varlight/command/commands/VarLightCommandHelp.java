@@ -47,7 +47,7 @@ public class VarLightCommandHelp extends VarLightSubCommand {
                             .requires(sender -> sender.hasPermission(subCommand.getRequiredPermission()))
                             .executes(context -> {
                                 context.getSource().sendMessage(subCommand.getUsageString());
-                                return 0;
+                                return VarLightCommand.SUCCESS;
                             })
             );
         }
@@ -58,14 +58,14 @@ public class VarLightCommandHelp extends VarLightSubCommand {
                             int page = Math.max(1, context.getArgument("page", int.class));
 
                             showHelp(context.getSource(), page);
-                            return 0;
+                            return VarLightCommand.SUCCESS;
                         })
         );
 
         literalArgumentBuilder.executes(
                 context -> {
                     showHelp(context.getSource());
-                    return 0;
+                    return VarLightCommand.SUCCESS;
                 }
         );
 

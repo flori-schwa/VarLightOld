@@ -10,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
 
 import static me.shawlaf.command.result.CommandResult.failure;
 import static me.shawlaf.command.result.CommandResult.successBroadcast;
+import static me.shawlaf.varlight.command.VarLightCommand.FAILURE;
+import static me.shawlaf.varlight.command.VarLightCommand.SUCCESS;
 
 public class VarLightCommandMigrate extends VarLightSubCommand {
 
@@ -45,6 +47,8 @@ public class VarLightCommandMigrate extends VarLightSubCommand {
 
                     if (!plugin.getNmsAdapter().getMinecraftVersion().newerOrEquals(VarLightPlugin.MC1_14_2)) {
                         failure(this, sender, "You may only migrate AFTER Minecraft 1.14.2!");
+
+                        return FAILURE;
                     }
 
                     int totalMigrated = 0, totalSkipped = 0;
@@ -81,7 +85,8 @@ public class VarLightCommandMigrate extends VarLightSubCommand {
                     }
 
                     successBroadcast(this, sender, String.format("All Light sources migrated (total migrated: %d, skipped: %d)", totalMigrated, totalSkipped));
-                    return 0;
+
+                    return SUCCESS;
                 }
         );
 

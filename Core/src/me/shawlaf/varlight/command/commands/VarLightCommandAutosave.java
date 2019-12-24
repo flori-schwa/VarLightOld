@@ -4,6 +4,7 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import me.shawlaf.varlight.VarLightPlugin;
+import me.shawlaf.varlight.command.VarLightCommand;
 import me.shawlaf.varlight.command.VarLightSubCommand;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
@@ -44,13 +45,13 @@ public class VarLightCommandAutosave extends VarLightSubCommand {
 
                             if (newInterval > 0) {
                                 successBroadcast(this, context.getSource(), String.format("Updated Autosave interval to %d Minutes", newInterval));
-                                return 0;
+                                return VarLightCommand.SUCCESS;
                             } else if (newInterval == 0) {
                                 successBroadcast(this, context.getSource(), "Disabled Autosave");
-                                return 0;
+                                return VarLightCommand.SUCCESS;
                             } else {
                                 successBroadcast(this, context.getSource(), "Enabled Persist On Save");
-                                return 0;
+                                return VarLightCommand.SUCCESS;
                             }
                         })
                 );

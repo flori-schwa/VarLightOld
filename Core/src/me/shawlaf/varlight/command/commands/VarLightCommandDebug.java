@@ -2,8 +2,10 @@ package me.shawlaf.varlight.command.commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
 import me.shawlaf.command.exception.CommandException;
 import me.shawlaf.varlight.VarLightPlugin;
+import me.shawlaf.varlight.command.VarLightCommand;
 import me.shawlaf.varlight.command.VarLightSubCommand;
 import me.shawlaf.varlight.persistence.PersistentLightSource;
 import me.shawlaf.varlight.persistence.RegionPersistor;
@@ -26,6 +28,12 @@ import static me.shawlaf.command.result.CommandResult.success;
 
 @SuppressWarnings("DuplicatedCode")
 public class VarLightCommandDebug extends VarLightSubCommand {
+
+    private static final String PARAM_REGION_X = "regionX";
+    private static final String PARAM_REGION_Z = "regionZ";
+
+    private static final String PARAM_CHUNK_X = "chunkX";
+    private static final String PARAM_CHUNK_Z = "chunkZ";
 
     public VarLightCommandDebug(VarLightPlugin plugin) {
         super(plugin, "debug");
@@ -57,80 +65,87 @@ public class VarLightCommandDebug extends VarLightSubCommand {
                         .requires(sender -> sender instanceof Player)
                         .then(
                                 LiteralArgumentBuilder.<CommandSender>literal("-r")
-                                        .executes(context -> {
-                                            if (!(context.getSource() instanceof Player)) {
-                                                throw CommandException.severeException("You must be a player to use this command!"); // Technically impossible
-                                            }
-
-                                            Player player = (Player) context.getSource();
-
-                                            int regionX = player.getLocation().getBlockX() >> 4 >> 5;
-                                            int regionZ = player.getLocation().getBlockZ() >> 4 >> 5;
-
-                                            listLightSourcesInRegion(player, regionX, regionZ);
-
-                                            return 0;
-                                        })
+                                        .executes(this::regionImplicit)
                                         .then(
-                                                RequiredArgumentBuilder.<CommandSender, Integer>argument("regionX", integer())
+                                                RequiredArgumentBuilder.<CommandSender, Integer>argument(PARAM_REGION_X, integer())
                                                         .then(
-                                                                RequiredArgumentBuilder.<CommandSender, Integer>argument("regionZ", integer())
-                                                                        .executes(context -> {
-                                                                            if (!(context.getSource() instanceof Player)) {
-                                                                                throw CommandException.severeException("You must be a player to use this command!"); // Technically impossible
-                                                                            }
-
-                                                                            Player player = (Player) context.getSource();
-
-                                                                            int regionX = context.getArgument("regionX", int.class);
-                                                                            int regionZ = context.getArgument("regionZ", int.class);
-
-                                                                            listLightSourcesInRegion(player, regionX, regionZ);
-
-                                                                            return 0;
-                                                                        })
+                                                                RequiredArgumentBuilder.<CommandSender, Integer>argument(PARAM_REGION_Z, integer())
+                                                                        .executes(this::regionExplicit)
                                                         )
                                         )
                         ).then(
                         LiteralArgumentBuilder.<CommandSender>literal("-c")
-                                .executes(context -> {
-                                    if (!(context.getSource() instanceof Player)) {
-                                        throw CommandException.severeException("You must be a player to use this command!"); // Technically impossible
-                                    }
-
-                                    Player player = (Player) context.getSource();
-
-                                    int chunkX = player.getLocation().getBlockX() >> 4;
-                                    int chunkZ = player.getLocation().getBlockZ() >> 4;
-
-                                    listLightSourcesInChunk(player, chunkX, chunkZ);
-
-                                    return 0;
-                                })
+                                .executes(this::chunkImplicit)
                                 .then(
-                                        RequiredArgumentBuilder.<CommandSender, Integer>argument("chunkX", integer())
+                                        RequiredArgumentBuilder.<CommandSender, Integer>argument(PARAM_CHUNK_X, integer())
                                                 .then(
-                                                        RequiredArgumentBuilder.<CommandSender, Integer>argument("chunkZ", integer())
-                                                                .executes(context -> {
-                                                                    if (!(context.getSource() instanceof Player)) {
-                                                                        throw CommandException.severeException("You must be a player to use this command!"); // Technically impossible
-                                                                    }
-
-                                                                    Player player = (Player) context.getSource();
-
-                                                                    int chunkX = context.getArgument("chunkX", int.class);
-                                                                    int chunkZ = context.getArgument("chunkZ", int.class);
-
-                                                                    listLightSourcesInChunk(player, chunkX, chunkZ);
-
-                                                                    return 0;
-                                                                })
+                                                        RequiredArgumentBuilder.<CommandSender, Integer>argument(PARAM_CHUNK_Z, integer())
+                                                                .executes(this::chunkExplicit)
                                                 )
                                 )
                 )
         );
     }
 
+    private int regionImplicit(CommandContext<CommandSender> context) {
+        if (!(context.getSource() instanceof Player)) {
+            throw CommandException.severeException("You must be a player to use this command!"); // Technically impossible
+        }
+
+        Player player = (Player) context.getSource();
+
+        int regionX = player.getLocation().getBlockX() >> 4 >> 5;
+        int regionZ = player.getLocation().getBlockZ() >> 4 >> 5;
+
+        listLightSourcesInRegion(player, regionX, regionZ);
+
+        return VarLightCommand.SUCCESS;
+    }
+
+    private int regionExplicit(CommandContext<CommandSender> context) {
+        if (!(context.getSource() instanceof Player)) {
+            throw CommandException.severeException("You must be a player to use this command!"); // Technically impossible
+        }
+
+        Player player = (Player) context.getSource();
+
+        int regionX = context.getArgument(PARAM_REGION_X, int.class);
+        int regionZ = context.getArgument(PARAM_REGION_Z, int.class);
+
+        listLightSourcesInRegion(player, regionX, regionZ);
+
+        return VarLightCommand.SUCCESS;
+    }
+
+    private int chunkImplicit(CommandContext<CommandSender> context) {
+        if (!(context.getSource() instanceof Player)) {
+            throw CommandException.severeException("You must be a player to use this command!"); // Technically impossible
+        }
+
+        Player player = (Player) context.getSource();
+
+        int chunkX = player.getLocation().getBlockX() >> 4;
+        int chunkZ = player.getLocation().getBlockZ() >> 4;
+
+        listLightSourcesInChunk(player, chunkX, chunkZ);
+
+        return VarLightCommand.SUCCESS;
+    }
+
+    private int chunkExplicit(CommandContext<CommandSender> context) {
+        if (!(context.getSource() instanceof Player)) {
+            throw CommandException.severeException("You must be a player to use this command!"); // Technically impossible
+        }
+
+        Player player = (Player) context.getSource();
+
+        int chunkX = context.getArgument(PARAM_CHUNK_X, int.class);
+        int chunkZ = context.getArgument(PARAM_CHUNK_Z, int.class);
+
+        listLightSourcesInChunk(player, chunkX, chunkZ);
+
+        return VarLightCommand.SUCCESS;
+    }
 
     private void listLightSourcesInRegion(Player player, int regionX, int regionZ) {
         WorldLightSourceManager manager = plugin.getManager(player.getWorld());

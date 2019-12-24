@@ -14,6 +14,9 @@ import java.lang.reflect.InvocationTargetException;
 @SuppressWarnings("rawtypes")
 public class VarLightCommand extends BrigadierCommand<CommandSender, VarLightPlugin> {
 
+    public static final int SUCCESS = 0;
+    public static final int FAILURE = 1;
+
     private static final Class[] SUB_COMMANDS;
 
     static {
