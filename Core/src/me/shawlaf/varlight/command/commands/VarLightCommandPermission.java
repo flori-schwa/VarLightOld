@@ -9,7 +9,7 @@ import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 
 import static com.mojang.brigadier.arguments.StringArgumentType.word;
-import static me.shawlaf.command.result.CommandResult.success;
+import static me.shawlaf.command.result.CommandResult.info;
 import static me.shawlaf.command.result.CommandResult.successBroadcast;
 import static me.shawlaf.varlight.command.VarLightCommand.SUCCESS;
 
@@ -41,7 +41,6 @@ public class VarLightCommandPermission extends VarLightSubCommand {
     @NotNull
     @Override
     public LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> node) {
-
         node.then(
                 LiteralArgumentBuilder.<CommandSender>literal("get").executes(this::get)
         );
@@ -58,12 +57,11 @@ public class VarLightCommandPermission extends VarLightSubCommand {
                 LiteralArgumentBuilder.<CommandSender>literal("unset").executes(this::unset)
         );
 
-
         return node;
     }
 
     private int get(CommandContext<CommandSender> context) {
-        success(this, context.getSource(), String.format("The current required permission node is \"%s\".", plugin.getConfiguration().getRequiredPermissionNode()));
+        info(this, context.getSource(), String.format("The current required permission node is \"%s\".", plugin.getConfiguration().getRequiredPermissionNode()));
 
         return SUCCESS;
     }

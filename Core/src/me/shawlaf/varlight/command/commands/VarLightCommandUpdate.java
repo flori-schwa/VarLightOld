@@ -1,12 +1,9 @@
 package me.shawlaf.varlight.command.commands;
 
-import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import me.shawlaf.command.brigadier.argument.PositionArgumentType;
-import me.shawlaf.command.brigadier.argument.WorldArgumentType;
 import me.shawlaf.command.brigadier.datatypes.ICoordinates;
 import me.shawlaf.varlight.VarLightPlugin;
 import me.shawlaf.varlight.command.VarLightSubCommand;
@@ -61,14 +58,14 @@ public class VarLightCommandUpdate extends VarLightSubCommand {
 
         node.then(
                 RequiredArgumentBuilder.<CommandSender, ICoordinates>argument(PARAM_POSITION, position())
-                .then(
-                        RequiredArgumentBuilder.<CommandSender, Integer>argument(PARAM_LIGHT_LEVEL, integer(0, 15))
-                        .executes(this::updateImplicit)
                         .then(
-                                RequiredArgumentBuilder.<CommandSender, World>argument(PARAM_WORLD, world())
-                                .executes(this::updateExplicit)
+                                RequiredArgumentBuilder.<CommandSender, Integer>argument(PARAM_LIGHT_LEVEL, integer(0, 15))
+                                        .executes(this::updateImplicit)
+                                        .then(
+                                                RequiredArgumentBuilder.<CommandSender, World>argument(PARAM_WORLD, world())
+                                                        .executes(this::updateExplicit)
+                                        )
                         )
-                )
         );
 
         return node;

@@ -96,7 +96,7 @@ public class VarLightCommandWorld extends VarLightSubCommand {
     }
 
     private int list(CommandContext<CommandSender> context) {
-        success(this, context.getSource(), String.format("Worlds on the VarLight %s:", worldListType.getName()));
+        info(this, context.getSource(), String.format("Worlds on the VarLight %s:", worldListType.getName()));
 
         for (World world : plugin.getConfiguration().getWorlds(worldListType)) {
             context.getSource().sendMessage(String.format("   - \"%s\"", world.getName()));
