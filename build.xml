@@ -44,7 +44,6 @@
     <property name="javac-src-lvl" value="8"/>
     <property name="javac-target-lvl" value="8"/>
 
-    <property name="lib-book-api" value="spigot-book-api-1.3.jar"/>
     <property name="lib-light-api" value="LightAPI-fork-3.4.2.jar"/>
     <property name="lib-annotations" value="annotations-17.0.01.jar"/>
     <property name="lib-command-api" value="SpigotCommandApi-1.6.jar"/>
@@ -114,7 +113,6 @@
             <classpath>
                 <fileset dir="${lib-dir}">
                     <include name="**/spigot-1.13.2.jar"/>
-                    <include name="**/${lib-book-api}"/>
                     <include name="**/${lib-light-api}"/>
                     <include name="**/${lib-annotations}"/>
                     <include name="**/${lib-command-api}"/>
@@ -164,7 +162,6 @@
 
                 <jar destfile="${dist}/VarLight-${plugin.version}-@{version}.jar" basedir="@{out-dir}">
                     <zipgroupfileset dir="${lib-dir}">
-                        <include name="${lib-book-api}"/>
                         <include name="${lib-annotations}"/>
                         <include name="${lib-command-api}"/>
                     </zipgroupfileset>
