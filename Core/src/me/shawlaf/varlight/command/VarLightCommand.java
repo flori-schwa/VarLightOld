@@ -1,6 +1,12 @@
 package me.shawlaf.varlight.command;
 
+import com.mojang.brigadier.ParseResults;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.suggestion.Suggestion;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.tree.CommandNode;
+import me.shawlaf.command.ArgumentIterator;
+import me.shawlaf.command.CommandSuggestions;
 import me.shawlaf.command.brigadier.BrigadierCommand;
 import me.shawlaf.command.exception.CommandException;
 import me.shawlaf.varlight.VarLightPlugin;
@@ -8,8 +14,11 @@ import me.shawlaf.varlight.command.commands.*;
 import me.shawlaf.varlight.command.commands.world.VarLightCommandBlacklist;
 import me.shawlaf.varlight.command.commands.world.VarLightCommandWhitelist;
 import org.bukkit.command.CommandSender;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
+import java.util.concurrent.ExecutionException;
 
 @SuppressWarnings("rawtypes")
 public class VarLightCommand extends BrigadierCommand<CommandSender, VarLightPlugin> {
@@ -71,7 +80,18 @@ public class VarLightCommand extends BrigadierCommand<CommandSender, VarLightPlu
 
         LiteralArgumentBuilder<CommandSender> subCommandRoot = LiteralArgumentBuilder.literal(subCommand.getName());
 
+        subCommandRoot.requires(sender -> {
+            String required = subCommand.getRequiredPermission();
+
+            if (required.isEmpty()) {
+                return true;
+            }
+
+            return sender.hasPermission(required);
+        });
+
         subCommand.build(subCommandRoot);
+
         root.then(subCommandRoot);
     }
 
@@ -82,16 +102,44 @@ public class VarLightCommand extends BrigadierCommand<CommandSender, VarLightPlu
         }
 
         VarLightCommandHelp helpCommand = new VarLightCommandHelp(plugin, this);
-
         LiteralArgumentBuilder<CommandSender> subCommandRoot = LiteralArgumentBuilder.literal(helpCommand.getName());
-
         helpCommand.build(subCommandRoot);
+
         builder.then(subCommandRoot);
 
         return builder;
     }
 
+    @Override
+    public @Nullable String getRequiredPermission() {
+        return "";
+    }
+
     public VarLightSubCommand[] getSubCommands() {
         return subCommands;
+    }
+
+    @Override
+    public void tabComplete(CommandSuggestions suggestions) {
+        try {
+            String fullInput = getFullInput(new ArgumentIterator(suggestions.getArguments()));
+
+            CommandSender source = suggestions.getCommandSender();
+            ParseResults<CommandSender> parseResults = commandDispatcher.parse(fullInput, source);
+
+            Suggestions completionSuggestions = commandDispatcher.getCompletionSuggestions(parseResults).get();
+
+            for (Suggestion suggestion : completionSuggestions.getList()) {
+                String input = suggestion.apply(fullInput);
+
+                CommandNode<CommandSender> node = commandDispatcher.findNode(Arrays.asList(input.split(" ")));
+
+                if (node == null || node.canUse(source)) {
+                    suggestions.add(suggestion.getText());
+                }
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
     }
 }

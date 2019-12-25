@@ -24,16 +24,17 @@ import java.io.IOException;
 import java.util.List;
 
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
+import static com.mojang.brigadier.builder.RequiredArgumentBuilder.argument;
 import static me.shawlaf.command.result.CommandResult.success;
 
 @SuppressWarnings("DuplicatedCode")
 public class VarLightCommandDebug extends VarLightSubCommand {
 
-    private static final String PARAM_REGION_X = "regionX";
-    private static final String PARAM_REGION_Z = "regionZ";
+    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_REGION_X = argument("regionX", integer());
+    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_REGION_Z = argument("regionX", integer());
 
-    private static final String PARAM_CHUNK_X = "chunkX";
-    private static final String PARAM_CHUNK_Z = "chunkZ";
+    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_CHUNK_X = argument("regionX", integer());
+    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_CHUNK_Z = argument("regionX", integer());
 
     public VarLightCommandDebug(VarLightPlugin plugin) {
         super(plugin, "debug");
@@ -54,7 +55,7 @@ public class VarLightCommandDebug extends VarLightSubCommand {
     @NotNull
     @Override
     public String getSyntax() {
-        return "-r|-c [regionX|chunkX] [regionZ|chunkZ]";
+        return " -r|-c [regionX|chunkX] [regionZ|chunkZ]";
     }
 
     @NotNull
@@ -67,21 +68,13 @@ public class VarLightCommandDebug extends VarLightSubCommand {
                                 LiteralArgumentBuilder.<CommandSender>literal("-r")
                                         .executes(this::regionImplicit)
                                         .then(
-                                                RequiredArgumentBuilder.<CommandSender, Integer>argument(PARAM_REGION_X, integer())
-                                                        .then(
-                                                                RequiredArgumentBuilder.<CommandSender, Integer>argument(PARAM_REGION_Z, integer())
-                                                                        .executes(this::regionExplicit)
-                                                        )
+                                                ARG_REGION_X.then(ARG_REGION_Z.executes(this::regionExplicit))
                                         )
                         ).then(
                         LiteralArgumentBuilder.<CommandSender>literal("-c")
                                 .executes(this::chunkImplicit)
                                 .then(
-                                        RequiredArgumentBuilder.<CommandSender, Integer>argument(PARAM_CHUNK_X, integer())
-                                                .then(
-                                                        RequiredArgumentBuilder.<CommandSender, Integer>argument(PARAM_CHUNK_Z, integer())
-                                                                .executes(this::chunkExplicit)
-                                                )
+                                        ARG_CHUNK_X.then(ARG_CHUNK_Z.executes(this::chunkExplicit))
                                 )
                 )
         );
@@ -109,8 +102,8 @@ public class VarLightCommandDebug extends VarLightSubCommand {
 
         Player player = (Player) context.getSource();
 
-        int regionX = context.getArgument(PARAM_REGION_X, int.class);
-        int regionZ = context.getArgument(PARAM_REGION_Z, int.class);
+        int regionX = context.getArgument(ARG_REGION_X.getName(), int.class);
+        int regionZ = context.getArgument(ARG_REGION_Z.getName(), int.class);
 
         listLightSourcesInRegion(player, regionX, regionZ);
 
@@ -139,8 +132,8 @@ public class VarLightCommandDebug extends VarLightSubCommand {
 
         Player player = (Player) context.getSource();
 
-        int chunkX = context.getArgument(PARAM_CHUNK_X, int.class);
-        int chunkZ = context.getArgument(PARAM_CHUNK_Z, int.class);
+        int chunkX = context.getArgument(ARG_CHUNK_X.getName(), int.class);
+        int chunkZ = context.getArgument(ARG_CHUNK_Z.getName(), int.class);
 
         listLightSourcesInChunk(player, chunkX, chunkZ);
 

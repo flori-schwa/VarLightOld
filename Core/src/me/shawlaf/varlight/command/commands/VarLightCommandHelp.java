@@ -1,6 +1,5 @@
 package me.shawlaf.varlight.command.commands;
 
-import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import me.shawlaf.varlight.VarLightPlugin;
@@ -11,7 +10,12 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.util.ChatPaginator;
 import org.jetbrains.annotations.NotNull;
 
+import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
+import static com.mojang.brigadier.builder.RequiredArgumentBuilder.argument;
+
 public class VarLightCommandHelp extends VarLightSubCommand {
+
+    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_PAGE = argument("page", integer(1));
 
     private VarLightCommand rootCommand;
 
@@ -30,7 +34,7 @@ public class VarLightCommandHelp extends VarLightSubCommand {
     @NotNull
     @Override
     public String getSyntax() {
-        return "[command|page]";
+        return " [command|page]";
     }
 
     @NotNull
@@ -53,13 +57,12 @@ public class VarLightCommandHelp extends VarLightSubCommand {
         }
 
         literalArgumentBuilder.then(
-                RequiredArgumentBuilder.<CommandSender, Integer>argument("page", IntegerArgumentType.integer())
-                        .executes(context -> {
-                            int page = Math.max(1, context.getArgument("page", int.class));
+                ARG_PAGE.executes(context -> {
+                    int page = context.getArgument(ARG_PAGE.getName(), int.class);
 
-                            showHelp(context.getSource(), page);
-                            return VarLightCommand.SUCCESS;
-                        })
+                    showHelp(context.getSource(), page);
+                    return VarLightCommand.SUCCESS;
+                })
         );
 
         literalArgumentBuilder.executes(
