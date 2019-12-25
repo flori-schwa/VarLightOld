@@ -215,7 +215,7 @@ public class VarLightCommandDebug extends VarLightSubCommand {
 
             textComponent.setClickEvent(new ClickEvent(
                     ClickEvent.Action.RUN_COMMAND,
-                    String.format("/tp @s %d %d %d", lightSource.getPosition().x, lightSource.getPosition().y, lightSource.getPosition().z)
+                    String.format("/tp %d %d %d", lightSource.getPosition().x, lightSource.getPosition().y, lightSource.getPosition().z)
             ));
 
             textComponent.setHoverEvent(new HoverEvent(

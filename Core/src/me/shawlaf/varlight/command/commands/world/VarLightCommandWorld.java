@@ -50,14 +50,14 @@ public class VarLightCommandWorld extends VarLightSubCommand {
 
         node.then(
                 LiteralArgumentBuilder.<CommandSender>literal("add")
-                        .then(RequiredArgumentBuilder.argument(PARAM_WORLD, world()))
-                        .executes(this::add)
+                        .then(RequiredArgumentBuilder.<CommandSender, World>argument(PARAM_WORLD, world())
+                                .executes(this::add))
         );
 
         node.then(
                 LiteralArgumentBuilder.<CommandSender>literal("remove")
-                        .then(RequiredArgumentBuilder.argument(PARAM_WORLD, world()))
-                        .executes(this::remove)
+                        .then(RequiredArgumentBuilder.<CommandSender, World>argument(PARAM_WORLD, world())
+                                .executes(this::remove))
         );
 
         node.then(
