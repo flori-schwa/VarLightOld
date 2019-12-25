@@ -1,0 +1,38 @@
+GENERAL:
+ - In 1.14+, light sources cannot be placed directly adjacent to other light sources anymore (#15)
+    - allowing this would result in buggy behaviour
+ - Other bugfixes (#16)
+
+COMMANDS:
+ - Refactored Commands internally
+ - Removed command book
+ - Added /varlight fill: Allows editing large regions (#12)
+ - Better tab completion for most commands
+
+PERMISSIONS:
+ - Permissions have been refactored
+ - /varlight autosave: Still requires permission node "varlight.admin.save"
+ - /varlight debug: required permission node changed from "varlight.debug" to "varlight.admin.debug"
+ - /varlight migrate: required permission node changed from "varlight.admin" to "varlight.admin.migrate"
+ - /varlight perm: Still requires permission node "varlight.admin.perm"
+ - /varlight reload: required permission node changed from "varlight.admin" to "varlight.admin.perm"
+ - /varlight save: Still requires permission node "varlight.admin.save"
+ - /varlight stepsize: required permission node changed from "varlight.admin" to "varlight.stepsize"
+ - /varlight update: required permission node changed from "varlight.admin" to "varlight.admin.update"
+ - /varlight blacklist|whitelist: Still requires permission node "varlight.admin.world"
+ - varlight.admin.fill permission node added, required for /varlight fill.
+    - This permission node also automatically gives access to /varlight update
+
+NEW PERMISSION TREE (Generated using LuckPerms)
+
+├── varlight
+│  ├── varlight.stepsize
+│  ├── varlight.admin
+│  │  ├── varlight.admin.debug
+│  │  ├── varlight.admin.fill
+│  │  ├── varlight.admin.migrate
+│  │  ├── varlight.admin.perm
+│  │  ├── varlight.admin.reload
+│  │  ├── varlight.admin.save
+│  │  ├── varlight.admin.update
+│  │  ├── varlight.admin.world

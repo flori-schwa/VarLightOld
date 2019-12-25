@@ -10,19 +10,45 @@ softdepend:
   - "LightAPI"
 
 permissions:
-  varlight.admin:
-    description: "Provides access to the varlight admin commands"
+  varlight.admin.save:
+    description: "Provides access to /varlight save and /varlight autosave"
+    default: op
+  varlight.admin.debug:
+    description: "Provides access to /varlight debug"
+    default: op
+  varlight.admin.migrate:
+    description: "Provides access to /varlight migrate"
+    default: op
+  varlight.admin.perm:
+    description: "Provides access to /varlight perm"
+    default: op
+  varlight.admin.reload:
+    description: "Provides access to /varlight reload"
+    default: op
+  varlight.admin.world:
+    description: "Provides access to /varlight blacklist and /varlight whitelist"
+    default: op
+  varlight.admin.fill:
+    description: "Provides access to /varlight fill and /varlight update"
+    default: op
     children:
-      varlight.admin.save:
-        description: "Provides access to the varlight save command"
-      varlight.admin.perm:
-        description: "Provides access to the varlight permission command"
-      varlight.admin.world:
-        description: "Provides access to the varlight whitelist/blacklist commands"
-
-commands:
-  varlight:
-    description: "VarLight admin command"
-    permission: "varlight.admin"
-    aliases:
-      - vl
+      varlight.admin.update: true
+  varlight.admin.update:
+    description: "Provides access to /varlight update"
+    default: op
+  varlight.stepsize:
+    description: "Provides access to /varlight stepsize"
+    default: op
+  varlight.admin:
+    description: "Provides access to all varlight admin commands"
+    default: op
+    children:
+      varlight.admin.save: true
+      varlight.admin.debug: true
+      varlight.admin.migrate: true
+      varlight.admin.perm: true
+      varlight.admin.reload: true
+      varlight.admin.world: true
+      varlight.admin.update: true
+      varlight.admin.fill: true
+      varlight.stepsize: true

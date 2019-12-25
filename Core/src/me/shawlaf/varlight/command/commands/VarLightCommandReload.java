@@ -1,42 +1,50 @@
 package me.shawlaf.varlight.command.commands;
 
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import me.shawlaf.varlight.VarLightPlugin;
-import me.shawlaf.varlight.command.ArgumentIterator;
-import me.shawlaf.varlight.command.VarLightCommand;
 import me.shawlaf.varlight.command.VarLightSubCommand;
 import org.bukkit.command.CommandSender;
+import org.jetbrains.annotations.NotNull;
+
+import static me.shawlaf.command.result.CommandResult.successBroadcast;
+import static me.shawlaf.varlight.command.VarLightCommand.SUCCESS;
 
 public class VarLightCommandReload extends VarLightSubCommand {
-
-    private final VarLightPlugin plugin;
-
     public VarLightCommandReload(VarLightPlugin plugin) {
-        this.plugin = plugin;
+        super(plugin, "reload");
     }
 
     @Override
-    public String getName() {
-        return "reload";
+    public @NotNull String getRequiredPermission() {
+        return "varlight.admin.reload";
     }
 
+    @NotNull
     @Override
     public String getSyntax() {
         return "";
     }
 
+    @NotNull
     @Override
     public String getDescription() {
         return "Reload the configuration file";
     }
 
+    @NotNull
     @Override
-    public boolean execute(CommandSender sender, ArgumentIterator args) {
-        VarLightCommand.assertPermission(sender, "varlight.admin");
+    public LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> node) {
+        node.executes(
+                context -> {
+                    plugin.reloadConfig();
+                    plugin.loadLightUpdateItem();
 
-        plugin.reloadConfig();
-        plugin.loadLightUpdateItem();
+                    successBroadcast(this, context.getSource(), "Configuration reloaded!");
 
-        VarLightCommand.broadcastResult(sender, "Configuration Reloaded", "varlight.admin");
-        return true;
+                    return SUCCESS;
+                }
+        );
+
+        return node;
     }
 }

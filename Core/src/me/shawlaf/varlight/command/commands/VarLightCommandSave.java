@@ -1,101 +1,101 @@
 package me.shawlaf.varlight.command.commands;
 
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
 import me.shawlaf.varlight.VarLightPlugin;
-import me.shawlaf.varlight.command.ArgumentIterator;
-import me.shawlaf.varlight.command.CommandSuggestions;
-import me.shawlaf.varlight.command.VarLightCommand;
 import me.shawlaf.varlight.command.VarLightSubCommand;
 import me.shawlaf.varlight.persistence.WorldLightSourceManager;
-import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.stream.Collectors;
+import static com.mojang.brigadier.builder.RequiredArgumentBuilder.argument;
+import static me.shawlaf.command.brigadier.argument.WorldArgumentType.world;
+import static me.shawlaf.command.result.CommandResult.failure;
+import static me.shawlaf.varlight.command.VarLightCommand.FAILURE;
+import static me.shawlaf.varlight.command.VarLightCommand.SUCCESS;
 
 public class VarLightCommandSave extends VarLightSubCommand {
 
-    private final VarLightPlugin plugin;
+    private static final RequiredArgumentBuilder<CommandSender, World> ARG_WORLD = argument("world", world());
 
     public VarLightCommandSave(VarLightPlugin plugin) {
-        this.plugin = plugin;
+        super(plugin, "save");
     }
 
-    @Override
-    public String getName() {
-        return "save";
-    }
-
+    @NotNull
     @Override
     public String getSyntax() {
-        return " [all/<world>]";
+        return " [all|<world>]";
     }
 
+    @NotNull
     @Override
     public String getDescription() {
         return "Save all custom light sources in the current world, the specified world or all worlds";
     }
 
     @Override
-    public boolean execute(CommandSender sender, ArgumentIterator args) {
-        VarLightCommand.assertPermission(sender, "varlight.admin.save");
-
-        if (!args.hasNext()) {
-            if (!(sender instanceof Player)) {
-                VarLightCommand.sendPrefixedMessage(sender, "Only Players may use this command");
-                return true;
-            }
-
-            Player player = (Player) sender;
-
-            WorldLightSourceManager manager = plugin.getManager(player.getWorld());
-
-            if (manager != null) {
-                manager.save(player);
-            } else {
-                VarLightCommand.sendPrefixedMessage(player, String.format("No custom Light sources present in world \"%s\"", player.getWorld().getName()));
-            }
-
-            return true;
-        }
-
-        if ("all".equalsIgnoreCase(args.peek())) {
-            for (WorldLightSourceManager persistor : plugin.getAllManagers()) {
-                persistor.save(sender);
-            }
-
-            return true;
-        }
-
-        World world = args.parseNext(Bukkit::getWorld);
-
-        if (world == null) {
-            VarLightCommand.sendPrefixedMessage(sender, "Could not find a world with that name");
-        } else {
-            WorldLightSourceManager manager = plugin.getManager(world);
-
-            if (manager == null) {
-                VarLightCommand.sendPrefixedMessage(sender, String.format("VarLight is not active in world \"%s\"", world.getName()));
-            } else {
-                manager.save(sender);
-            }
-        }
-
-        return true;
+    public @NotNull String getRequiredPermission() {
+        return "varlight.admin.save";
     }
 
+    @NotNull
     @Override
-    public void tabComplete(CommandSuggestions commandSuggestions) {
-        if (commandSuggestions.getArgumentCount() != 1) {
-            return;
+    public LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> node) {
+
+        node.executes(this::saveImplicit);
+        node.then(LiteralArgumentBuilder.<CommandSender>literal("all").executes(this::saveAll));
+        node.then(ARG_WORLD.executes(this::saveExplicit));
+
+        return node;
+    }
+
+    private int saveImplicit(CommandContext<CommandSender> context) {
+        if (!(context.getSource() instanceof Player)) {
+            failure(this, context.getSource(), "Only players may use this command!");
+
+            return FAILURE;
         }
 
-        commandSuggestions
-                .addSuggestion("all")
-                .suggestChoices(Bukkit.getWorlds().stream()
-                        .filter(plugin::hasManager)
-                        .map(World::getName)
-                        .collect(Collectors.toSet())
-                );
+        Player player = (Player) context.getSource();
+
+        WorldLightSourceManager manager = plugin.getManager(player.getWorld());
+
+        if (manager != null) {
+            manager.save(player);
+
+            return SUCCESS;
+        } else {
+            failure(this, player, String.format("Varlight is not active in world \"%s\"", player.getWorld().getName()));
+
+            return FAILURE;
+        }
     }
+
+    private int saveAll(CommandContext<CommandSender> context) {
+        for (WorldLightSourceManager manager : plugin.getAllManagers()) {
+            manager.save(context.getSource());
+        }
+
+        return SUCCESS;
+    }
+
+    private int saveExplicit(CommandContext<CommandSender> context) {
+        World world = context.getArgument(ARG_WORLD.getName(), World.class);
+        WorldLightSourceManager manager = plugin.getManager(world);
+
+        if (manager == null) {
+            failure(this, context.getSource(), String.format("Varlight is not active in world \"%s\"", world.getName()));
+
+            return FAILURE;
+        }
+
+        manager.save(context.getSource());
+
+        return SUCCESS;
+    }
+
 }

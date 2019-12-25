@@ -51,8 +51,8 @@ public class VLDBInputStream implements Closeable {
     public <L extends ICustomLightSource> Pair<ChunkCoords, L[]> readChunk(int regionX, int regionZ, IntFunction<L[]> arrayCreator, ToLightSource<L> toLightSource) throws IOException {
         short encodedCoords = readInt16();
 
-        int cx = ((encodedCoords & 0xFF00) >>> 8) + (regionX * 32);
-        int cz = (encodedCoords & 0xFF) + (regionZ * 32);
+        int cx = ((encodedCoords & 0xFF00) >>> 8) + regionX * 32;
+        int cz = (encodedCoords & 0xFF) + regionZ * 32;
 
         int amountLightSources = readUInt24();
 
@@ -87,8 +87,8 @@ public class VLDBInputStream implements Closeable {
             int encodedCoords = readInt16();
             int offset = readInt32();
 
-            int cx = ((encodedCoords & 0xFF00) >>> 8) + (regionX * 32);
-            int cz = (encodedCoords & 0xFF) + (regionZ * 32);
+            int cx = ((encodedCoords & 0xFF00) >>> 8) + regionX * 32;
+            int cz = (encodedCoords & 0xFF) + regionZ * 32;
 
             header.put(new ChunkCoords(cx, cz), offset);
         }
@@ -105,7 +105,7 @@ public class VLDBInputStream implements Closeable {
     }
 
     public int readUInt24() throws IOException {
-        return (readByte() << 16) | (readByte() << 8) | (readByte());
+        return Byte.toUnsignedInt(readByte()) << 16 | Byte.toUnsignedInt(readByte()) << 8 | Byte.toUnsignedInt(readByte());
     }
 
     public int readInt32() throws IOException {

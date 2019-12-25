@@ -12,10 +12,12 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
@@ -55,11 +57,21 @@ public interface INmsAdapter {
 
     void sendActionBarMessage(Player player, String message);
 
+    Collection<String> getBlockTypes();
+
+    Material blockTypeFromMinecraftKey(String key);
+
+    ItemStack getVarLightDebugStick();
+
     @Nullable
     Block getTargetBlockExact(Player player, int maxDistance);
 
     @NotNull
     String getNumericMinecraftVersion();
+
+    default boolean isVarLightDebugStick(ItemStack itemStack) {
+        return itemStack.equals(getVarLightDebugStick());
+    }
 
     @NotNull
     default NumericMajorMinorVersion getMinecraftVersion() {

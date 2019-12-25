@@ -5,8 +5,10 @@ import me.shawlaf.varlight.persistence.PersistentLightSource;
 import me.shawlaf.varlight.persistence.WorldLightSourceManager;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
-import net.minecraft.server.v1_15_R1.IBlockData;
-import net.minecraft.server.v1_15_R1.MinecraftServer;
+import net.minecraft.server.v1_15_R1.*;
+import org.bukkit.Chunk;
+import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -16,6 +18,8 @@ import org.bukkit.block.data.Openable;
 import org.bukkit.block.data.Powerable;
 import org.bukkit.block.data.type.Piston;
 import org.bukkit.craftbukkit.v1_15_R1.block.CraftBlock;
+import org.bukkit.craftbukkit.v1_15_R1.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.v1_15_R1.util.CraftMagicNumbers;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -24,14 +28,14 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockEvent;
 import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import ru.beykerykt.lightapi.LightAPI;
 import ru.beykerykt.lightapi.LightType;
 import ru.beykerykt.lightapi.chunks.ChunkInfo;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @SuppressWarnings("deprecation")
 @ForMinecraft(version = "1.15.1")
@@ -47,6 +51,7 @@ public class NmsAdapter implements INmsAdapter, Listener {
     };
 
     private final VarLightPlugin plugin;
+    private final ItemStack varlightDebugStick;
 
     public NmsAdapter(VarLightPlugin plugin) {
         this.plugin = plugin;
@@ -54,6 +59,16 @@ public class NmsAdapter implements INmsAdapter, Listener {
         if (!plugin.isLightApiInstalled()) {
             throw new VarLightInitializationException("LightAPI required!");
         }
+
+        net.minecraft.server.v1_15_R1.ItemStack nmsStack = new net.minecraft.server.v1_15_R1.ItemStack(Items.DEBUG_STICK);
+
+        nmsStack.a("CustomType", NBTTagString.a("varlight:debug_stick"));
+
+        this.varlightDebugStick = CraftItemStack.asBukkitCopy(nmsStack);
+        ItemMeta meta = varlightDebugStick.getItemMeta();
+
+        meta.setDisplayName(ChatColor.RESET + "" + ChatColor.GOLD + "VarLight Debug Stick");
+        varlightDebugStick.setItemMeta(meta);
     }
 
     @Override
@@ -161,6 +176,23 @@ public class NmsAdapter implements INmsAdapter, Listener {
     }
 
     @Override
+    public Collection<String> getBlockTypes() {
+        Set<String> keys = new HashSet<>();
+
+        for (MinecraftKey key : IRegistry.BLOCK.keySet()) {
+            keys.add(key.toString());
+            keys.add(key.getKey());
+        }
+
+        return keys;
+    }
+
+    @Override
+    public Material blockTypeFromMinecraftKey(String key) {
+        return CraftMagicNumbers.getMaterial(IRegistry.BLOCK.get(new MinecraftKey(key)));
+    }
+
+    @Override
     public Block getTargetBlockExact(Player player, int maxDistance) {
         return player.getTargetBlockExact(maxDistance);
     }
@@ -188,10 +220,31 @@ public class NmsAdapter implements INmsAdapter, Listener {
         handleBlockUpdate(e);
     }
 
+    @Override
+    public ItemStack getVarLightDebugStick() {
+        return varlightDebugStick;
+    }
+
+    @Override
+    public boolean isVarLightDebugStick(ItemStack itemStack) {
+        if (itemStack == null || itemStack.getType() != Material.DEBUG_STICK) {
+            return false;
+        }
+
+        net.minecraft.server.v1_15_R1.ItemStack nmsStack = CraftItemStack.asNMSCopy(itemStack);
+
+        NBTTagCompound tag = nmsStack.getTag();
+
+        if (tag == null) {
+            return false;
+        }
+
+        return tag.getString("CustomType").equals("varlight:debug_stick");
+    }
+
     private void handleBlockUpdate(BlockEvent e) {
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             Block theBlock = e.getBlock();
-//            WorldServer worldServer = getNmsWorld(theBlock.getWorld());
 
             WorldLightSourceManager manager = plugin.getManager(theBlock.getWorld());
 
@@ -211,7 +264,7 @@ public class NmsAdapter implements INmsAdapter, Listener {
 
                 int customLuminance = pls.getCustomLuminance();
 
-                if (customLuminance > 0 && theBlock.getLightFromBlocks() != customLuminance) {
+                if (pls.isInvalid() && relative.getBlock().getType() == pls.getType()) {
                     updateBlockLight(relative, customLuminance);
                 }
             }

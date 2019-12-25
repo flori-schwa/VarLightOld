@@ -6,14 +6,19 @@ import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.server.v1_8_R3.*;
 import org.bukkit.Chunk;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.v1_8_R3.CraftWorld;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.v1_8_R3.util.CraftMagicNumbers;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.material.DirectionalContainer;
 import org.bukkit.material.MaterialData;
 import org.bukkit.material.PistonBaseMaterial;
@@ -23,8 +28,7 @@ import org.jetbrains.annotations.NotNull;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 @ForMinecraft(version = "1.8.8")
 public class NmsAdapter implements INmsAdapter {
@@ -44,6 +48,8 @@ public class NmsAdapter implements INmsAdapter {
             DirectionalContainer.class,
             PistonBaseMaterial.class
     };
+    private final ItemStack varlightDebugStick;
+
     private Field longHashMapPlayerChunk;
     private Method broadcastPacket;
 
@@ -60,8 +66,22 @@ public class NmsAdapter implements INmsAdapter {
         } catch (NoSuchFieldException | ClassNotFoundException | NoSuchMethodException e) {
             e.printStackTrace();
         }
+
+        net.minecraft.server.v1_8_R3.ItemStack nmsStack = new net.minecraft.server.v1_8_R3.ItemStack(Items.STICK);
+
+        nmsStack.addEnchantment(Enchantment.DAMAGE_ALL, 0);
+        nmsStack.a("CustomType", new NBTTagString("varlight:debug_stick"));
+        nmsStack.c = 1;
+
+        this.varlightDebugStick = CraftItemStack.asBukkitCopy(nmsStack);
+
+        ItemMeta meta = varlightDebugStick.getItemMeta();
+
+        meta.setDisplayName(ChatColor.RESET + "" + ChatColor.GOLD + "VarLight Debug Stick");
+        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        varlightDebugStick.setItemMeta(meta);
     }
-    
+
 
     private Object getPlayerChunk(Chunk chunk) throws IllegalAccessException {
         long encoded = (long) chunk.getX() + 2147483647L | (long) chunk.getZ() + 2147483647L << 32;
@@ -172,6 +192,52 @@ public class NmsAdapter implements INmsAdapter {
         packetPlayOutChat.components = new BaseComponent[]{textComponent};
 
         ((CraftPlayer) player).getHandle().playerConnection.sendPacket(packetPlayOutChat);
+    }
+
+    @Override
+    public Collection<String> getBlockTypes() {
+        Set<String> keys = new HashSet<>();
+
+        for (MinecraftKey key : net.minecraft.server.v1_8_R3.Block.REGISTRY.keySet()) {
+            keys.add(key.toString());
+            keys.add(key.a());
+        }
+
+        return keys;
+    }
+
+    @Override
+    public Material blockTypeFromMinecraftKey(String key) {
+        return CraftMagicNumbers.getMaterial(net.minecraft.server.v1_8_R3.Block.REGISTRY.get(new MinecraftKey(key)));
+    }
+
+    @Override
+    public org.bukkit.inventory.ItemStack getVarLightDebugStick() {
+        net.minecraft.server.v1_8_R3.ItemStack nmsStack = CraftItemStack.asNMSCopy(varlightDebugStick);
+
+        UUID id = UUID.randomUUID();
+
+        nmsStack.a("idLeast", new NBTTagLong(id.getLeastSignificantBits()));
+        nmsStack.a("idMost", new NBTTagLong(id.getMostSignificantBits()));
+
+        return CraftItemStack.asBukkitCopy(nmsStack);
+    }
+
+    @Override
+    public boolean isVarLightDebugStick(org.bukkit.inventory.ItemStack itemStack) {
+        if (itemStack == null || itemStack.getType() != Material.STICK) {
+            return false;
+        }
+
+        net.minecraft.server.v1_8_R3.ItemStack nmsStack = CraftItemStack.asNMSCopy(itemStack);
+
+        NBTTagCompound tag = nmsStack.getTag();
+
+        if (tag == null) {
+            return false;
+        }
+
+        return tag.getString("CustomType").equals("varlight:debug_stick");
     }
 
     @NotNull
