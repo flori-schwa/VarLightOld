@@ -13,6 +13,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.v1_8_R3.CraftWorld;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_8_R3.util.CraftMagicNumbers;
 import org.bukkit.entity.Player;
 import org.bukkit.material.DirectionalContainer;
 import org.bukkit.material.MaterialData;
@@ -23,8 +24,10 @@ import org.jetbrains.annotations.NotNull;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @ForMinecraft(version = "1.8.8")
 public class NmsAdapter implements INmsAdapter {
@@ -172,6 +175,23 @@ public class NmsAdapter implements INmsAdapter {
         packetPlayOutChat.components = new BaseComponent[]{textComponent};
 
         ((CraftPlayer) player).getHandle().playerConnection.sendPacket(packetPlayOutChat);
+    }
+
+    @Override
+    public Collection<String> getBlockTypes() {
+        Set<String> keys = new HashSet<>();
+
+        for (MinecraftKey key : net.minecraft.server.v1_8_R3.Block.REGISTRY.keySet()) {
+            keys.add(key.toString());
+            keys.add(key.a());
+        }
+
+        return keys;
+    }
+
+    @Override
+    public Material blockTypeFromMinecraftKey(String key) {
+        return CraftMagicNumbers.getMaterial(net.minecraft.server.v1_8_R3.Block.REGISTRY.get(new MinecraftKey(key)));
     }
 
     @NotNull

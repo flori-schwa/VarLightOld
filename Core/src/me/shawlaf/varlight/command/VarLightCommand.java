@@ -39,6 +39,7 @@ public class VarLightCommand extends BrigadierCommand<CommandSender, VarLightPlu
                 VarLightCommandSave.class,
                 VarLightCommandStepSize.class,
                 VarLightCommandUpdate.class,
+                VarLightCommandFill.class,
                 VarLightCommandWhitelist.class,
                 VarLightCommandBlacklist.class,
         };
@@ -79,15 +80,7 @@ public class VarLightCommand extends BrigadierCommand<CommandSender, VarLightPlu
 
         LiteralArgumentBuilder<CommandSender> subCommandRoot = LiteralArgumentBuilder.literal(subCommand.getName());
 
-        subCommandRoot.requires(sender -> {
-            String required = subCommand.getRequiredPermission();
-
-            if (required.isEmpty()) {
-                return true;
-            }
-
-            return sender.hasPermission(required);
-        });
+        subCommandRoot.requires(subCommand::meetsRequirement);
 
         subCommand.build(subCommandRoot);
 

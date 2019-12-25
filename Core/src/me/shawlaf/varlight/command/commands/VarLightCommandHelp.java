@@ -48,7 +48,7 @@ public class VarLightCommandHelp extends VarLightSubCommand {
 
             literalArgumentBuilder.then(
                     LiteralArgumentBuilder.<CommandSender>literal(subCommand.getName())
-                            .requires(sender -> sender.hasPermission(subCommand.getRequiredPermission()))
+                            .requires(subCommand::meetsRequirement)
                             .executes(context -> {
                                 context.getSource().sendMessage(subCommand.getUsageString());
                                 return VarLightCommand.SUCCESS;
@@ -81,7 +81,7 @@ public class VarLightCommandHelp extends VarLightSubCommand {
         for (VarLightSubCommand subCommand : rootCommand.getSubCommands()) {
             String help = subCommand.getUsageString();
 
-            if (!help.isEmpty() && commandSender.hasPermission(subCommand.getRequiredPermission())) {
+            if (!help.isEmpty() && subCommand.meetsRequirement(commandSender)) {
                 builder.append(help).append('\n');
             }
         }

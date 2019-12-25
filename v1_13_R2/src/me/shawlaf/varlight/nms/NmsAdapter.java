@@ -17,13 +17,13 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Powerable;
 import org.bukkit.block.data.type.Piston;
 import org.bukkit.craftbukkit.v1_13_R2.CraftWorld;
+import org.bukkit.craftbukkit.v1_13_R2.util.CraftMagicNumbers;
 import org.bukkit.entity.Player;
 import org.bukkit.material.Openable;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @ForMinecraft(version = "1.13.2")
 public class NmsAdapter implements INmsAdapter {
@@ -176,6 +176,23 @@ public class NmsAdapter implements INmsAdapter {
     @Override
     public void sendActionBarMessage(Player player, String message) {
         player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(message));
+    }
+
+    @Override
+    public Collection<String> getBlockTypes() {
+        Set<String> keys = new HashSet<>();
+
+        for (MinecraftKey key : IRegistry.BLOCK.keySet()) {
+            keys.add(key.toString());
+            keys.add(key.getKey());
+        }
+
+        return keys;
+    }
+
+    @Override
+    public Material blockTypeFromMinecraftKey(String key) {
+        return CraftMagicNumbers.getMaterial(IRegistry.BLOCK.get(new MinecraftKey(key)));
     }
 
     @Override

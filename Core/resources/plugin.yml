@@ -28,6 +28,14 @@ permissions:
   varlight.admin.world:
     description: "Provides access to /varlight blacklist and /varlight whitelist"
     default: op
+  varlight.admin.fill:
+    description: "Provides access to /varlight fill and /varlight update"
+    default: op
+    children:
+      varlight.admin.update: true
+  varlight.admin.update:
+    description: "Provides access to /varlight update"
+    default: op
   varlight.stepsize:
     description: "Provides access to /varlight stepsize"
     default: op
@@ -41,4 +49,6 @@ permissions:
       varlight.admin.perm: true
       varlight.admin.reload: true
       varlight.admin.world: true
+      varlight.admin.update: true
+      varlight.admin.fill: true
       varlight.stepsize: true

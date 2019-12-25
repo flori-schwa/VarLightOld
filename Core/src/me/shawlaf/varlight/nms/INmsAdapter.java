@@ -16,6 +16,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
@@ -54,6 +55,10 @@ public interface INmsAdapter {
     boolean isIllegalBlock(@NotNull Block block);
 
     void sendActionBarMessage(Player player, String message);
+
+    Collection<String> getBlockTypes();
+
+    Material blockTypeFromMinecraftKey(String key);
 
     @Nullable
     Block getTargetBlockExact(Player player, int maxDistance);

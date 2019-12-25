@@ -19,6 +19,16 @@ public abstract class VarLightSubCommand implements ICommandAccess<VarLightPlugi
 
     public abstract @NotNull LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> node);
 
+    public boolean meetsRequirement(CommandSender commandSender) {
+        String required = getRequiredPermission();
+
+        if (required.isEmpty()) {
+            return true;
+        }
+
+        return commandSender.hasPermission(required);
+    }
+
     @Override
     public final @NotNull VarLightPlugin getPlugin() {
         return plugin;

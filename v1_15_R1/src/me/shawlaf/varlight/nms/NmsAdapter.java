@@ -6,6 +6,8 @@ import me.shawlaf.varlight.persistence.WorldLightSourceManager;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.server.v1_15_R1.IBlockData;
+import net.minecraft.server.v1_15_R1.IRegistry;
+import net.minecraft.server.v1_15_R1.MinecraftKey;
 import net.minecraft.server.v1_15_R1.MinecraftServer;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -16,6 +18,7 @@ import org.bukkit.block.data.Openable;
 import org.bukkit.block.data.Powerable;
 import org.bukkit.block.data.type.Piston;
 import org.bukkit.craftbukkit.v1_15_R1.block.CraftBlock;
+import org.bukkit.craftbukkit.v1_15_R1.util.CraftMagicNumbers;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -29,9 +32,7 @@ import ru.beykerykt.lightapi.LightAPI;
 import ru.beykerykt.lightapi.LightType;
 import ru.beykerykt.lightapi.chunks.ChunkInfo;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @SuppressWarnings("deprecation")
 @ForMinecraft(version = "1.15.1")
@@ -158,6 +159,23 @@ public class NmsAdapter implements INmsAdapter, Listener {
     @Override
     public void sendActionBarMessage(Player player, String message) {
         player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(message));
+    }
+
+    @Override
+    public Collection<String> getBlockTypes() {
+        Set<String> keys = new HashSet<>();
+
+        for (MinecraftKey key : IRegistry.BLOCK.keySet()) {
+            keys.add(key.toString());
+            keys.add(key.getKey());
+        }
+
+        return keys;
+    }
+
+    @Override
+    public Material blockTypeFromMinecraftKey(String key) {
+        return CraftMagicNumbers.getMaterial(IRegistry.BLOCK.get(new MinecraftKey(key)));
     }
 
     @Override
