@@ -16,12 +16,12 @@ public class MinecraftTypeArgumentType implements ArgumentType<Material> {
 
     private final VarLightPlugin plugin;
 
-    public static MinecraftTypeArgumentType minecraftType(VarLightPlugin plugin) {
-        return new MinecraftTypeArgumentType(plugin);
-    }
-
     private MinecraftTypeArgumentType(VarLightPlugin plugin) {
         this.plugin = plugin;
+    }
+
+    public static MinecraftTypeArgumentType minecraftType(VarLightPlugin plugin) {
+        return new MinecraftTypeArgumentType(plugin);
     }
 
     private boolean isLegalNamespaceChar(char c) {

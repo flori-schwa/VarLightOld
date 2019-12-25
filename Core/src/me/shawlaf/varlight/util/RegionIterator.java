@@ -13,10 +13,6 @@ public class RegionIterator implements Iterator<IntPosition> {
 
     private int x, y, z;
 
-    private static int binaryStep(int x) {
-        return Integer.compare(x, 0);
-    }
-
     public RegionIterator(IntPosition pos1, IntPosition pos2) {
         if (pos1.compareTo(pos2) < 0) {
             // pos1 closer to origin
@@ -37,6 +33,10 @@ public class RegionIterator implements Iterator<IntPosition> {
         this.isSingleBlock = pos1.equals(pos2);
 
         reset();
+    }
+
+    private static int binaryStep(int x) {
+        return Integer.compare(x, 0);
     }
 
     private boolean xInRange(int x) {

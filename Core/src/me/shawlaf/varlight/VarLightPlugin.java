@@ -1,25 +1,22 @@
 package me.shawlaf.varlight;
 
-//import me.shawlaf.varlight.command_old.VarLightCommand;
-
 import me.shawlaf.varlight.command.VarLightCommand;
-import me.shawlaf.varlight.event.LightUpdateEvent;
 import me.shawlaf.varlight.nms.*;
+import me.shawlaf.varlight.persistence.PersistentLightSource;
 import me.shawlaf.varlight.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.util.IntPosition;
+import me.shawlaf.varlight.util.LightSourceUtil;
 import me.shawlaf.varlight.util.NumericMajorMinorVersion;
-import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
-import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.*;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
@@ -31,6 +28,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+
+import static me.shawlaf.command.result.CommandResult.failure;
+import static me.shawlaf.command.result.CommandResult.info;
 
 public class VarLightPlugin extends JavaPlugin implements Listener {
 
@@ -215,14 +215,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         return nmsAdapter;
     }
 
-    private boolean isLightLevelInRange(int lightLevel) {
-        return lightLevel >= 0 && lightLevel <= 15;
-    }
-
-    private boolean canModifyBlockLight(Block block, int mod) {
-        return isLightLevelInRange(block.getLightFromBlocks() + mod);
-    }
-
     private boolean isNullOrEmpty(String x) {
         return x == null || x.isEmpty();
     }
@@ -250,6 +242,36 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         }
 
         if (manager == null) {
+            return;
+        }
+
+        if (nmsAdapter.isVarLightDebugStick(e.getItem())) {
+            e.setCancelled(true);
+
+
+            if (!e.getPlayer().hasPermission("varlight.admin.debug")) {
+                failure(command, e.getPlayer(), "You do not have permission to use the debug stick!");
+                return;
+            }
+
+            if (e.getAction() != Action.RIGHT_CLICK_BLOCK) {
+                return;
+            }
+
+            Block clickedBlock = e.getClickedBlock();
+
+            PersistentLightSource pls = manager.getPersistentLightSource(clickedBlock.getLocation());
+
+            if (pls == null) {
+                info(command, e.getPlayer(),
+                        String.format("No custom light source present at Position [%d, %d, %d]",
+                                clickedBlock.getX(), clickedBlock.getY(), clickedBlock.getZ()),
+                        ChatColor.RED
+                );
+            } else {
+                info(command, e.getPlayer(), pls.toCompactString(true), ChatColor.GREEN);
+            }
+
             return;
         }
 
@@ -284,37 +306,18 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         final boolean creative = player.getGameMode() == GameMode.CREATIVE;
 
-        if (nmsAdapter.isIllegalBlock(clickedBlock)) {
-            LightUpdateResult.INVALID_BLOCK.displayMessage(this, player, -1); // INVALID_BLOCK does not use the newLight Parameter
-            return;
+        LightUpdateResult result = LightSourceUtil.placeNewLightSource(this, clickedBlock.getLocation(),
+                manager.getCustomLuminance(new IntPosition(clickedBlock), 0) + mod);
+
+        if (result.successful()) {
+            e.setCancelled(creative && e.getAction() == Action.LEFT_CLICK_BLOCK);
+
+            if (!creative && e.getAction() == Action.RIGHT_CLICK_BLOCK) {
+                heldItem.setAmount(heldItem.getAmount() - 1);
+            }
         }
 
-        if (!canModifyBlockLight(clickedBlock, mod)) {
-            (mod < 0 ? LightUpdateResult.ZERO_REACHED : LightUpdateResult.FIFTEEN_REACHED)
-                    .displayMessage(this, player, -1); // Both do not use the newLight Parameter
-            return;
-        }
-
-        LightUpdateEvent lightUpdateEvent = new LightUpdateEvent(this, clickedBlock, mod);
-        Bukkit.getPluginManager().callEvent(lightUpdateEvent);
-
-        if (lightUpdateEvent.isCancelled()) {
-            LightUpdateResult.CANCELLED.displayMessage(this, player, -1); // CANCELLED does not use the newLight Parameter
-            return;
-        }
-
-        int lightTo = lightUpdateEvent.getToLight();
-
-        nmsAdapter.updateBlockLight(clickedBlock.getLocation(), lightTo);
-        manager.setCustomLuminance(clickedBlock.getLocation(), lightTo);
-
-        e.setCancelled(creative && e.getAction() == Action.LEFT_CLICK_BLOCK);
-
-        if (!creative && e.getAction() == Action.RIGHT_CLICK_BLOCK) {
-            heldItem.setAmount(heldItem.getAmount() - 1);
-        }
-
-        LightUpdateResult.UPDATED.displayMessage(this, player, lightTo);
+        result.displayMessage(e.getPlayer());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -326,84 +329,73 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent e) {
-        if (e.isCancelled()) {
-            return;
-        }
+        handleBlockAffected(e.getBlock());
+    }
 
-        WorldLightSourceManager manager = getManager(e.getBlock().getWorld());
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPistonExtend(BlockPistonExtendEvent e) {
+        handleAreaAffected(e.getBlock().getWorld(), e.getBlocks());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPistonRetract(BlockPistonRetractEvent e) {
+        handleAreaAffected(e.getBlock().getWorld(), e.getBlocks());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onBlockExplode(BlockExplodeEvent e) {
+        System.out.println("test");
+        handleAreaAffected(e.blockList().get(0).getWorld(), e.blockList());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onEntityExplode(EntityExplodeEvent e) {
+        handleAreaAffected(e.getLocation().getWorld(), e.blockList());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onEntityChangeBlock(EntityChangeBlockEvent e) {
+        handleBlockAffected(e.getBlock());
+    }
+
+    private void handleBlockAffected(Block block) {
+        WorldLightSourceManager manager = getManager(block.getWorld());
 
         if (manager == null) {
             return;
         }
 
-        IntPosition position = new IntPosition(e.getBlock().getLocation());
+        IntPosition position = new IntPosition(block.getLocation());
 
-        if (manager.getCustomLuminance(position, -1) > 0) {
-            manager.setCustomLuminance(position, 0); // Delete the light source
+        PersistentLightSource pls = manager.getPersistentLightSource(block.getLocation());
+
+        if (pls != null) {
+            manager.setCustomLuminance(position, 0);
         }
     }
+
+    private void handleAreaAffected(World world, List<Block> blocks) {
+        WorldLightSourceManager manager = getManager(world);
+
+        if (manager == null) {
+            return;
+        }
+
+        for (Block block : blocks) {
+            IntPosition position = new IntPosition(block.getLocation());
+            PersistentLightSource pls = manager.getPersistentLightSource(block.getLocation());
+
+            if (pls != null) {
+                manager.setCustomLuminance(position, 0);
+            }
+        }
+    }
+
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent e) {
         stepSizes.remove(e.getPlayer().getUniqueId());
-    }
-
-    private void displayMessage(Player player, LightUpdateResult lightUpdateResult) {
-        switch (lightUpdateResult) {
-            case CANCELLED:
-            case INVALID_BLOCK: {
-                return;
-            }
-
-            case FIFTEEN_REACHED: {
-                nmsAdapter.sendActionBarMessage(player, "Cannot increase light level beyond 15.");
-                return;
-            }
-            case ZERO_REACHED: {
-                nmsAdapter.sendActionBarMessage(player, "Cannot decrease light level below 0.");
-                return;
-            }
-
-            case UPDATED: {
-                nmsAdapter.sendActionBarMessage(player, "Updated Light level");
-            }
-        }
-    }
-
-    private enum LightUpdateResult {
-        INVALID_BLOCK {
-            @Override
-            public void displayMessage(VarLightPlugin plugin, Player player, int newLight) {
-                // Ignore
-            }
-        },
-        CANCELLED {
-            @Override
-            public void displayMessage(VarLightPlugin plugin, Player player, int newLight) {
-                // Ignore
-            }
-        },
-        ZERO_REACHED {
-            @Override
-            public void displayMessage(VarLightPlugin plugin, Player player, int newLight) {
-                plugin.getNmsAdapter().sendActionBarMessage(player, "Cannot decrease light level below 0.");
-            }
-        },
-        FIFTEEN_REACHED {
-            @Override
-            public void displayMessage(VarLightPlugin plugin, Player player, int newLight) {
-                plugin.getNmsAdapter().sendActionBarMessage(player, "Cannot increase light level beyond 15.");
-            }
-        },
-        UPDATED {
-            @Override
-            public void displayMessage(VarLightPlugin plugin, Player player, int newLight) {
-                plugin.getNmsAdapter().sendActionBarMessage(player, String.format("Updated Light level to %d", newLight));
-            }
-        };
-
-        public abstract void displayMessage(VarLightPlugin plugin, Player player, int newLight);
     }
 }

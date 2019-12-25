@@ -1,6 +1,5 @@
 package me.shawlaf.varlight.command.commands;
 
-import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import me.shawlaf.varlight.VarLightPlugin;

@@ -19,14 +19,6 @@ public class CollectionArgumentType<T> implements ArgumentType<Collection<T>> {
     private ArgumentType<T> baseArgumentType;
     private String separator;
 
-    public static <V> CollectionArgumentType<V> collection(ArgumentType<V> baseType) {
-        return new CollectionArgumentType<>(baseType);
-    }
-
-    public static <V> CollectionArgumentType<V> collection(ArgumentType<V> baseType, String separator) {
-        return new CollectionArgumentType<>(baseType, separator);
-    }
-
     private CollectionArgumentType(ArgumentType<T> baseArgumentType) {
         this(baseArgumentType, SEPARATOR);
     }
@@ -36,6 +28,13 @@ public class CollectionArgumentType<T> implements ArgumentType<Collection<T>> {
         this.separator = separator;
     }
 
+    public static <V> CollectionArgumentType<V> collection(ArgumentType<V> baseType) {
+        return new CollectionArgumentType<>(baseType);
+    }
+
+    public static <V> CollectionArgumentType<V> collection(ArgumentType<V> baseType, String separator) {
+        return new CollectionArgumentType<>(baseType, separator);
+    }
 
     @Override
     public <S> Collection<T> parse(StringReader stringReader) throws CommandSyntaxException {

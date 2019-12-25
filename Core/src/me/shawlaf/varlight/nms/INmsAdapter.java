@@ -12,6 +12,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -60,11 +61,17 @@ public interface INmsAdapter {
 
     Material blockTypeFromMinecraftKey(String key);
 
+    ItemStack getVarLightDebugStick();
+
     @Nullable
     Block getTargetBlockExact(Player player, int maxDistance);
 
     @NotNull
     String getNumericMinecraftVersion();
+
+    default boolean isVarLightDebugStick(ItemStack itemStack) {
+        return itemStack.equals(getVarLightDebugStick());
+    }
 
     @NotNull
     default NumericMajorMinorVersion getMinecraftVersion() {

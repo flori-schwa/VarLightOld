@@ -5,13 +5,13 @@ import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import me.shawlaf.command.brigadier.datatypes.ICoordinates;
+import me.shawlaf.varlight.LightUpdateResult;
 import me.shawlaf.varlight.VarLightPlugin;
 import me.shawlaf.varlight.command.VarLightSubCommand;
-import me.shawlaf.varlight.event.LightUpdateEvent;
 import me.shawlaf.varlight.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.util.IntPosition;
+import me.shawlaf.varlight.util.LightSourceUtil;
 import me.shawlaf.varlight.util.RegionIterator;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -180,18 +180,13 @@ public class VarLightCommandFill extends VarLightSubCommand {
                 continue;
             }
 
-            LightUpdateEvent lightUpdateEvent = new LightUpdateEvent(block, manager.getCustomLuminance(next, 0), lightLevel);
-            Bukkit.getPluginManager().callEvent(lightUpdateEvent);
+            LightUpdateResult result = LightSourceUtil.placeNewLightSource(plugin, block.getLocation(), lightLevel);
 
-            if (lightUpdateEvent.isCancelled()) {
+            if (!result.successful()) {
                 ++failed;
-                continue;
+            } else {
+                ++updated;
             }
-
-            manager.setCustomLuminance(next, lightUpdateEvent.getToLight());
-            plugin.getNmsAdapter().updateBlockLight(block.getLocation(), lightUpdateEvent.getToLight());
-
-            ++updated;
         }
 
         successBroadcast(this, source, String.format("Successfully updated %d Light sources in Region [%d, %d, %d] to [%d, %d, %d]. (Total blocks: %d, Invalid Blocks: %d, Skipped Blocks: %d, Failed Blocks: %d)",

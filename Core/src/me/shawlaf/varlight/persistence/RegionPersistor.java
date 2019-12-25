@@ -155,6 +155,7 @@ public abstract class RegionPersistor<L extends ICustomLightSource> {
         }
     }
 
+    @Deprecated
     public void removeLightSource(@NotNull IntPosition position) throws IOException {
         Objects.requireNonNull(position);
 
@@ -166,7 +167,13 @@ public abstract class RegionPersistor<L extends ICustomLightSource> {
             }
 
             if (chunkCache.get(chunkCoords).removeIf(l -> l.getPosition().equals(position))) {
-                file.editChunk(chunkCoords, chunkCache.get(chunkCoords).toArray(createArray(0)));
+                List<L> chunk = chunkCache.get(chunkCoords);
+
+                if (chunk.size() == 0) {
+                    file.removeChunk(chunkCoords);
+                } else {
+                    file.editChunk(chunkCoords, chunk.toArray(createArray(0)));
+                }
             }
         }
     }

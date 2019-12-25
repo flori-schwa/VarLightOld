@@ -5,7 +5,6 @@ import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import me.shawlaf.command.exception.CommandException;
 import me.shawlaf.varlight.VarLightPlugin;
-import me.shawlaf.varlight.command.VarLightCommand;
 import me.shawlaf.varlight.command.VarLightSubCommand;
 import me.shawlaf.varlight.persistence.PersistentLightSource;
 import me.shawlaf.varlight.persistence.RegionPersistor;
@@ -25,7 +24,10 @@ import java.util.List;
 
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
 import static com.mojang.brigadier.builder.RequiredArgumentBuilder.argument;
+import static me.shawlaf.command.result.CommandResult.failure;
 import static me.shawlaf.command.result.CommandResult.success;
+import static me.shawlaf.varlight.command.VarLightCommand.FAILURE;
+import static me.shawlaf.varlight.command.VarLightCommand.SUCCESS;
 
 @SuppressWarnings("DuplicatedCode")
 public class VarLightCommandDebug extends VarLightSubCommand {
@@ -61,9 +63,8 @@ public class VarLightCommandDebug extends VarLightSubCommand {
     @NotNull
     @Override
     public LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> literalArgumentBuilder) {
-        return literalArgumentBuilder.then(
+        literalArgumentBuilder.then(
                 LiteralArgumentBuilder.<CommandSender>literal("list")
-                        .requires(sender -> sender instanceof Player)
                         .then(
                                 LiteralArgumentBuilder.<CommandSender>literal("-r")
                                         .executes(this::regionImplicit)
@@ -78,11 +79,27 @@ public class VarLightCommandDebug extends VarLightSubCommand {
                                 )
                 )
         );
+
+        literalArgumentBuilder.then(
+                LiteralArgumentBuilder.<CommandSender>literal("stick").executes(context -> {
+                    if (!(context.getSource() instanceof Player)) {
+                        failure(this, context.getSource(), "You must be a player to use this command!");
+                        return FAILURE;
+                    }
+
+                    ((Player) context.getSource()).getInventory().addItem(plugin.getNmsAdapter().getVarLightDebugStick());
+
+                    return SUCCESS;
+                })
+        );
+
+        return literalArgumentBuilder;
     }
 
     private int regionImplicit(CommandContext<CommandSender> context) {
         if (!(context.getSource() instanceof Player)) {
-            throw CommandException.severeException("You must be a player to use this command!"); // Technically impossible
+            failure(this, context.getSource(), "You must be a player to use this command!");
+            return FAILURE;
         }
 
         Player player = (Player) context.getSource();
@@ -92,12 +109,13 @@ public class VarLightCommandDebug extends VarLightSubCommand {
 
         listLightSourcesInRegion(player, regionX, regionZ);
 
-        return VarLightCommand.SUCCESS;
+        return SUCCESS;
     }
 
     private int regionExplicit(CommandContext<CommandSender> context) {
         if (!(context.getSource() instanceof Player)) {
-            throw CommandException.severeException("You must be a player to use this command!"); // Technically impossible
+            failure(this, context.getSource(), "You must be a player to use this command!");
+            return FAILURE;
         }
 
         Player player = (Player) context.getSource();
@@ -107,12 +125,13 @@ public class VarLightCommandDebug extends VarLightSubCommand {
 
         listLightSourcesInRegion(player, regionX, regionZ);
 
-        return VarLightCommand.SUCCESS;
+        return SUCCESS;
     }
 
     private int chunkImplicit(CommandContext<CommandSender> context) {
         if (!(context.getSource() instanceof Player)) {
-            throw CommandException.severeException("You must be a player to use this command!"); // Technically impossible
+            failure(this, context.getSource(), "You must be a player to use this command!");
+            return FAILURE;
         }
 
         Player player = (Player) context.getSource();
@@ -122,12 +141,13 @@ public class VarLightCommandDebug extends VarLightSubCommand {
 
         listLightSourcesInChunk(player, chunkX, chunkZ);
 
-        return VarLightCommand.SUCCESS;
+        return SUCCESS;
     }
 
     private int chunkExplicit(CommandContext<CommandSender> context) {
         if (!(context.getSource() instanceof Player)) {
-            throw CommandException.severeException("You must be a player to use this command!"); // Technically impossible
+            failure(this, context.getSource(), "You must be a player to use this command!");
+            return FAILURE;
         }
 
         Player player = (Player) context.getSource();
@@ -137,7 +157,7 @@ public class VarLightCommandDebug extends VarLightSubCommand {
 
         listLightSourcesInChunk(player, chunkX, chunkZ);
 
-        return VarLightCommand.SUCCESS;
+        return SUCCESS;
     }
 
     private void listLightSourcesInRegion(Player player, int regionX, int regionZ) {
@@ -191,16 +211,7 @@ public class VarLightCommandDebug extends VarLightSubCommand {
     private void listInternal(Player player, List<PersistentLightSource> list) {
         for (PersistentLightSource lightSource : list) {
 
-            TextComponent textComponent = new TextComponent(
-                    String.format("    (%d | %d | %d): type: %s light: %d migrated: %s",
-                            lightSource.getPosition().x,
-                            lightSource.getPosition().y,
-                            lightSource.getPosition().z,
-                            lightSource.getType().name(),
-                            lightSource.getEmittingLight(),
-                            lightSource.isMigrated() ? "yes" : "no"
-                    )
-            );
+            TextComponent textComponent = new TextComponent(lightSource.toCompactString(true));
 
             textComponent.setClickEvent(new ClickEvent(
                     ClickEvent.Action.RUN_COMMAND,

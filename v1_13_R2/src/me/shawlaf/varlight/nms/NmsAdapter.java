@@ -17,8 +17,10 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Powerable;
 import org.bukkit.block.data.type.Piston;
 import org.bukkit.craftbukkit.v1_13_R2.CraftWorld;
+import org.bukkit.craftbukkit.v1_13_R2.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_13_R2.util.CraftMagicNumbers;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.material.Openable;
 import org.jetbrains.annotations.NotNull;
 
@@ -36,6 +38,7 @@ public class NmsAdapter implements INmsAdapter {
             BlockFace.UP,
             BlockFace.DOWN
     };
+    private final org.bukkit.inventory.ItemStack varlightDebugStick;
 
     private Field lightBlockingField;
 
@@ -46,6 +49,16 @@ public class NmsAdapter implements INmsAdapter {
         } catch (NoSuchFieldException e) {
             e.printStackTrace();
         }
+
+        ItemStack nmsStack = new ItemStack(Items.DEBUG_STICK);
+
+        nmsStack.a("CustomType", new NBTTagString("varlight:debug_stick"));
+
+        this.varlightDebugStick = CraftItemStack.asBukkitCopy(nmsStack);
+        ItemMeta meta = varlightDebugStick.getItemMeta();
+
+        meta.setDisplayName(ChatColor.RESET + "" + ChatColor.GOLD + "VarLight Debug Stick");
+        varlightDebugStick.setItemMeta(meta);
     }
 
     private WorldServer getNmsWorld(World world) {
@@ -193,6 +206,28 @@ public class NmsAdapter implements INmsAdapter {
     @Override
     public Material blockTypeFromMinecraftKey(String key) {
         return CraftMagicNumbers.getMaterial(IRegistry.BLOCK.get(new MinecraftKey(key)));
+    }
+
+    @Override
+    public org.bukkit.inventory.ItemStack getVarLightDebugStick() {
+        return varlightDebugStick;
+    }
+
+    @Override
+    public boolean isVarLightDebugStick(org.bukkit.inventory.ItemStack itemStack) {
+        if (itemStack == null || itemStack.getType() != Material.DEBUG_STICK) {
+            return false;
+        }
+
+        net.minecraft.server.v1_13_R2.ItemStack nmsStack = CraftItemStack.asNMSCopy(itemStack);
+
+        NBTTagCompound tag = nmsStack.getTag();
+
+        if (tag == null) {
+            return false;
+        }
+
+        return tag.getString("CustomType").equals("varlight:debug_stick");
     }
 
     @Override

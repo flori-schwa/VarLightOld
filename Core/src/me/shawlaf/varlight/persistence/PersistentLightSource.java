@@ -2,6 +2,7 @@ package me.shawlaf.varlight.persistence;
 
 import me.shawlaf.varlight.VarLightPlugin;
 import me.shawlaf.varlight.util.IntPosition;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -118,6 +119,35 @@ public class PersistentLightSource implements ICustomLightSource {
         }
 
         return block.getLightFromBlocks() < emittingLight;
+    }
+
+    public String toCompactString(boolean colored) {
+        boolean valid = !isInvalid();
+
+        if (colored) {
+            return String.format("%s%s %s%s%s %s [%d, %d, %d] = %d",
+                    valid ? ChatColor.GREEN : ChatColor.RED,
+                    valid ? "VALID" : "INVALID",
+                    migrated ? ChatColor.GREEN : ChatColor.RED,
+                    migrated ? "MIGRATED" : "NOT MIGRATED",
+                    valid ? ChatColor.GREEN : ChatColor.RED,
+                    type.name(),
+                    position.x,
+                    position.y,
+                    position.z,
+                    emittingLight
+            );
+        } else {
+            return String.format("%s %s %s [%d, %d, %d] = %d",
+                    valid ? "VALID" : "INVALID",
+                    migrated ? "MIGRATED" : "NOT MIGRATED",
+                    type.name(),
+                    position.x,
+                    position.y,
+                    position.z,
+                    emittingLight
+            );
+        }
     }
 
     @Override

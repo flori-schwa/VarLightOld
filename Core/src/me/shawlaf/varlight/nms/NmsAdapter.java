@@ -6,6 +6,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -59,6 +60,11 @@ public class NmsAdapter implements INmsAdapter {
 
     @Override
     public Material blockTypeFromMinecraftKey(String key) {
+        throw new AbstractMethodError();
+    }
+
+    @Override
+    public ItemStack getVarLightDebugStick() {
         throw new AbstractMethodError();
     }
 

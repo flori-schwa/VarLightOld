@@ -5,12 +5,12 @@ import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import me.shawlaf.command.brigadier.datatypes.ICoordinates;
+import me.shawlaf.varlight.LightUpdateResult;
 import me.shawlaf.varlight.VarLightPlugin;
 import me.shawlaf.varlight.command.VarLightSubCommand;
-import me.shawlaf.varlight.event.LightUpdateEvent;
 import me.shawlaf.varlight.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.util.IntPosition;
-import org.bukkit.Bukkit;
+import me.shawlaf.varlight.util.LightSourceUtil;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
@@ -116,21 +116,17 @@ public class VarLightCommandUpdate extends VarLightSubCommand {
             return FAILURE;
         }
 
-        LightUpdateEvent lightUpdateEvent = new LightUpdateEvent(location.getBlock(), fromLight, toLight);
-        Bukkit.getPluginManager().callEvent(lightUpdateEvent);
+        LightUpdateResult result = LightSourceUtil.placeNewLightSource(plugin, location, toLight);
 
-        if (lightUpdateEvent.isCancelled()) {
-            failure(this, source, "The Light update event was cancelled!");
+        if (!result.successful()) {
+            failure(this, source, result.getMessage());
 
             return FAILURE;
+        } else {
+            successBroadcast(this, source, String.format("Updated Light level at [%d, %d, %d] in world \"%s\" from %d to %d",
+                    location.getBlockX(), location.getBlockY(), location.getBlockZ(), world.getName(), fromLight, result.getToLight()));
+
+            return SUCCESS;
         }
-
-        manager.setCustomLuminance(location, lightUpdateEvent.getToLight());
-        plugin.getNmsAdapter().updateBlockLight(location, lightUpdateEvent.getToLight());
-
-        successBroadcast(this, source, String.format("Updated Light level at [%d, %d, %d] in world \"%s\" from %d to %d",
-                location.getBlockX(), location.getBlockY(), location.getBlockZ(), world.getName(), fromLight, lightUpdateEvent.getToLight()));
-
-        return SUCCESS;
     }
 }

@@ -120,9 +120,22 @@ public class WorldLightSourceManager {
 //    }
 
     public void setCustomLuminance(IntPosition position, int lightLevel) {
+//        if (lightLevel == 0) {
+//            removeCustomLightSource(position);
+//            return;
+//        }
+
         createPersistentLightSource(position, lightLevel);
 //        getOrCreatePersistentLightSource(position).setEmittingLight(lightLevel);
     }
+
+//    public void removeCustomLightSource(IntPosition position) {
+//        try {
+//            getRegionPersistor(position.toRegionCoords()).removeLightSource(position);
+//        } catch (IOException e) {
+//            throw new LightPersistFailedException(e);
+//        }
+//    }
 
     //    public void loadChunk(Chunk chunk) {
 //        try {
