@@ -47,7 +47,7 @@ public class NmsAdapter implements INmsAdapter {
     public NmsAdapter(VarLightPlugin plugin) {
         ItemStack nmsStack = new ItemStack(Items.STICK);
 
-        nmsStack.addEnchantment(Enchantments.DAMAGE_ALL, 0);
+        nmsStack.addEnchantment(Enchantments.DURABILITY, 1);
         nmsStack.a("CustomType", new NBTTagString("varlight:debug_stick"));
 
         this.varlightDebugStick = CraftItemStack.asBukkitCopy(nmsStack);

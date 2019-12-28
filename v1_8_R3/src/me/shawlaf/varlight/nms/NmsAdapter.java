@@ -69,7 +69,7 @@ public class NmsAdapter implements INmsAdapter {
 
         net.minecraft.server.v1_8_R3.ItemStack nmsStack = new net.minecraft.server.v1_8_R3.ItemStack(Items.STICK);
 
-        nmsStack.addEnchantment(Enchantment.DAMAGE_ALL, 0);
+        nmsStack.addEnchantment(Enchantment.DURABILITY, 1);
         nmsStack.a("CustomType", new NBTTagString("varlight:debug_stick"));
         nmsStack.c = 1;
 

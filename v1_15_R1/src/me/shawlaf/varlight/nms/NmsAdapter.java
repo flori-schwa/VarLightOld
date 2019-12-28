@@ -28,6 +28,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockEvent;
 import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
@@ -60,13 +61,15 @@ public class NmsAdapter implements INmsAdapter, Listener {
             throw new VarLightInitializationException("LightAPI required!");
         }
 
-        net.minecraft.server.v1_15_R1.ItemStack nmsStack = new net.minecraft.server.v1_15_R1.ItemStack(Items.DEBUG_STICK);
+        net.minecraft.server.v1_15_R1.ItemStack nmsStack = new net.minecraft.server.v1_15_R1.ItemStack(Items.STICK);
 
+        nmsStack.addEnchantment(Enchantments.DURABILITY, 1);
         nmsStack.a("CustomType", NBTTagString.a("varlight:debug_stick"));
 
         this.varlightDebugStick = CraftItemStack.asBukkitCopy(nmsStack);
         ItemMeta meta = varlightDebugStick.getItemMeta();
 
+        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         meta.setDisplayName(ChatColor.RESET + "" + ChatColor.GOLD + "VarLight Debug Stick");
         varlightDebugStick.setItemMeta(meta);
     }
@@ -222,12 +225,19 @@ public class NmsAdapter implements INmsAdapter, Listener {
 
     @Override
     public ItemStack getVarLightDebugStick() {
-        return varlightDebugStick;
+        net.minecraft.server.v1_15_R1.ItemStack nmsStack = CraftItemStack.asNMSCopy(varlightDebugStick);
+
+        UUID id = UUID.randomUUID();
+
+        nmsStack.a("idLeast", NBTTagLong.a(id.getLeastSignificantBits()));
+        nmsStack.a("idMost", NBTTagLong.a(id.getMostSignificantBits()));
+
+        return CraftItemStack.asBukkitCopy(nmsStack);
     }
 
     @Override
     public boolean isVarLightDebugStick(ItemStack itemStack) {
-        if (itemStack == null || itemStack.getType() != Material.DEBUG_STICK) {
+        if (itemStack == null || itemStack.getType() != Material.STICK) {
             return false;
         }
 

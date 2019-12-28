@@ -231,10 +231,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     public void onInteract(PlayerInteractEvent e) {
         WorldLightSourceManager manager = getManager(e.getPlayer().getWorld());
 
-        if (e.isCancelled() || e.getAction() != Action.RIGHT_CLICK_BLOCK && e.getAction() != Action.LEFT_CLICK_BLOCK) {
-            return;
-        }
-
         if (manager == null && configuration.getVarLightEnabledWorldNames().contains(e.getPlayer().getWorld().getName())) {
             enableInWorld(e.getPlayer().getWorld());
 
@@ -248,13 +244,22 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         if (nmsAdapter.isVarLightDebugStick(e.getItem())) {
             e.setCancelled(true);
 
-
             if (!e.getPlayer().hasPermission("varlight.admin.debug")) {
                 failure(command, e.getPlayer(), "You do not have permission to use the debug stick!");
                 return;
             }
 
             if (e.getAction() != Action.RIGHT_CLICK_BLOCK) {
+                if (e.getAction() == Action.RIGHT_CLICK_AIR) {
+                    if (e.getPlayer().isSneaking()) {
+                        Bukkit.dispatchCommand(e.getPlayer(), "varlight debug list -r");
+                    } else {
+                        Bukkit.dispatchCommand(e.getPlayer(), "varlight debug list -c");
+                    }
+
+                    return;
+                }
+
                 return;
             }
 
@@ -272,6 +277,10 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
                 info(command, e.getPlayer(), pls.toCompactString(true), ChatColor.GREEN);
             }
 
+            return;
+        }
+
+        if (e.isCancelled() || (e.getAction() != Action.RIGHT_CLICK_BLOCK && e.getAction() != Action.LEFT_CLICK_BLOCK)) {
             return;
         }
 

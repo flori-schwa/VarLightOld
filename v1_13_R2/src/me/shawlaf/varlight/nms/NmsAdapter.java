@@ -20,6 +20,7 @@ import org.bukkit.craftbukkit.v1_13_R2.CraftWorld;
 import org.bukkit.craftbukkit.v1_13_R2.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_13_R2.util.CraftMagicNumbers;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.material.Openable;
 import org.jetbrains.annotations.NotNull;
@@ -50,14 +51,16 @@ public class NmsAdapter implements INmsAdapter {
             e.printStackTrace();
         }
 
-        ItemStack nmsStack = new ItemStack(Items.DEBUG_STICK);
+        ItemStack nmsStack = new ItemStack(Items.STICK);
 
+        nmsStack.addEnchantment(Enchantments.DURABILITY, 1);
         nmsStack.a("CustomType", new NBTTagString("varlight:debug_stick"));
 
         this.varlightDebugStick = CraftItemStack.asBukkitCopy(nmsStack);
         ItemMeta meta = varlightDebugStick.getItemMeta();
 
         meta.setDisplayName(ChatColor.RESET + "" + ChatColor.GOLD + "VarLight Debug Stick");
+        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         varlightDebugStick.setItemMeta(meta);
     }
 
@@ -210,12 +213,19 @@ public class NmsAdapter implements INmsAdapter {
 
     @Override
     public org.bukkit.inventory.ItemStack getVarLightDebugStick() {
-        return varlightDebugStick;
+        ItemStack nmsStack = CraftItemStack.asNMSCopy(varlightDebugStick);
+
+        UUID id = UUID.randomUUID();
+
+        nmsStack.a("idLeast", new NBTTagLong(id.getLeastSignificantBits()));
+        nmsStack.a("idMost", new NBTTagLong(id.getMostSignificantBits()));
+
+        return CraftItemStack.asBukkitCopy(nmsStack);
     }
 
     @Override
     public boolean isVarLightDebugStick(org.bukkit.inventory.ItemStack itemStack) {
-        if (itemStack == null || itemStack.getType() != Material.DEBUG_STICK) {
+        if (itemStack == null || itemStack.getType() != Material.STICK) {
             return false;
         }
 
