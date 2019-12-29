@@ -1,3 +1,4 @@
  - The update item now gets saved as a namespaced key instead of the Material enum constant name
    - The enum constant key can still be parsed
  - vldb files can now be stored decompressed
+ - Add /varlight item to update the light update item
