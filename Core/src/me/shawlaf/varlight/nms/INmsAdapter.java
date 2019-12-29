@@ -78,20 +78,6 @@ public interface INmsAdapter {
         return new NumericMajorMinorVersion(getNumericMinecraftVersion());
     }
 
-    default void suggestCommand(Player player, String command) {
-        player.spigot().sendMessage(
-                new ComponentBuilder(String.format("Click to here to run command %s", command))
-                        .color(ChatColor.GRAY)
-                        .italic(true)
-                        .event(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, command))
-
-                        .event(
-                                new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("You can thank MC-70317").color(ChatColor.GRAY).italic(true).create())
-                        )
-                        .create()
-        );
-    }
-
     default int getChunkBitMask(@NotNull Location location) {
         Objects.requireNonNull(location);
 
