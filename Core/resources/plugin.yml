@@ -36,6 +36,9 @@ permissions:
   varlight.admin.update:
     description: "Provides access to /varlight update"
     default: op
+  varlight.admin.item:
+    description: "Provides access to /varlight item"
+    default: op
   varlight.stepsize:
     description: "Provides access to /varlight stepsize"
     default: op
@@ -51,4 +54,5 @@ permissions:
       varlight.admin.world: true
       varlight.admin.update: true
       varlight.admin.fill: true
+      varlight.admin.item: true
       varlight.stepsize: true

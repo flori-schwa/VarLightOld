@@ -4,6 +4,9 @@ import me.shawlaf.varlight.command.VarLightCommand;
 import me.shawlaf.varlight.nms.*;
 import me.shawlaf.varlight.persistence.PersistentLightSource;
 import me.shawlaf.varlight.persistence.WorldLightSourceManager;
+import me.shawlaf.varlight.persistence.migrate.LightDatabaseMigrator;
+import me.shawlaf.varlight.persistence.migrate.data.JsonToVLDBMigration;
+import me.shawlaf.varlight.persistence.migrate.data.VLDBMigration;
 import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.LightSourceUtil;
 import me.shawlaf.varlight.util.NumericMajorMinorVersion;
@@ -44,6 +47,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     private INmsAdapter nmsAdapter;
     private VarLightConfiguration configuration;
     private BukkitTask autosaveTask;
+    private boolean shouldVLDBDeflate;
     private boolean doLoad = true;
     private PersistOnWorldSaveHandler persistOnWorldSaveHandler;
     private Material lightUpdateItem;
@@ -85,8 +89,12 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-        configuration = new VarLightConfiguration(this);
+        LightDatabaseMigrator.addDataMigration(new JsonToVLDBMigration(this));
+        LightDatabaseMigrator.addDataMigration(new VLDBMigration(this));
 
+        this.shouldVLDBDeflate = getConfig().getBoolean(VarLightConfiguration.CONFIG_KEY_VLDB_DEFLATED, true);
+
+        configuration = new VarLightConfiguration(this);
         configuration.getVarLightEnabledWorlds().forEach(this::enableInWorld);
 
         try {
@@ -205,6 +213,10 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     @Nullable
     public WorldLightSourceManager getManager(@NotNull World world) {
         return managers.get(Objects.requireNonNull(world).getUID());
+    }
+
+    public boolean shouldVLDBDeflate() {
+        return shouldVLDBDeflate;
     }
 
     public VarLightConfiguration getConfiguration() {
@@ -406,5 +418,12 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent e) {
         stepSizes.remove(e.getPlayer().getUniqueId());
+    }
+
+    public void setUpdateItem(Material item) {
+        getConfig().set(VarLightConfiguration.CONFIG_KEY_VARLIGHT_ITEM, item.name());
+        saveConfig();
+
+        loadLightUpdateItem();
     }
 }

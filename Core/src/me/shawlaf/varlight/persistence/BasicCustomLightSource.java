@@ -24,8 +24,8 @@ public class BasicCustomLightSource implements ICustomLightSource {
     }
 
     @Override
-    public Material getType() {
-        return Material.valueOf(type);
+    public String getType() {
+        return type;
     }
 
     @Override

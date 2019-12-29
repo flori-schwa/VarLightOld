@@ -1,0 +1,10 @@
+ - The update item now gets saved as a namespaced key instead of the Material enum constant name
+   - The enum constant key can still be parsed
+ - Add /varlight item to update the light update item
+ - vldb was slightly altered:
+   - The file can now be saved in the uncompressed format
+   - file header now has magic number 0x564C4442 ("VLDB" in ASCII)#
+   - Types of light sources now stored as Namespaced Key
+   - file extension changed from .vldb to .vldb2
+   - Migrated automatically
+

@@ -11,7 +11,8 @@ public class VLDBUtil {
     public static final int SIZEOF_UINT24 = 3;
     public static final int SIZEOF_INT32 = 4;
 
-    public static final int SIZEOF_HEADER_WITHOUT_OFFSET_TABLE = (2 * SIZEOF_INT32) + SIZEOF_INT16;
+    public static final int SIZEOF_MAGIC = SIZEOF_INT32;
+    public static final int SIZEOF_HEADER_WITHOUT_OFFSET_TABLE = SIZEOF_MAGIC + (2 * SIZEOF_INT32) + SIZEOF_INT16;
     public static final int SIZEOF_OFFSET_TABLE_ENTRY = SIZEOF_INT16 + SIZEOF_INT32;
 
     public static final int SIZEOF_CHUNK_WITHOUT_LIGHT_DATA = SIZEOF_INT16 + SIZEOF_UINT24;
@@ -36,7 +37,7 @@ public class VLDBUtil {
     }
 
     public static int sizeofLightSource(ICustomLightSource lightSource) {
-        return SIZEOF_LIGHT_SOURCE_WITHOUT_ASCII + sizeofASCII(lightSource.getType().name());
+        return SIZEOF_LIGHT_SOURCE_WITHOUT_ASCII + sizeofASCII(lightSource.getType());
     }
 
     public static int sizeofASCII(String ascii) {

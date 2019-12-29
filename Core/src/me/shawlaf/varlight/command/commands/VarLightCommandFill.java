@@ -8,6 +8,7 @@ import me.shawlaf.command.brigadier.datatypes.ICoordinates;
 import me.shawlaf.varlight.LightUpdateResult;
 import me.shawlaf.varlight.VarLightPlugin;
 import me.shawlaf.varlight.command.VarLightSubCommand;
+import me.shawlaf.varlight.nms.MaterialType;
 import me.shawlaf.varlight.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.LightSourceUtil;
@@ -75,14 +76,14 @@ public class VarLightCommandFill extends VarLightSubCommand {
                                         .then(
                                                 LiteralArgumentBuilder.<CommandSender>literal("include")
                                                         .then(
-                                                                RequiredArgumentBuilder.<CommandSender, Collection<Material>>argument("posFilter", collection(minecraftType(plugin)))
+                                                                RequiredArgumentBuilder.<CommandSender, Collection<Material>>argument("posFilter", collection(minecraftType(plugin, MaterialType.BLOCK)))
                                                                         .executes(this::fillPosFilter)
                                                         )
                                         )
                                         .then(
                                                 LiteralArgumentBuilder.<CommandSender>literal("exclude")
                                                         .then(
-                                                                RequiredArgumentBuilder.<CommandSender, Collection<Material>>argument("negFilter", collection(minecraftType(plugin)))
+                                                                RequiredArgumentBuilder.<CommandSender, Collection<Material>>argument("negFilter", collection(minecraftType(plugin, MaterialType.BLOCK)))
                                                                         .executes(this::fillNegFilter)
                                                         )
                                         )

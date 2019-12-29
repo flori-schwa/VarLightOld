@@ -102,24 +102,33 @@ public class RegionIterator implements Iterator<IntPosition> {
             throw new IndexOutOfBoundsException("Already Iterated over entire region!");
         }
 
-        this.z += modZ;
+        if (modZ != 0) {
+            this.z += modZ;
 
-        if (zInRange(z)) {
-            return new IntPosition(x, y, z);
+            if (zInRange(z)) {
+                return new IntPosition(x, y, z);
+            }
         }
 
         this.z = pos1.z;
-        this.x += modX;
 
-        if (xInRange(x)) {
-            return new IntPosition(x, y, z);
+        if (modX != 0) {
+            this.x += modX;
+
+            if (xInRange(x)) {
+                return new IntPosition(x, y, z);
+            }
         }
 
         this.x = pos1.x;
-        this.y += modY;
 
-        if (yInRange(y)) {
-            return new IntPosition(x, y, z);
+
+        if (modY != 0) {
+            this.y += modY;
+
+            if (yInRange(y)) {
+                return new IntPosition(x, y, z);
+            }
         }
 
         throw new IndexOutOfBoundsException("Already Iterated over entire region!");

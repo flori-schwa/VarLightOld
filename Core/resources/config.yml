@@ -17,11 +17,15 @@
 # -------------------------------------------------------------------------------------------
 # "blacklist" Controls in which worlds the plugin will not function
 # -------------------------------------------------------------------------------------------
+# "vldb-deflated" Controls, whether the files used to store Light source information should
+# be deflated using GZIP
+# -------------------------------------------------------------------------------------------
 
 
-item: "GLOWSTONE_DUST"
+item: "minecraft:glowstone_dust"
 autosave: 5
-autosave-logpersist: 'true'
+autosave-logpersist: true
 requiredPermission: ''
 whitelist: []
 blacklist: []
+vldb-deflated: true

@@ -7,7 +7,7 @@ public interface ICustomLightSource {
 
     IntPosition getPosition();
 
-    Material getType();
+    String getType();
 
     boolean isMigrated();
 

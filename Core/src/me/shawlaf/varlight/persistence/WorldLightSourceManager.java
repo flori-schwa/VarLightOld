@@ -2,6 +2,7 @@ package me.shawlaf.varlight.persistence;
 
 import me.shawlaf.command.result.CommandResult;
 import me.shawlaf.varlight.VarLightPlugin;
+import me.shawlaf.varlight.nms.MaterialType;
 import me.shawlaf.varlight.persistence.migrate.LightDatabaseMigrator;
 import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
@@ -317,7 +318,7 @@ public class WorldLightSourceManager {
         synchronized (worldMap) {
             if (!worldMap.containsKey(regionCoords)) {
                 try {
-                    worldMap.put(regionCoords, new RegionPersistor<PersistentLightSource>(getVarLightSaveDirectory(world), regionCoords.x, regionCoords.z) {
+                    worldMap.put(regionCoords, new RegionPersistor<PersistentLightSource>(getVarLightSaveDirectory(world), regionCoords.x, regionCoords.z, plugin.shouldVLDBDeflate()) {
                         @NotNull
                         @Override
                         protected PersistentLightSource[] createArray(int size) {
@@ -327,7 +328,7 @@ public class WorldLightSourceManager {
                         @NotNull
                         @Override
                         protected PersistentLightSource createInstance(IntPosition position, int lightLevel, boolean migrated, String material) {
-                            return new PersistentLightSource(position, Material.valueOf(material), migrated, world, plugin, lightLevel);
+                            return new PersistentLightSource(position, plugin.getNmsAdapter().keyToType(material, MaterialType.BLOCK), migrated, world, plugin, lightLevel);
                         }
                     });
                 } catch (IOException e) {

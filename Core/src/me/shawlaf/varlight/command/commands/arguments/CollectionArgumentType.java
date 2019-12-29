@@ -43,7 +43,6 @@ public class CollectionArgumentType<T> implements ArgumentType<Collection<T>> {
         while (stringReader.canRead()) {
             stringReader.skipWhitespace();
             list.add(baseArgumentType.parse(stringReader));
-            stringReader.skipWhitespace();
         }
 
         return list;

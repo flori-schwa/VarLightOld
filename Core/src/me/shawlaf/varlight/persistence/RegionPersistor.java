@@ -24,7 +24,7 @@ public abstract class RegionPersistor<L extends ICustomLightSource> {
 //        count++;
 //    }
 
-    public RegionPersistor(@NotNull File vldbRoot, int regionX, int regionZ) throws IOException {
+    public RegionPersistor(@NotNull File vldbRoot, int regionX, int regionZ, boolean deflated) throws IOException {
         Objects.requireNonNull(vldbRoot);
 
         if (!vldbRoot.exists()) {
@@ -43,7 +43,7 @@ public abstract class RegionPersistor<L extends ICustomLightSource> {
         File vldbFile = new File(vldbRoot, String.format(VLDBFile.FILE_NAME_FORMAT, regionX, regionZ));
 
         if (!vldbFile.exists()) {
-            this.file = new VLDBFile<L>(vldbFile, regionX, regionZ) {
+            this.file = new VLDBFile<L>(vldbFile, regionX, regionZ, deflated) {
                 @NotNull
                 @Override
                 protected L[] createArray(int size) {
@@ -57,7 +57,7 @@ public abstract class RegionPersistor<L extends ICustomLightSource> {
                 }
             };
         } else {
-            this.file = new VLDBFile<L>(vldbFile) {
+            this.file = new VLDBFile<L>(vldbFile, deflated) {
                 @NotNull
                 @Override
                 protected L[] createArray(int size) {
