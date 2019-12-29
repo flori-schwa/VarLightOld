@@ -24,8 +24,8 @@
 
 item: "minecraft:glowstone_dust"
 autosave: 5
-autosave-logpersist: 'true'
+autosave-logpersist: true
 requiredPermission: ''
 whitelist: []
 blacklist: []
-vldb-deflated: 'true'
+vldb-deflated: true
