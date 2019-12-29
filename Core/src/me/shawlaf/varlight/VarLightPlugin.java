@@ -185,7 +185,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     public void loadLightUpdateItem() {
         this.lightUpdateItem = configuration.getLightUpdateItem();
-        getLogger().info(String.format("Using \"%s\" as the Light update item.", lightUpdateItem.name()));
+        getLogger().info(String.format("Using \"%s\" as the Light update item.", nmsAdapter.materialToKey(lightUpdateItem)));
     }
 
     public Material getLightUpdateItem() {
@@ -421,7 +421,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     }
 
     public void setUpdateItem(Material item) {
-        getConfig().set(VarLightConfiguration.CONFIG_KEY_VARLIGHT_ITEM, item.name());
+        getConfig().set(VarLightConfiguration.CONFIG_KEY_VARLIGHT_ITEM, nmsAdapter.materialToKey(item));
         saveConfig();
 
         loadLightUpdateItem();

@@ -1,5 +1,6 @@
 package me.shawlaf.varlight;
 
+import me.shawlaf.varlight.nms.MaterialType;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -36,18 +37,17 @@ public class VarLightConfiguration {
     }
 
     public Material getLightUpdateItem() {
-        Material material = Material.GLOWSTONE_DUST;
-        String configMaterial = plugin.getConfig().getString(CONFIG_KEY_VARLIGHT_ITEM, "GLOWSTONE_DUST").toUpperCase();
+        String configMaterial = plugin.getConfig().getString(CONFIG_KEY_VARLIGHT_ITEM, "minecraft:glowstone_dust").toLowerCase();
 
-        try {
-            material = Material.valueOf(configMaterial);
-        } catch (IllegalArgumentException e) {
-            plugin.getLogger().warning(String.format("Could not find a Material with the given name \"%s\", defaulting to \"%s\"", configMaterial, material.name()));
-            return material;
+        Material material = plugin.getNmsAdapter().keyToType(configMaterial, MaterialType.ITEM);
+
+        if (material == null) {
+            plugin.getLogger().warning(String.format("Could not find a Material with the given name \"%s\", defaulting to \"%s\"", configMaterial, plugin.getNmsAdapter().materialToKey(Material.GLOWSTONE_DUST)));
+            return Material.GLOWSTONE_DUST;
         }
 
         if (plugin.getNmsAdapter().isIllegalLightUpdateItem(material)) {
-            plugin.getLogger().warning(String.format("\"%s\" cannot be used as the Light update item. Defaulting to \"%s\"", material.name(), Material.GLOWSTONE_DUST.name()));
+            plugin.getLogger().warning(String.format("\"%s\" cannot be used as the Light update item. Defaulting to \"%s\"", plugin.getNmsAdapter().materialToKey(material), plugin.getNmsAdapter().materialToKey(Material.GLOWSTONE_DUST)));
 
             return Material.GLOWSTONE_DUST;
         }
