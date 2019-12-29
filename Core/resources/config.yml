@@ -22,7 +22,7 @@
 # -------------------------------------------------------------------------------------------
 
 
-item: "GLOWSTONE_DUST"
+item: "minecraft:glowstone_dust"
 autosave: 5
 autosave-logpersist: 'true'
 requiredPermission: ''
