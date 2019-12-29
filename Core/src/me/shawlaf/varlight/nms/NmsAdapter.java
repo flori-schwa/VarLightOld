@@ -8,6 +8,7 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 
@@ -19,7 +20,22 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public boolean isInvalidLightUpdateItem(Material material) {
+    public @Nullable Material keyToType(String namespacedKey, MaterialType type) {
+        throw new AbstractMethodError();
+    }
+
+    @Override
+    public String materialToKey(Material material) {
+        throw new AbstractMethodError();
+    }
+
+    @Override
+    public Collection<String> getTypes(MaterialType type) {
+        throw new AbstractMethodError();
+    }
+
+    @Override
+    public boolean isIllegalLightUpdateItem(Material material) {
         throw new AbstractMethodError();
     }
 
@@ -50,16 +66,6 @@ public class NmsAdapter implements INmsAdapter {
 
     @Override
     public void sendActionBarMessage(Player player, String message) {
-        throw new AbstractMethodError();
-    }
-
-    @Override
-    public Collection<String> getBlockTypes() {
-        throw new AbstractMethodError();
-    }
-
-    @Override
-    public Material blockTypeFromMinecraftKey(String key) {
         throw new AbstractMethodError();
     }
 

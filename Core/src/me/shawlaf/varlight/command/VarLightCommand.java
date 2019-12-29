@@ -26,24 +26,22 @@ public class VarLightCommand extends BrigadierCommand<CommandSender, VarLightPlu
     public static final int SUCCESS = 0;
     public static final int FAILURE = 1;
 
-    private static final Class[] SUB_COMMANDS;
+    private static final Class[] SUB_COMMANDS = new Class[]{
+            // Register sub commands here
+            VarLightCommandAutosave.class,
+            VarLightCommandDebug.class,
+            VarLightCommandFill.class,
+            VarLightCommandItem.class,
+            VarLightCommandMigrate.class,
+            VarLightCommandPermission.class,
+            VarLightCommandReload.class,
+            VarLightCommandSave.class,
+            VarLightCommandStepSize.class,
+            VarLightCommandUpdate.class,
 
-    static {
-        SUB_COMMANDS = new Class[]{
-                // Register sub commands here
-                VarLightCommandAutosave.class,
-                VarLightCommandDebug.class,
-                VarLightCommandMigrate.class,
-                VarLightCommandPermission.class,
-                VarLightCommandReload.class,
-                VarLightCommandSave.class,
-                VarLightCommandStepSize.class,
-                VarLightCommandUpdate.class,
-                VarLightCommandFill.class,
-                VarLightCommandWhitelist.class,
-                VarLightCommandBlacklist.class,
-        };
-    }
+            VarLightCommandWhitelist.class,
+            VarLightCommandBlacklist.class,
+    };
 
     private VarLightSubCommand[] subCommands; // Will be used by help command
     private int counter = 0;

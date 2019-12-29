@@ -8,6 +8,7 @@ import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import me.shawlaf.varlight.VarLightPlugin;
+import me.shawlaf.varlight.nms.MaterialType;
 import org.bukkit.Material;
 
 import java.util.concurrent.CompletableFuture;
@@ -15,13 +16,15 @@ import java.util.concurrent.CompletableFuture;
 public class MinecraftTypeArgumentType implements ArgumentType<Material> {
 
     private final VarLightPlugin plugin;
+    private final MaterialType type;
 
-    private MinecraftTypeArgumentType(VarLightPlugin plugin) {
+    private MinecraftTypeArgumentType(VarLightPlugin plugin, MaterialType type) {
         this.plugin = plugin;
+        this.type = type;
     }
 
-    public static MinecraftTypeArgumentType minecraftType(VarLightPlugin plugin) {
-        return new MinecraftTypeArgumentType(plugin);
+    public static MinecraftTypeArgumentType minecraftType(VarLightPlugin plugin, MaterialType type) {
+        return new MinecraftTypeArgumentType(plugin, type);
     }
 
     private boolean isLegalNamespaceChar(char c) {
@@ -43,7 +46,7 @@ public class MinecraftTypeArgumentType implements ArgumentType<Material> {
     private String readKey(StringReader reader) throws CommandSyntaxException {
         int start = reader.getCursor();
 
-        while (reader.canRead() && isLegalKeyChar(reader.peek())) {
+        while (reader.canRead() && (reader.peek() == ':' || isLegalKeyChar(reader.peek()))) {
             reader.skip();
         }
 
@@ -62,7 +65,7 @@ public class MinecraftTypeArgumentType implements ArgumentType<Material> {
 
             for (char c : namespace.toCharArray()) {
                 if (!isLegalNamespaceChar(c)) {
-                    throw new SimpleCommandExceptionType(() -> "Illegal character \"" + c + "\" is namespace!").create();
+                    throw new SimpleCommandExceptionType(() -> "Illegal character \"" + c + "\" in namespace!").create();
                 }
             }
         }
@@ -72,12 +75,12 @@ public class MinecraftTypeArgumentType implements ArgumentType<Material> {
 
     @Override
     public <S> Material parse(StringReader stringReader) throws CommandSyntaxException {
-        return plugin.getNmsAdapter().blockTypeFromMinecraftKey(readKey(stringReader));
+        return plugin.getNmsAdapter().keyToType(readKey(stringReader), type);
     }
 
     @Override
     public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> context, SuggestionsBuilder builder) {
-        plugin.getNmsAdapter().getBlockTypes().forEach(builder::suggest);
+        plugin.getNmsAdapter().getTypes(type).forEach(builder::suggest);
 
         return builder.buildFuture();
     }

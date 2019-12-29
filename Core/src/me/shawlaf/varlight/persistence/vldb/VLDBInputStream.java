@@ -2,19 +2,20 @@ package me.shawlaf.varlight.persistence.vldb;
 
 import me.shawlaf.varlight.persistence.ICustomLightSource;
 import me.shawlaf.varlight.util.ChunkCoords;
+import me.shawlaf.varlight.util.FileUtil;
 import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.Pair;
 
-import java.io.Closeable;
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.IntFunction;
+import java.util.zip.GZIPInputStream;
 
 public class VLDBInputStream implements Closeable {
+
+    public static int VLDB_MAGIC = 0x56_4C_44_42;
 
     protected final DataInputStream baseStream;
 
@@ -31,7 +32,32 @@ public class VLDBInputStream implements Closeable {
         this.baseStream.close();
     }
 
+    public static boolean verifyVLDB(File file) throws IOException {
+        VLDBInputStream in;
+        boolean isVLDB;
+
+        try (FileInputStream fis = new FileInputStream(file)) {
+            if (FileUtil.isDeflated(file)) {
+                in = new VLDBInputStream(new GZIPInputStream(fis));
+            } else {
+                in = new VLDBInputStream(fis);
+            }
+
+             isVLDB = in.readVLDBMagic();
+        }
+
+
+        in.close();
+
+        return isVLDB;
+    }
+
+    public boolean readVLDBMagic() throws IOException {
+        return readInt32() == VLDB_MAGIC;
+    }
+
     public <L extends ICustomLightSource> List<L> readAll(IntFunction<L[]> arrayCreator, ToLightSource<L> toLightSource) throws IOException {
+
         final int regionX = readInt32();
         final int regionZ = readInt32();
 

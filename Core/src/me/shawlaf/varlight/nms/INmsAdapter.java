@@ -39,7 +39,13 @@ public interface INmsAdapter {
 
     }
 
-    boolean isInvalidLightUpdateItem(Material material);
+    @Nullable Material keyToType(String namespacedKey, MaterialType type);
+
+    String materialToKey(Material material);
+
+    Collection<String> getTypes(MaterialType type);
+
+    boolean isIllegalLightUpdateItem(Material material);
 
     boolean isBlockTransparent(@NotNull Block block);
 
@@ -56,10 +62,6 @@ public interface INmsAdapter {
     boolean isIllegalBlock(@NotNull Block block);
 
     void sendActionBarMessage(Player player, String message);
-
-    Collection<String> getBlockTypes();
-
-    Material blockTypeFromMinecraftKey(String key);
 
     ItemStack getVarLightDebugStick();
 
@@ -128,5 +130,27 @@ public interface INmsAdapter {
             }
         }
         return chunksToUpdate;
+    }
+
+    default boolean areKeysEqual(String keyA, String keyB) {
+        String aNs = "minecraft", aK, bNs = "minecraft", bK;
+
+        int i;
+
+        if ((i = keyA.indexOf(':')) > 0) { // Key is namespaced
+            aNs = keyA.substring(0, i);
+            aK = keyA.substring(i + 1);
+        } else {
+            aK = keyA;
+        }
+
+        if ((i = keyB.indexOf(':')) > 0) { // Key is namespaced
+            bNs = keyB.substring(0, i);
+            bK = keyB.substring(i + 1);
+        } else {
+            bK = keyB;
+        }
+
+        return aNs.equals(bNs) && aK.equals(bK);
     }
 }

@@ -2,6 +2,7 @@ package me.shawlaf.varlight.persistence.vldb;
 
 import me.shawlaf.varlight.persistence.ICustomLightSource;
 import me.shawlaf.varlight.util.ChunkCoords;
+import me.shawlaf.varlight.util.FileUtil;
 import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -22,17 +23,19 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
 //    private static int count;
 //    private static List<VLDBFile<?>> instances = new ArrayList<>();
 
-    public static String FILE_NAME_FORMAT = "r.%d.%d.vldb";
+    public static String FILE_NAME_FORMAT = "r.%d.%d.vldb2";
     public final File file;
     private final Object lock = new Object();
     private final int regionX, regionZ;
+    private final boolean deflate;
     public byte[] fileContents;
     private Map<ChunkCoords, Integer> offsetTable;
 
     private boolean modified = false;
 
-    public VLDBFile(@NotNull File file, int regionX, int regionZ) throws IOException {
+    public VLDBFile(@NotNull File file, int regionX, int regionZ, boolean deflate) throws IOException {
         this.file = requireNonNull(file);
+        this.deflate = deflate;
 
         synchronized (lock) {
             this.regionX = regionX;
@@ -51,8 +54,9 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
         }
     }
 
-    public VLDBFile(@NotNull File file) throws IOException {
+    public VLDBFile(@NotNull File file, boolean deflate) throws IOException {
         this.file = requireNonNull(file);
+        this.deflate = deflate;
 
         synchronized (lock) {
             readFileFully();
@@ -357,16 +361,19 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
                 return false;
             }
 
-            try (FileOutputStream fos = new FileOutputStream(file)) {
-                GZIPOutputStream gzipOut = new GZIPOutputStream(fos);
-                VLDBOutputStream out = new VLDBOutputStream(gzipOut);
+            if (deflate) {
+                try (FileOutputStream fos = new FileOutputStream(file)) {
+                    GZIPOutputStream gzipOut = new GZIPOutputStream(fos);
 
-                out.write(fileContents);
+                    gzipOut.write(fileContents, 0, fileContents.length);
 
-                out.flush();
-                gzipOut.flush();
-
-                gzipOut.close();
+                    gzipOut.flush();
+                    gzipOut.close();
+                }
+            } else {
+                try (FileOutputStream fos = new FileOutputStream(file)) {
+                    fos.write(fileContents);
+                }
             }
 
             modified = false;
@@ -375,13 +382,25 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
     }
 
     @NotNull
-    private VLDBInputStream in(int offset) {
-        return new VLDBInputStream(new ByteArrayInputStream(fileContents, offset, fileContents.length - offset));
+    private VLDBInputStream in(int offset) throws IOException {
+        VLDBInputStream in = new VLDBInputStream(new ByteArrayInputStream(fileContents, offset, fileContents.length - offset));
+
+        if (offset == 0 && !in.readVLDBMagic()) {
+            throw new IOException("Couldn't identify VLDB Magic");
+        }
+
+        return in;
     }
 
     @NotNull
-    private VLDBInputStream in() {
-        return new VLDBInputStream(new ByteArrayInputStream(fileContents));
+    private VLDBInputStream in() throws IOException {
+        VLDBInputStream in = new VLDBInputStream(new ByteArrayInputStream(fileContents));
+
+        if (!in.readVLDBMagic()) {
+            throw new IOException("Couldn't identify VLDB Magic");
+        }
+
+        return in;
     }
 
     @NotNull
@@ -403,18 +422,25 @@ public abstract class VLDBFile<L extends ICustomLightSource> {
 
     private void readFileFully() throws IOException {
         synchronized (lock) {
-            GZIPInputStream in = new GZIPInputStream(new FileInputStream(file));
-            ByteArrayOutputStream out = new ByteArrayOutputStream(Math.toIntExact(file.length()));
+            InputStream in;
+            ByteArrayOutputStream baos;
+
+            if (FileUtil.isDeflated(file)) {
+                in = new GZIPInputStream(new FileInputStream(file));
+                baos = new ByteArrayOutputStream();
+            } else {
+                in = new FileInputStream(file);
+                baos = new ByteArrayOutputStream(Math.toIntExact(file.length()));
+            }
 
             byte[] buffer = new byte[1024];
             int read;
 
             while ((read = in.read(buffer, 0, buffer.length)) > 0) {
-                out.write(buffer, 0, read);
+                baos.write(buffer, 0, read);
             }
 
-            this.fileContents = out.toByteArray();
-
+            this.fileContents = baos.toByteArray();
             in.close();
         }
     }

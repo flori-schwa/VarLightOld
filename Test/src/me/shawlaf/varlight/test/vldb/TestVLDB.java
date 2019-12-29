@@ -101,6 +101,8 @@ public class TestVLDB {
                         zipped ? new GZIPInputStream(new ByteArrayInputStream(buffer)) : new ByteArrayInputStream(buffer)
                 );
 
+                assertTrue(in.readVLDBMagic());
+
                 List<BasicCustomLightSource> read = in.readAll(BasicCustomLightSource[]::new,
                         BasicCustomLightSource::new);
 
@@ -171,6 +173,9 @@ public class TestVLDB {
         }
 
         try (VLDBInputStream in = new VLDBInputStream(new ByteArrayInputStream(buffer))) {
+
+            assertTrue(in.readVLDBMagic());
+
             int regionX = in.readInt32();
             int regionZ = in.readInt32();
 
@@ -179,8 +184,8 @@ public class TestVLDB {
 
             Map<ChunkCoords, Integer> header = in.readHeader(regionX, regionZ);
 
-            assertEquals(22, header.get(new ChunkCoords(0, 0)));
-            assertEquals(22 + (2 + 3 + 10), header.get(new ChunkCoords(0, 1)));
+            assertEquals(26, header.get(new ChunkCoords(0, 0)));
+            assertEquals(26 + (2 + 3 + 10), header.get(new ChunkCoords(0, 1)));
 
         } catch (IOException e) {
             fail("Something went wrong", e);
@@ -200,6 +205,8 @@ public class TestVLDB {
         }
 
         try (VLDBInputStream in = new VLDBInputStream(new GZIPInputStream(new ByteArrayInputStream(buffer)))) {
+            assertTrue(in.readVLDBMagic());
+
             int regionX = in.readInt32();
             int regionZ = in.readInt32();
 
@@ -208,8 +215,8 @@ public class TestVLDB {
 
             Map<ChunkCoords, Integer> header = in.readHeader(regionX, regionZ);
 
-            assertEquals(22, header.get(new ChunkCoords(0, 0)));
-            assertEquals(22 + (2 + 3 + 10), header.get(new ChunkCoords(0, 1)));
+            assertEquals(26, header.get(new ChunkCoords(0, 0)));
+            assertEquals(26 + (2 + 3 + 10), header.get(new ChunkCoords(0, 1)));
 
         } catch (IOException e) {
             fail("Something went wrong", e);
@@ -252,7 +259,7 @@ public class TestVLDB {
                 out.write(testData);
             }
 
-            VLDBFile<BasicCustomLightSource> vldbFile = new VLDBFile<BasicCustomLightSource>(file) {
+            VLDBFile<BasicCustomLightSource> vldbFile = new VLDBFile<BasicCustomLightSource>(file, true) {
                 @Override
                 protected BasicCustomLightSource[] createArray(int size) {
                     return new BasicCustomLightSource[size];

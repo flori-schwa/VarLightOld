@@ -19,9 +19,15 @@ public class LightDatabaseMigrator {
     private static final List<Predicate<World>> STRUCTURE_MIGRATIONS = new ArrayList<>();
 
     static {
-        DATA_MIGRATIONS.add(new JsonToVLDBMigration());
+        addStructureMigration(new MoveVarlightRootFolder());
+    }
 
-        STRUCTURE_MIGRATIONS.add(new MoveVarlightRootFolder());
+    public static void addDataMigration(Predicate<File> migration) {
+        DATA_MIGRATIONS.add(migration);
+    }
+
+    public static void addStructureMigration(Predicate<World> migration) {
+        STRUCTURE_MIGRATIONS.add(migration);
     }
 
     @NotNull

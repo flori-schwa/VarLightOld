@@ -61,6 +61,8 @@ public class TestRegionPersistor {
                 try (FileInputStream fis = new FileInputStream(saveFile)) {
                     VLDBInputStream vis = new VLDBInputStream(new GZIPInputStream(fis));
 
+                    vis.readVLDBMagic();
+
                     assertEquals(rx, vis.readInt32());
                     assertEquals(rz, vis.readInt32());
                     assertEquals(0, vis.readInt16());
@@ -141,7 +143,7 @@ public class TestRegionPersistor {
 
     private static class RegionPersistorBasic extends RegionPersistor<BasicCustomLightSource> {
         public RegionPersistorBasic(@NotNull File vldbRoot, int regionX, int regionZ) throws IOException {
-            super(vldbRoot, regionX, regionZ);
+            super(vldbRoot, regionX, regionZ, true);
         }
 
         @Override

@@ -15,6 +15,7 @@ public class VarLightConfiguration {
     public static final String CONFIG_KEY_REQUIRED_PERMISSION = "requiredPermission";
     public static final String REQUIRED_PERMISSION_DEFAULT = "";
     public static final String CONFIG_KEY_AUTOSAVE = "autosave";
+    public static final String CONFIG_KEY_VLDB_DEFLATED = "vldb-deflated";
     public static final int AUTOSAVE_DEFAULT = 5;
     private final VarLightPlugin plugin;
 
@@ -36,7 +37,7 @@ public class VarLightConfiguration {
 
     public Material getLightUpdateItem() {
         Material material = Material.GLOWSTONE_DUST;
-        String configMaterial = plugin.getConfig().getString("item", "GLOWSTONE_DUST").toUpperCase();
+        String configMaterial = plugin.getConfig().getString(CONFIG_KEY_VARLIGHT_ITEM, "GLOWSTONE_DUST").toUpperCase();
 
         try {
             material = Material.valueOf(configMaterial);
@@ -45,7 +46,7 @@ public class VarLightConfiguration {
             return material;
         }
 
-        if (plugin.getNmsAdapter().isInvalidLightUpdateItem(material)) {
+        if (plugin.getNmsAdapter().isIllegalLightUpdateItem(material)) {
             plugin.getLogger().warning(String.format("\"%s\" cannot be used as the Light update item. Defaulting to \"%s\"", material.name(), Material.GLOWSTONE_DUST.name()));
 
             return Material.GLOWSTONE_DUST;

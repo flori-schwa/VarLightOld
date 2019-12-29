@@ -24,6 +24,7 @@ import org.bukkit.material.MaterialData;
 import org.bukkit.material.PistonBaseMaterial;
 import org.bukkit.material.Redstone;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -97,7 +98,62 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public boolean isInvalidLightUpdateItem(Material material) {
+    @Nullable
+    public Material keyToType(String namespacedKey, MaterialType type) {
+        MinecraftKey key = new MinecraftKey(namespacedKey);
+
+        switch (type) {
+            case ITEM: {
+                Item nmsItem = Item.REGISTRY.get(key);
+                return nmsItem == null ? null : CraftMagicNumbers.getMaterial(nmsItem);
+            }
+
+            case BLOCK: {
+                net.minecraft.server.v1_8_R3.Block nmsBlock = net.minecraft.server.v1_8_R3.Block.REGISTRY.get(key);
+
+                return nmsBlock == null ? null : CraftMagicNumbers.getMaterial(nmsBlock);
+            }
+        }
+
+        return null;
+    }
+
+    @Override
+    public String materialToKey(Material material) {
+        return material.isBlock() ?
+                net.minecraft.server.v1_8_R3.Block.REGISTRY.c(CraftMagicNumbers.getBlock(material)).toString() :
+                Item.REGISTRY.c(CraftMagicNumbers.getItem(material)).toString();
+    }
+
+    @Override
+    public Collection<String> getTypes(MaterialType type) {
+        List<String> types = new ArrayList<>();
+
+        switch (type) {
+            case ITEM: {
+                for (MinecraftKey key : Item.REGISTRY.keySet()) {
+                    types.add(key.toString());
+                    types.add(key.a());
+                }
+
+                return types;
+            }
+
+            case BLOCK: {
+                for (MinecraftKey key : net.minecraft.server.v1_8_R3.Block.REGISTRY.keySet()) {
+                    types.add(key.toString());
+                    types.add(key.a());
+                }
+
+                return types;
+            }
+        }
+
+        return types;
+    }
+
+    @Override
+    public boolean isIllegalLightUpdateItem(Material material) {
         return material.isBlock();
     }
 
@@ -192,23 +248,6 @@ public class NmsAdapter implements INmsAdapter {
         packetPlayOutChat.components = new BaseComponent[]{textComponent};
 
         ((CraftPlayer) player).getHandle().playerConnection.sendPacket(packetPlayOutChat);
-    }
-
-    @Override
-    public Collection<String> getBlockTypes() {
-        Set<String> keys = new HashSet<>();
-
-        for (MinecraftKey key : net.minecraft.server.v1_8_R3.Block.REGISTRY.keySet()) {
-            keys.add(key.toString());
-            keys.add(key.a());
-        }
-
-        return keys;
-    }
-
-    @Override
-    public Material blockTypeFromMinecraftKey(String key) {
-        return CraftMagicNumbers.getMaterial(net.minecraft.server.v1_8_R3.Block.REGISTRY.get(new MinecraftKey(key)));
     }
 
     @Override

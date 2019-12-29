@@ -50,8 +50,8 @@ public class PersistentLightSource implements ICustomLightSource {
     }
 
     @Override
-    public Material getType() {
-        return type;
+    public String getType() {
+        return plugin.getNmsAdapter().materialToKey(type);
     }
 
     @Override
