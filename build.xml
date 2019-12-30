@@ -39,8 +39,8 @@
 
     <property name="lib-dir" location="lib"/>
 
-    <property name="javac-debug" value="off"/>
-    <property name="javac-debug-level" value="none"/>
+    <property name="javac-debug" value="true"/>
+    <property name="javac-debug-level" value="source,vars,lines"/>
     <property name="javac-src-lvl" value="8"/>
     <property name="javac-target-lvl" value="8"/>
 
