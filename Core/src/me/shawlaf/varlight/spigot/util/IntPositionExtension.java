@@ -8,19 +8,19 @@ import org.bukkit.block.Block;
 
 @UtilityClass
 public class IntPositionExtension {
-    public IntPosition toIntPosition(Location location) {
+    public static IntPosition toIntPosition(Location location) {
         return new IntPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
     }
 
-    public IntPosition toIntPosition(Block block) {
+    public static IntPosition toIntPosition(Block block) {
         return new IntPosition(block.getX(), block.getY(), block.getZ());
     }
 
-    public Location toLocation(IntPosition position, World world) {
+    public static Location toLocation(IntPosition position, World world) {
         return new Location(world, position.x, position.y, position.z);
     }
 
-    public Block toBlock(IntPosition position, World world) {
+    public static Block toBlock(IntPosition position, World world) {
         return world.getBlockAt(position.x, position.y, position.z);
     }
 }

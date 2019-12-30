@@ -18,9 +18,9 @@ import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition
 @UtilityClass
 public class LightSourceUtil {
 
-    public final NumericMajorMinorVersion MC1_14 = new NumericMajorMinorVersion("1.14");
+    public static final NumericMajorMinorVersion MC1_14 = new NumericMajorMinorVersion("1.14");
 
-    private final BlockFace[] CHECK_ADJACENT = new BlockFace[]{
+    private static final BlockFace[] CHECK_ADJACENT = new BlockFace[]{
             BlockFace.UP,
             BlockFace.DOWN,
             BlockFace.NORTH,
@@ -29,7 +29,7 @@ public class LightSourceUtil {
             BlockFace.WEST
     };
 
-    public LightUpdateResult placeNewLightSource(VarLightPlugin plugin, Location location, int lightLevel) {
+    public static LightUpdateResult placeNewLightSource(VarLightPlugin plugin, Location location, int lightLevel) {
         if (!canNewLightSourceBePlaced(plugin, location)) {
             return adjacentLightSource(plugin);
         }
@@ -67,7 +67,7 @@ public class LightSourceUtil {
         return updated(plugin, lightTo);
     }
 
-    public boolean canNewLightSourceBePlaced(VarLightPlugin plugin, Location location) {
+    public static boolean canNewLightSourceBePlaced(VarLightPlugin plugin, Location location) {
         WorldLightSourceManager manager = plugin.getManager(location.getWorld());
 
         if (manager == null) {
