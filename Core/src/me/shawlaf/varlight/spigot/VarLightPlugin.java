@@ -368,7 +368,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockExplode(BlockExplodeEvent e) {
-        System.out.println("test");
         handleAreaAffected(e.blockList().get(0).getWorld(), e.blockList());
     }
 
