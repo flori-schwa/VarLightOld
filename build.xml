@@ -48,7 +48,8 @@
     <property name="lib-annotations" value="annotations-17.0.01.jar"/>
     <property name="lib-command-api" value="SpigotCommandApi-1.7.jar"/>
     <property name="lib-brigadier" value="brigadier.jar"/>
-
+    <property name="lib-lombok" value="lombok-1.18.10.jar"/>
+    <property name="lib-varlight-core" value="VarLightCore.jar"/>
 
     <target name="clean">
         <delete dir="${build}"/>
@@ -116,10 +117,12 @@
                     <include name="**/${lib-light-api}"/>
                     <include name="**/${lib-annotations}"/>
                     <include name="**/${lib-command-api}"/>
+                    <include name="**/${lib-lombok}"/>
+                    <include name="**/${lib-varlight-core}"/>
                 </fileset>
             </classpath>
         </javac>
-        <delete file="${core-build}/me/shawlaf/varlight/nms/NmsAdapter.class"/>
+        <delete file="${core-build}/me/shawlaf/varlight/spigot/nms/NmsAdapter.class"/>
     </target>
 
     <target name="master" depends="build-core">
@@ -155,6 +158,8 @@
 
                         <fileset dir="${lib-dir}">
                             <include name="**/${lib-annotations}"/>
+                            <include name="**/${lib-lombok}"/>
+                            <include name="**/${lib-varlight-core}"/>
                             <libraries/>
                         </fileset>
                     </classpath>
@@ -164,6 +169,7 @@
                     <zipgroupfileset dir="${lib-dir}">
                         <include name="${lib-annotations}"/>
                         <include name="${lib-command-api}"/>
+                        <include name="**/${lib-varlight-core}"/>
                     </zipgroupfileset>
 
                     <shaded/>

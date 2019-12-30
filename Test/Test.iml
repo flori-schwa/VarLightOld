@@ -29,5 +29,6 @@
       </library>
     </orderEntry>
     <orderEntry type="library" name="org.mockito:mockito-core:2.1.0" level="project" />
+    <orderEntry type="library" name="VarLightCore" level="project" />
   </component>
 </module>

@@ -1,7 +1,7 @@
 name: VarLight
 version: "plugin.version"
 author: shawlaf
-main: me.shawlaf.varlight.VarLightPlugin
+main: me.shawlaf.varlight.spigot.VarLightPlugin
 description: Turn Normal Blocks into Light Sources!
 api-version: "api.version"
 

@@ -1,10 +1,10 @@
 package me.shawlaf.varlight.test.vldb;
 
 import com.google.gson.Gson;
-import me.shawlaf.varlight.VarLightPlugin;
-import me.shawlaf.varlight.nms.INmsAdapter;
+import me.shawlaf.varlight.spigot.VarLightPlugin;
+import me.shawlaf.varlight.spigot.nms.INmsAdapter;
 import me.shawlaf.varlight.persistence.BasicCustomLightSource;
-import me.shawlaf.varlight.persistence.migrate.data.JsonToVLDBMigration;
+import me.shawlaf.varlight.spigot.persistence.migrate.data.JsonToVLDBMigration;
 import me.shawlaf.varlight.persistence.vldb.VLDBFile;
 import me.shawlaf.varlight.util.IntPosition;
 import org.bukkit.Material;
@@ -12,7 +12,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 
 import java.io.File;
 import java.io.FileWriter;
