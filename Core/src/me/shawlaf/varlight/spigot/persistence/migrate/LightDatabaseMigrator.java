@@ -44,10 +44,17 @@ public class LightDatabaseMigrator {
             or = false;
 
             for (Predicate<World> migration : STRUCTURE_MIGRATIONS) {
-                if (migration.test(world)) {
-                    logger.info(String.format("[%s] Migrated World \"%s\"", migration.getClass().getSimpleName(), world.getName()));
+                try {
+                    if (migration.test(world)) {
+                        logger.info(String.format("[%s] Migrated World \"%s\"", migration.getClass().getSimpleName(), world.getName()));
 
-                    or = true;
+                        or = true;
+                    }
+                } catch (Exception e) {
+                    throw new MigrationFailedException(
+                            String.format("Failed to Migrate World \"%s\": %s",
+                                    world.getName(), e.getMessage()), e
+                    );
                 }
             }
         } while (or);
@@ -66,10 +73,17 @@ public class LightDatabaseMigrator {
 
             for (File file : files) {
                 for (Predicate<File> migration : DATA_MIGRATIONS) {
-                    if (migration.test(file)) {
-                        logger.info(String.format("[%s] Migrated File \"%s\"", migration.getClass().getSimpleName(), file.getAbsolutePath()));
+                    try {
+                        if (migration.test(file)) {
+                            logger.info(String.format("[%s] Migrated File \"%s\"", migration.getClass().getSimpleName(), file.getAbsolutePath()));
 
-                        or = true;
+                            or = true;
+                        }
+                    } catch (Exception e) {
+                        throw new MigrationFailedException(
+                                String.format("Failed to migrate file \"%s\" in world \"%s\": %s",
+                                        file.getName(), world.getName(), e.getMessage()), e
+                        );
                     }
                 }
             }
