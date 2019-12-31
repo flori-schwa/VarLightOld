@@ -90,14 +90,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-        LightDatabaseMigrator.addDataMigration(new JsonToVLDBMigration(this));
-        LightDatabaseMigrator.addDataMigration(new VLDBMigration(this));
-
-        this.shouldVLDBDeflate = getConfig().getBoolean(VarLightConfiguration.CONFIG_KEY_VLDB_DEFLATED, true);
-
-        configuration = new VarLightConfiguration(this);
-        configuration.getVarLightEnabledWorlds().forEach(this::enableInWorld);
-
         try {
             nmsAdapter.onEnable();
         } catch (VarLightInitializationException e) {
@@ -106,6 +98,14 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
             throw e;
         }
+
+        LightDatabaseMigrator.addDataMigration(new JsonToVLDBMigration(this));
+        LightDatabaseMigrator.addDataMigration(new VLDBMigration(this));
+
+        this.shouldVLDBDeflate = getConfig().getBoolean(VarLightConfiguration.CONFIG_KEY_VLDB_DEFLATED, true);
+
+        configuration = new VarLightConfiguration(this);
+        configuration.getVarLightEnabledWorlds().forEach(this::enableInWorld);
 
         loadLightUpdateItem();
         initAutosave();
