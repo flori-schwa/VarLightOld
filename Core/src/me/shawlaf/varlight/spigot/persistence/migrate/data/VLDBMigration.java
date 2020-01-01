@@ -1,18 +1,17 @@
 package me.shawlaf.varlight.spigot.persistence.migrate.data;
 
-import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.persistence.BasicCustomLightSource;
 import me.shawlaf.varlight.persistence.vldb.VLDBInputStream;
 import me.shawlaf.varlight.persistence.vldb.VLDBOutputStream;
+import me.shawlaf.varlight.spigot.VarLightPlugin;
+import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.FileUtil;
 import org.bukkit.Material;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -32,19 +31,14 @@ public class VLDBMigration implements Predicate<File> {
         }
 
         try (FileInputStream fis = new FileInputStream(file)) {
-            VLDBInputStream in;
-
             if (VLDBInputStream.verifyVLDB(file)) {
                 fis.close();
 
                 return false;
             }
 
-            if (FileUtil.isDeflated(file)) {
-                in = new VLDBInputStream(new GZIPInputStream(fis));
-            } else {
-                in = new VLDBInputStream(fis); // this will probably never be the case, though
-            }
+            byte[] fileContent = FileUtil.readFileFullyInflate(file);
+            VLDBInputStream in = new VLDBInputStream(new ByteArrayInputStream(fileContent));
 
             List<BasicCustomLightSource> old = in.readAll(BasicCustomLightSource[]::new, BasicCustomLightSource::new);
 
