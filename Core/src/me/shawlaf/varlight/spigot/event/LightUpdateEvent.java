@@ -1,8 +1,6 @@
 package me.shawlaf.varlight.spigot.event;
 
 import me.shawlaf.varlight.spigot.VarLightPlugin;
-import me.shawlaf.varlight.spigot.util.IntPositionExtension;
-import me.shawlaf.varlight.util.IntPosition;
 import org.bukkit.block.Block;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;

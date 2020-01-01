@@ -1,7 +1,6 @@
 package me.shawlaf.varlight.spigot.nms;
 
 import me.shawlaf.varlight.spigot.VarLightPlugin;
-import me.shawlaf.varlight.spigot.util.IntPositionExtension;
 import me.shawlaf.varlight.util.IntPosition;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;

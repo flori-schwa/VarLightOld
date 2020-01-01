@@ -4,16 +4,13 @@ import me.shawlaf.varlight.persistence.BasicCustomLightSource;
 import me.shawlaf.varlight.persistence.vldb.VLDBInputStream;
 import me.shawlaf.varlight.persistence.vldb.VLDBOutputStream;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
-import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.FileUtil;
 import org.bukkit.Material;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Predicate;
-import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 public class VLDBMigration implements Predicate<File> {

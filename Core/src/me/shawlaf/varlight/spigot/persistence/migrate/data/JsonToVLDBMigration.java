@@ -1,9 +1,9 @@
 package me.shawlaf.varlight.spigot.persistence.migrate.data;
 
 import com.google.gson.Gson;
-import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.persistence.BasicCustomLightSource;
 import me.shawlaf.varlight.persistence.vldb.VLDBOutputStream;
+import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.util.FileUtil;
 import org.bukkit.Material;
 

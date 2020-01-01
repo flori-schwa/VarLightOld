@@ -1,14 +1,14 @@
 package me.shawlaf.varlight.spigot;
 
+import me.shawlaf.varlight.spigot.command.VarLightCommand;
+import me.shawlaf.varlight.spigot.nms.*;
 import me.shawlaf.varlight.spigot.persistence.PersistentLightSource;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.spigot.persistence.migrate.LightDatabaseMigrator;
 import me.shawlaf.varlight.spigot.persistence.migrate.data.JsonToVLDBMigration;
 import me.shawlaf.varlight.spigot.persistence.migrate.data.VLDBMigration;
-import me.shawlaf.varlight.spigot.command.VarLightCommand;
-import me.shawlaf.varlight.spigot.nms.*;
-import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.spigot.util.LightSourceUtil;
+import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.NumericMajorMinorVersion;
 import org.bukkit.*;
 import org.bukkit.block.Block;

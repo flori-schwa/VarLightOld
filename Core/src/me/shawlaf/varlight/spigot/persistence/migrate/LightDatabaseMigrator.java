@@ -21,20 +21,20 @@ public class LightDatabaseMigrator {
         addStructureMigration(new MoveVarlightRootFolder());
     }
 
-    public static void addDataMigration(Predicate<File> migration) {
-        DATA_MIGRATIONS.add(migration);
-    }
-
-    public static void addStructureMigration(Predicate<World> migration) {
-        STRUCTURE_MIGRATIONS.add(migration);
-    }
-
     @NotNull
     private final World world;
 
     public LightDatabaseMigrator(@NotNull World world) {
         Objects.requireNonNull(world, "World may not be null!");
         this.world = world;
+    }
+
+    public static void addDataMigration(Predicate<File> migration) {
+        DATA_MIGRATIONS.add(migration);
+    }
+
+    public static void addStructureMigration(Predicate<World> migration) {
+        STRUCTURE_MIGRATIONS.add(migration);
     }
 
     public void runMigrations(Logger logger) {

@@ -1,6 +1,5 @@
 package me.shawlaf.varlight.spigot.nms;
 
-import me.shawlaf.varlight.spigot.util.IntPositionExtension;
 import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.NumericMajorMinorVersion;
 import org.bukkit.Chunk;

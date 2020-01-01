@@ -1,11 +1,11 @@
 package me.shawlaf.varlight.spigot.util;
 
 import lombok.experimental.UtilityClass;
-import me.shawlaf.varlight.spigot.persistence.PersistentLightSource;
-import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.spigot.LightUpdateResult;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.event.LightUpdateEvent;
+import me.shawlaf.varlight.spigot.persistence.PersistentLightSource;
+import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.util.NumericMajorMinorVersion;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;

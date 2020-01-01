@@ -2,7 +2,6 @@ package me.shawlaf.varlight.spigot.persistence;
 
 import me.shawlaf.varlight.persistence.ICustomLightSource;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
-import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.util.IntPosition;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
