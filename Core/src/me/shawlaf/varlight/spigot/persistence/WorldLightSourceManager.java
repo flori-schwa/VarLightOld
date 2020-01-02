@@ -7,6 +7,7 @@ import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.nms.MaterialType;
 import me.shawlaf.varlight.spigot.persistence.migrate.LightDatabaseMigrator;
 import me.shawlaf.varlight.util.ChunkCoords;
+import me.shawlaf.varlight.util.FileUtil;
 import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.RegionCoords;
 import org.bukkit.*;
@@ -113,43 +114,9 @@ public class WorldLightSourceManager {
         setCustomLuminance(toIntPosition(location), lightLevel);
     }
 
-//    @NotNull
-//    private PersistentLightSource getOrCreatePersistentLightSource(IntPosition position) {
-//        PersistentLightSource persistentLightSource = getPersistentLightSource(position);
-//
-//        if (persistentLightSource == null) {
-//            persistentLightSource = createPersistentLightSource(position, 0);
-//        }
-//
-//        return persistentLightSource;
-//    }
-
     public void setCustomLuminance(IntPosition position, int lightLevel) {
-//        if (lightLevel == 0) {
-//            removeCustomLightSource(position);
-//            return;
-//        }
-
         createPersistentLightSource(position, lightLevel);
-//        getOrCreatePersistentLightSource(position).setEmittingLight(lightLevel);
     }
-
-//    public void removeCustomLightSource(IntPosition position) {
-//        try {
-//            getRegionPersistor(position.toRegionCoords()).removeLightSource(position);
-//        } catch (IOException e) {
-//            throw new LightPersistFailedException(e);
-//        }
-//    }
-
-    //    public void loadChunk(Chunk chunk) {
-//        try {
-//            getRegionPersistor(new RegionCoords(chunk.getX() >> 5, chunk.getZ() >> 5)).loadChunk(new ChunkCoords(chunk.getX(), chunk.getZ()));
-//        } catch (IOException e) {
-//            throw new LightPersistFailedException(e);
-//        }
-//    }
-//
     public void unloadChunk(Chunk chunk) {
         try {
             getRegionPersistor(new RegionCoords(chunk.getX() >> 5, chunk.getZ() >> 5)).unloadChunk(new ChunkCoords(chunk.getX(), chunk.getZ()));
@@ -177,15 +144,7 @@ public class WorldLightSourceManager {
         }
 
         for (File regionFile : files) {
-            try {
-                String name = regionFile.getName().substring(2, regionFile.getName().length() - ".json".length());
-                String[] coords = name.split("\\.");
-
-                RegionCoords regionCoords = new RegionCoords(Integer.parseInt(coords[0]), Integer.parseInt(coords[1]));
-                getRegionPersistor(regionCoords);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            getRegionPersistor(FileUtil.parseRegionCoordsFromFileName(regionFile.getName()));
         }
 
         synchronized (worldMap) {
