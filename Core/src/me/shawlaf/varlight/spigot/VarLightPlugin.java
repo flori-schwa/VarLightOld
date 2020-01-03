@@ -28,7 +28,6 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
@@ -40,11 +39,15 @@ import java.util.concurrent.TimeUnit;
 import static me.shawlaf.command.result.CommandResult.failure;
 import static me.shawlaf.command.result.CommandResult.info;
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
+import static me.shawlaf.varlight.spigot.util.LightSourceUtil.canNewLightSourceBePlaced;
+import static me.shawlaf.varlight.spigot.util.LightSourceUtil.placeNewLightSource;
 
 public class VarLightPlugin extends JavaPlugin implements Listener {
 
     public static final NumericMajorMinorVersion
             MC1_14_2 = new NumericMajorMinorVersion("1.14.2");
+    public static final NumericMajorMinorVersion MC1_9 = new NumericMajorMinorVersion("1.9");
+    public static final NumericMajorMinorVersion MC1_12 = new NumericMajorMinorVersion("1.12");
     public static final long TICK_RATE = 20L;
 
     private final Map<UUID, Integer> stepSizes = new HashMap<>();
@@ -358,7 +361,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         }
 
         if (hasValidStepsizeGamemode(player)) {
-            mod = stepSizes.getOrDefault(player.getUniqueId(), 1);
+            mod *= stepSizes.getOrDefault(player.getUniqueId(), 1);
         }
 
         final boolean creative = player.getGameMode() == GameMode.CREATIVE;
@@ -369,7 +372,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             }
         }
 
-        LightUpdateResult result = LightSourceUtil.placeNewLightSource(this, clickedBlock.getLocation(),
+        LightUpdateResult result = placeNewLightSource(this, clickedBlock.getLocation(),
                 manager.getCustomLuminance(toIntPosition(clickedBlock), 0) + mod);
 
         if (result.successful()) {
@@ -394,83 +397,129 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent e) {
-        WorldLightSourceManager manager = getManager(e.getBlock().getWorld());
+        if (!configuration.hasReclaim()) {
+            handleBlockAffected(e.getBlock());
+            return;
+        }
+
+        Block theBlock = e.getBlock();
+        World world = theBlock.getWorld();
+
+        WorldLightSourceManager manager = getManager(world);
 
         if (manager == null) {
             return;
         }
 
-        int emittingLight = manager.getCustomLuminance(toIntPosition(e.getBlock()), -1);
+        int emittingLight = manager.getCustomLuminance(toIntPosition(theBlock), -1);
 
         if (emittingLight <= 0) {
             return;
         }
 
-        handleBlockAffected(e.getBlock());
+        handleBlockAffected(theBlock);
 
         if (e.getPlayer().getGameMode() == GameMode.CREATIVE) {
             return;
         }
 
-        ItemStack heldItem = e.getPlayer().getInventory().getItemInMainHand(); // You cannot break blocks with items in off hand
+        ItemStack heldItem;
 
-        if (!nmsAdapter.isCorrectTool(e.getBlock().getType(), heldItem.getType())) {
+        if (nmsAdapter.getMinecraftVersion().newerOrEquals(MC1_9)) {
+            heldItem = e.getPlayer().getInventory().getItemInMainHand(); // You cannot break blocks with items in off hand
+        } else {
+            heldItem = e.getPlayer().getInventory().getItemInHand();
+        }
+
+        if (!nmsAdapter.isCorrectTool(theBlock.getType(), heldItem.getType())) {
             return;
         }
 
         // Player is using correct tool
-
-        double modX = e.getBlock().getX() < 0 ? -1 : 1;
-        double modZ = e.getBlock().getZ() < 0 ? -1 : 1;
-
-        Location dropLocation = new Location(
-                e.getBlock().getWorld(),
-                e.getBlock().getX() + modX * 0.5d,
-                e.getBlock().getY() + 0.5d,
-                e.getBlock().getZ() + modZ * 0.5d
-        );
-
         int fortuneLvl = heldItem.getEnchantmentLevel(Enchantment.LOOT_BONUS_BLOCKS);
 
+        Location dropLocation = theBlock.getLocation();
+
         if (heldItem.getEnchantmentLevel(Enchantment.SILK_TOUCH) != 0) {
-            Collection<ItemStack> drops = e.getBlock().getDrops(heldItem);
+            Collection<ItemStack> drops = theBlock.getDrops(heldItem);
 
             if (drops.size() != 1 || drops.stream().findFirst().get().getAmount() != 1) {
                 return;
             }
 
             ItemStack dropStack = drops.stream().findFirst().get();
-            ItemMeta meta = dropStack.getItemMeta();
+            dropStack = nmsAdapter.makeGlowingStack(dropStack, emittingLight);
 
-            String newName = String.format(ChatColor.RESET + "" + ChatColor.GOLD + "Glowing %s", nmsAdapter.getLocalizedBlockName(dropStack.getType()));
+            if (nmsAdapter.getMinecraftVersion().newerOrEquals(MC1_12)) {
+                e.setDropItems(false);
+            } else {
+                e.getBlock().setType(Material.AIR);
+            }
 
-            meta.setDisplayName(newName);
-            meta.setLore(Collections.singletonList(ChatColor.RESET + "Emitting Light: " + emittingLight));
-            dropStack.setItemMeta(meta);
-
-            e.setDropItems(false);
-            e.getBlock().getWorld().dropItemNaturally(dropLocation, dropStack);
+            world.dropItemNaturally(dropLocation, dropStack);
         } else {
             ItemStack lui = new ItemStack(lightUpdateItem, 1);
 
             if (fortuneLvl == 0) {
-                e.getBlock().getWorld().dropItemNaturally(dropLocation, lui.clone());
+                world.dropItemNaturally(dropLocation, lui);
             } else {
                 // f(x) = 1 - (1 - -0.5) * e^(-0.6 * x)
                 double chance = 1d - (1.5) * Math.exp(-0.6 * fortuneLvl);
 
                 for (int i = 0; i < emittingLight; i++) {
                     if (Math.random() <= chance) {
-                        e.getBlock().getWorld().dropItemNaturally(dropLocation, lui.clone());
+                        world.dropItemNaturally(dropLocation, lui);
                     }
                 }
             }
         }
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @SuppressWarnings("ConstantConditions")
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent e) {
-        // TODO implement Placing glowing blocks
+        if (!configuration.hasReclaim()) {
+            return;
+        }
+
+        final ItemStack placedStack = e.getItemInHand().clone();
+        final int emittingLight = nmsAdapter.getGlowingValue(placedStack);
+        final Material before = e.getBlock().getType(); // We cannot always assume it's air, it could be water
+
+        WorldLightSourceManager manager = getManager(e.getBlock().getWorld());
+
+        if (emittingLight != -1) {
+            if (manager == null && e.canBuild()) {
+                info(command, e.getPlayer(), "VarLight is not active in your current world!");
+                e.setCancelled(true);
+                return;
+            }
+
+            if (!e.canBuild()) {
+                return;
+            }
+
+            if (!canNewLightSourceBePlaced(this, e.getBlock().getLocation())) {
+                e.setCancelled(true);
+                e.setBuild(false);
+
+                nmsAdapter.handleBlockUpdate(e);
+
+                return;
+            }
+
+            Bukkit.getScheduler().runTaskLater(this,
+                    () -> {
+                        LightUpdateResult lightUpdateResult = placeNewLightSource(this, e.getBlock().getLocation(), emittingLight);
+
+                        if (!lightUpdateResult.successful()) {
+                            e.getBlock().setType(before);
+                            placedStack.setAmount(1);
+
+                            e.getBlock().getWorld().dropItemNaturally(e.getBlock().getLocation(), placedStack);
+                        }
+                    }, 1L);
+        }
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

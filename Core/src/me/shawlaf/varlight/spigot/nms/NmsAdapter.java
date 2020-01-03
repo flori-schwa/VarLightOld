@@ -84,6 +84,16 @@ public class NmsAdapter implements INmsAdapter {
         throw new AbstractMethodError();
     }
 
+    @Override
+    public ItemStack makeGlowingStack(ItemStack base, int lightLevel) {
+        throw new AbstractMethodError();
+    }
+
+    @Override
+    public int getGlowingValue(ItemStack glowingStack) {
+        throw new AbstractMethodError();
+    }
+
     @NotNull
     @Override
     public String getNumericMinecraftVersion() {

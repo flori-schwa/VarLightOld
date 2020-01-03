@@ -19,6 +19,7 @@ public class VarLightConfiguration {
     public static final String CONFIG_KEY_AUTOSAVE = "autosave";
     public static final String CONFIG_KEY_VLDB_DEFLATED = "vldb-deflated";
     public static final String CONFIG_KEY_STEPSIZE_GAMEMODE = "stepsize-gamemode";
+    public static final String CONFIG_KEY_VARLIGHT_RECLAIM = "varlight-reclaim";
     private final VarLightPlugin plugin;
 
     public VarLightConfiguration(VarLightPlugin plugin) {
@@ -34,6 +35,7 @@ public class VarLightConfiguration {
         plugin.getConfig().addDefault(WorldListType.BLACKLIST.configPath, new ArrayList<String>());
         plugin.getConfig().addDefault(CONFIG_KEY_VLDB_DEFLATED, true);
         plugin.getConfig().addDefault(CONFIG_KEY_STEPSIZE_GAMEMODE, GameMode.CREATIVE);
+        plugin.getConfig().addDefault(CONFIG_KEY_VARLIGHT_RECLAIM, true);
     }
 
     public String getRequiredPermissionNode() {
@@ -133,6 +135,10 @@ public class VarLightConfiguration {
         save();
 
         return true;
+    }
+
+    public boolean hasReclaim() {
+        return plugin.getConfig().getBoolean(CONFIG_KEY_VARLIGHT_RECLAIM);
     }
 
     public List<String> getWorldNames(WorldListType type) {

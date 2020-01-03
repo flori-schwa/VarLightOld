@@ -259,6 +259,42 @@ public class NmsAdapter implements INmsAdapter, Listener {
     }
 
     @Override
+    public ItemStack makeGlowingStack(ItemStack base, int lightLevel) {
+        net.minecraft.server.v1_14_R1.ItemStack nmsStack = new net.minecraft.server.v1_14_R1.ItemStack(
+                CraftMagicNumbers.getItem(base.getType()),
+                base.getAmount()
+        );
+
+        lightLevel &= 0xF;
+
+        nmsStack.a("varlight:glowing", new NBTTagInt(lightLevel));
+
+        ItemStack stack = CraftItemStack.asBukkitCopy(nmsStack);
+
+        ItemMeta meta = stack.getItemMeta();
+
+        meta.setDisplayName(ChatColor.RESET + "" + ChatColor.GOLD + "Glowing " + getLocalizedBlockName(stack.getType()));
+        meta.setLore(Collections.singletonList(ChatColor.RESET + "Emitting Light: " + lightLevel));
+
+        stack.setItemMeta(meta);
+
+        return stack;
+    }
+
+    @Override
+    public int getGlowingValue(ItemStack glowingStack) {
+        net.minecraft.server.v1_14_R1.ItemStack nmsStack = CraftItemStack.asNMSCopy(glowingStack);
+
+        NBTTagCompound tag = nmsStack.getTag();
+
+        if (tag == null || !tag.hasKey("varlight:glowing")) {
+            return -1;
+        }
+
+        return tag.getInt("varlight:glowing");
+    }
+
+    @Override
     public boolean isVarLightDebugStick(ItemStack itemStack) {
         if (itemStack == null || itemStack.getType() != Material.STICK) {
             return false;
@@ -303,7 +339,8 @@ public class NmsAdapter implements INmsAdapter, Listener {
         handleBlockUpdate(e);
     }
 
-    private void handleBlockUpdate(BlockEvent e) {
+    @Override
+    public void handleBlockUpdate(BlockEvent e) {
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             Block theBlock = e.getBlock();
 

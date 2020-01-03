@@ -27,6 +27,14 @@
 #  3) ADVENTURE: Players in adventure, survival and creative mode may use stepsize
 # Spectators cannot use VarLight, which is why they're not listed
 # -------------------------------------------------------------------------------------------
+# When "varlight-reclaim" is set to true, players will be able to mine light sources with
+# Silk Touch to get a "Glowing ..." (example: Glowing Block of Iron) that will automatically
+# create a light source when placed
+# Mining a Light source with Fortune will drop some of the glowstone dust (or whatever item
+# you're using)
+# When this value is set to false, mining light sources will always destroy the light source
+# completely and drop the normal block
+# -------------------------------------------------------------------------------------------
 
 item: "minecraft:glowstone_dust"
 autosave: 5
@@ -36,3 +44,4 @@ whitelist: []
 blacklist: []
 vldb-deflated: true
 stepsize-gamemode: "CREATIVE"
+varlight-reclaim: true

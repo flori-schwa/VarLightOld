@@ -8,6 +8,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.event.block.BlockEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,6 +35,10 @@ public interface INmsAdapter {
     }
 
     default void onWorldEnable(@NotNull World world) {
+
+    }
+
+    default void handleBlockUpdate(BlockEvent blockEvent) {
 
     }
 
@@ -66,6 +71,10 @@ public interface INmsAdapter {
     void sendActionBarMessage(Player player, String message);
 
     ItemStack getVarLightDebugStick();
+
+    ItemStack makeGlowingStack(ItemStack base, int lightLevel);
+
+    int getGlowingValue(ItemStack glowingStack);
 
     @Nullable
     Block getTargetBlockExact(Player player, int maxDistance);
