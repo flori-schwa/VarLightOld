@@ -2,9 +2,11 @@ package me.shawlaf.varlight.spigot;
 
 import me.shawlaf.varlight.spigot.nms.MaterialType;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.World;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -14,20 +16,28 @@ public class VarLightConfiguration {
     public static final String CONFIG_KEY_VARLIGHT_ITEM = "item";
     public static final String CONFIG_KEY_LOG_PERSIST = "autosave-logpersist";
     public static final String CONFIG_KEY_REQUIRED_PERMISSION = "requiredPermission";
-    public static final String REQUIRED_PERMISSION_DEFAULT = "";
     public static final String CONFIG_KEY_AUTOSAVE = "autosave";
     public static final String CONFIG_KEY_VLDB_DEFLATED = "vldb-deflated";
-    public static final int AUTOSAVE_DEFAULT = 5;
+    public static final String CONFIG_KEY_STEPSIZE_GAMEMODE = "stepsize-gamemode";
     private final VarLightPlugin plugin;
 
     public VarLightConfiguration(VarLightPlugin plugin) {
         this.plugin = plugin;
 
         plugin.saveDefaultConfig();
+
+        plugin.getConfig().addDefault(CONFIG_KEY_VARLIGHT_ITEM, plugin.getNmsAdapter().materialToKey(Material.GLOWSTONE_DUST));
+        plugin.getConfig().addDefault(CONFIG_KEY_AUTOSAVE, 5);
+        plugin.getConfig().addDefault(CONFIG_KEY_LOG_PERSIST, true);
+        plugin.getConfig().addDefault(CONFIG_KEY_REQUIRED_PERMISSION, "");
+        plugin.getConfig().addDefault(WorldListType.WHITELIST.configPath, new ArrayList<String>());
+        plugin.getConfig().addDefault(WorldListType.BLACKLIST.configPath, new ArrayList<String>());
+        plugin.getConfig().addDefault(CONFIG_KEY_VLDB_DEFLATED, true);
+        plugin.getConfig().addDefault(CONFIG_KEY_STEPSIZE_GAMEMODE, GameMode.CREATIVE);
     }
 
     public String getRequiredPermissionNode() {
-        return plugin.getConfig().getString(CONFIG_KEY_REQUIRED_PERMISSION, REQUIRED_PERMISSION_DEFAULT);
+        return plugin.getConfig().getString(CONFIG_KEY_REQUIRED_PERMISSION);
     }
 
     public void setRequiredPermissionNode(String permissionNode) {
@@ -55,12 +65,32 @@ public class VarLightConfiguration {
         return material;
     }
 
+    public GameMode getStepsizeGamemode() {
+        GameMode def = GameMode.CREATIVE;
+        String configGameMode = plugin.getConfig().getString(CONFIG_KEY_STEPSIZE_GAMEMODE, GameMode.CREATIVE.name());
+        GameMode gameMode;
+
+        try {
+            gameMode = GameMode.valueOf(configGameMode);
+        } catch (IllegalArgumentException e) {
+            plugin.getLogger().warning(String.format("Could not find a Gamemode with the given name \"%s\", defaulting to \"%s\"", configGameMode, def.name()));
+            return def;
+        }
+
+        if (gameMode == GameMode.SPECTATOR) {
+            plugin.getLogger().warning(String.format("Spectators cannot use VarLight, defaulting the Stepsize gamemode to \"%s\"", def.name()));
+            return def;
+        }
+
+        return gameMode;
+    }
+
     public boolean isLoggingPersist() {
         return plugin.getConfig().getBoolean(CONFIG_KEY_LOG_PERSIST, true);
     }
 
     public int getAutosaveInterval() {
-        return plugin.getConfig().getInt(CONFIG_KEY_AUTOSAVE, AUTOSAVE_DEFAULT);
+        return plugin.getConfig().getInt(CONFIG_KEY_AUTOSAVE);
     }
 
     public void setAutosaveInterval(int interval) {

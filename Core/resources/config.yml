@@ -20,7 +20,13 @@
 # "vldb-deflated" Controls, whether the files used to store Light source information should
 # be deflated using GZIP
 # -------------------------------------------------------------------------------------------
-
+# "stepsize-gamemode" Controls, which Gamemode is required to use /varlight stepsize
+# The Hierarchy is:
+#  1) Creative: Players can only use stepsize in creative mode (default)
+#  2) SURVIVAL: Players in survival and creative mode may use stepsize
+#  3) ADVENTURE: Players in adventure, survival and creative mode may use stepsize
+# Spectators cannot use VarLight, which is why they're not listed
+# -------------------------------------------------------------------------------------------
 
 item: "minecraft:glowstone_dust"
 autosave: 5
@@ -29,3 +35,4 @@ requiredPermission: ''
 whitelist: []
 blacklist: []
 vldb-deflated: true
+stepsize-gamemode: "CREATIVE"

@@ -52,6 +52,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     private boolean doLoad = true;
     private PersistOnWorldSaveHandler persistOnWorldSaveHandler;
     private Material lightUpdateItem;
+    private GameMode stepsizeGamemode;
     private VarLightCommand command;
 
     private void unsupportedOperation(String message) {
@@ -108,6 +109,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         configuration.getVarLightEnabledWorlds().forEach(this::enableInWorld);
 
         loadLightUpdateItem();
+        loadStepsizeGamemode();
         initAutosave();
 
         Bukkit.getPluginManager().registerEvents(this, this);
@@ -182,11 +184,39 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
                 l.save(Bukkit.getConsoleSender());
             }
         }
+
+        saveConfig();
     }
 
     public void loadLightUpdateItem() {
         this.lightUpdateItem = configuration.getLightUpdateItem();
         getLogger().info(String.format("Using \"%s\" as the Light update item.", nmsAdapter.materialToKey(lightUpdateItem)));
+    }
+
+    public void loadStepsizeGamemode() {
+        this.stepsizeGamemode = configuration.getStepsizeGamemode();
+        getLogger().info(String.format("Using, \"%s\" as the Stepsize Gamemode", stepsizeGamemode.name()));
+    }
+
+    public boolean hasValidStepsizeGamemode(Player player) {
+        switch (stepsizeGamemode) {
+            case CREATIVE: {
+                return player.getGameMode() == GameMode.CREATIVE;
+            }
+
+            case SURVIVAL: {
+                return player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SURVIVAL;
+            }
+
+            case ADVENTURE: {
+                return player.getGameMode() != GameMode.SPECTATOR;
+            }
+
+            default:
+            case SPECTATOR: {
+                throw new IllegalStateException();
+            }
+        }
     }
 
     public Material getLightUpdateItem() {
@@ -322,11 +352,17 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
                 break;
         }
 
-        if (player.getGameMode() == GameMode.CREATIVE) {
-            mod *= stepSizes.getOrDefault(player.getUniqueId(), 1);
+        if (hasValidStepsizeGamemode(player)) {
+            mod = stepSizes.getOrDefault(player.getUniqueId(), 1);
         }
 
         final boolean creative = player.getGameMode() == GameMode.CREATIVE;
+
+        if (!creative) {
+            if (heldItem.getAmount() < Math.abs(mod)) {
+                return;
+            }
+        }
 
         LightUpdateResult result = LightSourceUtil.placeNewLightSource(this, clickedBlock.getLocation(),
                 manager.getCustomLuminance(toIntPosition(clickedBlock), 0) + mod);
@@ -335,7 +371,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             e.setCancelled(creative && e.getAction() == Action.LEFT_CLICK_BLOCK);
 
             if (!creative && e.getAction() == Action.RIGHT_CLICK_BLOCK) {
-                heldItem.setAmount(heldItem.getAmount() - 1);
+                heldItem.setAmount(heldItem.getAmount() - Math.abs(mod));
             }
         }
 

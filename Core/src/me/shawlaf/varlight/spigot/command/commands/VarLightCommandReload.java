@@ -38,6 +38,7 @@ public class VarLightCommandReload extends VarLightSubCommand {
                 context -> {
                     plugin.reloadConfig();
                     plugin.loadLightUpdateItem();
+                    plugin.loadStepsizeGamemode();
 
                     successBroadcast(this, context.getSource(), "Configuration reloaded!");
 
