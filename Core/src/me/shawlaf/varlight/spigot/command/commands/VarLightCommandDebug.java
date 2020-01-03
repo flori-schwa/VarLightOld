@@ -33,10 +33,10 @@ import static me.shawlaf.varlight.spigot.command.VarLightCommand.SUCCESS;
 public class VarLightCommandDebug extends VarLightSubCommand {
 
     private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_REGION_X = argument("regionX", integer());
-    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_REGION_Z = argument("regionX", integer());
+    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_REGION_Z = argument("regionZ", integer());
 
     private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_CHUNK_X = argument("regionX", integer());
-    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_CHUNK_Z = argument("regionX", integer());
+    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_CHUNK_Z = argument("regionZ", integer());
 
     public VarLightCommandDebug(VarLightPlugin plugin) {
         super(plugin, "debug");
