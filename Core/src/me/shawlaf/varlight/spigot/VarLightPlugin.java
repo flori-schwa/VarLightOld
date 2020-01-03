@@ -1,7 +1,10 @@
 package me.shawlaf.varlight.spigot;
 
 import me.shawlaf.varlight.spigot.command.VarLightCommand;
-import me.shawlaf.varlight.spigot.nms.*;
+import me.shawlaf.varlight.spigot.nms.ForMinecraft;
+import me.shawlaf.varlight.spigot.nms.INmsAdapter;
+import me.shawlaf.varlight.spigot.nms.NmsAdapter;
+import me.shawlaf.varlight.spigot.nms.VarLightInitializationException;
 import me.shawlaf.varlight.spigot.persistence.PersistentLightSource;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.spigot.persistence.migrate.LightDatabaseMigrator;
@@ -12,6 +15,7 @@ import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.NumericMajorMinorVersion;
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -24,6 +28,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
@@ -65,10 +70,10 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     @Override
     public void onLoad() {
-        if ((int) ReflectionHelper.get(Bukkit.getServer(), "reloadCount") > 0) {
-            unsupportedOperation("VarLight does not support /reload!");
-            return;
-        }
+//        if ((int) ReflectionHelper.get(Bukkit.getServer(), "reloadCount") > 0) {
+//            unsupportedOperation("VarLight does not support /reload!");
+//            return;
+//        }
 
         final String version;
 
@@ -389,7 +394,83 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent e) {
+        WorldLightSourceManager manager = getManager(e.getBlock().getWorld());
+
+        if (manager == null) {
+            return;
+        }
+
+        int emittingLight = manager.getCustomLuminance(toIntPosition(e.getBlock()), -1);
+
+        if (emittingLight <= 0) {
+            return;
+        }
+
         handleBlockAffected(e.getBlock());
+
+        if (e.getPlayer().getGameMode() == GameMode.CREATIVE) {
+            return;
+        }
+
+        ItemStack heldItem = e.getPlayer().getInventory().getItemInMainHand(); // You cannot break blocks with items in off hand
+
+        if (!nmsAdapter.isCorrectTool(e.getBlock().getType(), heldItem.getType())) {
+            return;
+        }
+
+        // Player is using correct tool
+
+        double modX = e.getBlock().getX() < 0 ? -1 : 1;
+        double modZ = e.getBlock().getZ() < 0 ? -1 : 1;
+
+        Location dropLocation = new Location(
+                e.getBlock().getWorld(),
+                e.getBlock().getX() + modX * 0.5d,
+                e.getBlock().getY() + 0.5d,
+                e.getBlock().getZ() + modZ * 0.5d
+        );
+
+        int fortuneLvl = heldItem.getEnchantmentLevel(Enchantment.LOOT_BONUS_BLOCKS);
+
+        if (heldItem.getEnchantmentLevel(Enchantment.SILK_TOUCH) != 0) {
+            Collection<ItemStack> drops = e.getBlock().getDrops(heldItem);
+
+            if (drops.size() != 1 || drops.stream().findFirst().get().getAmount() != 1) {
+                return;
+            }
+
+            ItemStack dropStack = drops.stream().findFirst().get();
+            ItemMeta meta = dropStack.getItemMeta();
+
+            String newName = String.format(ChatColor.RESET + "" + ChatColor.GOLD + "Glowing %s", nmsAdapter.getLocalizedBlockName(dropStack.getType()));
+
+            meta.setDisplayName(newName);
+            meta.setLore(Collections.singletonList(ChatColor.RESET + "Emitting Light: " + emittingLight));
+            dropStack.setItemMeta(meta);
+
+            e.setDropItems(false);
+            e.getBlock().getWorld().dropItemNaturally(dropLocation, dropStack);
+        } else {
+            ItemStack lui = new ItemStack(lightUpdateItem, 1);
+
+            if (fortuneLvl == 0) {
+                e.getBlock().getWorld().dropItemNaturally(dropLocation, lui.clone());
+            } else {
+                // f(x) = 1 - (1 - -0.5) * e^(-0.6 * x)
+                double chance = 1d - (1.5) * Math.exp(-0.6 * fortuneLvl);
+
+                for (int i = 0; i < emittingLight; i++) {
+                    if (Math.random() <= chance) {
+                        e.getBlock().getWorld().dropItemNaturally(dropLocation, lui.clone());
+                    }
+                }
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onBlockPlace(BlockPlaceEvent e) {
+        // TODO implement Placing glowing blocks
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

@@ -25,7 +25,17 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
+    public boolean isCorrectTool(Material block, Material tool) {
+        throw new AbstractMethodError();
+    }
+
+    @Override
     public String materialToKey(Material material) {
+        throw new AbstractMethodError();
+    }
+
+    @Override
+    public String getLocalizedBlockName(Material material) {
         throw new AbstractMethodError();
     }
 

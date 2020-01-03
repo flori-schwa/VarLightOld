@@ -39,7 +39,11 @@ public interface INmsAdapter {
 
     @Nullable Material keyToType(String namespacedKey, MaterialType type);
 
+    boolean isCorrectTool(Material block, Material tool);
+
     String materialToKey(Material material);
+
+    String getLocalizedBlockName(Material material);
 
     Collection<String> getTypes(MaterialType type);
 

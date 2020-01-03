@@ -121,10 +121,25 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
+    public boolean isCorrectTool(Material block, Material tool) {
+        net.minecraft.server.v1_8_R3.Block nmsBlock = CraftMagicNumbers.getBlock(block);
+        Item item = CraftMagicNumbers.getItem(tool);
+
+        net.minecraft.server.v1_8_R3.ItemStack stack = new net.minecraft.server.v1_8_R3.ItemStack(item);
+
+        return item.getDestroySpeed(stack, nmsBlock) > 1.0f;
+    }
+
+    @Override
     public String materialToKey(Material material) {
         return material.isBlock() ?
                 net.minecraft.server.v1_8_R3.Block.REGISTRY.c(CraftMagicNumbers.getBlock(material)).toString() :
                 Item.REGISTRY.c(CraftMagicNumbers.getItem(material)).toString();
+    }
+
+    @Override
+    public String getLocalizedBlockName(Material material) {
+        return CraftMagicNumbers.getBlock(material).getName();
     }
 
     @Override
