@@ -437,11 +437,10 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             heldItem = e.getPlayer().getInventory().getItemInHand();
         }
 
-        if (!nmsAdapter.isCorrectTool(theBlock.getType(), heldItem.getType())) {
-            return;
-        }
+//        if (!nmsAdapter.isCorrectTool(theBlock.getType(), heldItem.getType())) {
+//            return;
+//        }
 
-        // Player is using correct tool
         int fortuneLvl = heldItem.getEnchantmentLevel(Enchantment.LOOT_BONUS_BLOCKS);
 
         Location dropLocation = theBlock.getLocation();
@@ -464,6 +463,10 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
             world.dropItemNaturally(dropLocation, dropStack);
         } else {
+            if (theBlock.getDrops(heldItem).size() == 0) {
+                return;
+            }
+
             ItemStack lui = new ItemStack(lightUpdateItem, 1);
 
             if (fortuneLvl == 0) {
