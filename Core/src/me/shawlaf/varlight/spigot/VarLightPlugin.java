@@ -123,6 +123,12 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         Bukkit.getPluginManager().registerEvents(this, this);
 
         command = new VarLightCommand(this);
+
+        NumericMajorMinorVersion current = NumericMajorMinorVersion.tryParse(getDescription().getVersion());
+
+        if (current != null) { // Development versions are not numeric
+            Bukkit.getScheduler().runTaskAsynchronously(this, new UpdateCheck(getLogger(), current));
+        }
 //        final PluginCommand varlightPluginCommand = getCommand("varlight");
 //
 //        varlightPluginCommand.setExecutor(handler);
