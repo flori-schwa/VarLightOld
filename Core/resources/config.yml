@@ -8,9 +8,6 @@
 # A value less than zero will automatically save all custom light sources of a world as
 # soon as that world gets saved.
 # -------------------------------------------------------------------------------------------
-# "autosave-logpersist" Controls if information about the autosave should be printed
-# to the server console log
-# -------------------------------------------------------------------------------------------
 # "requiredPermission" controls the Permission node required to use the plugins functionality
 # -------------------------------------------------------------------------------------------
 # "whitelist" Controls in which worlds the plugin will function
@@ -20,12 +17,31 @@
 # "vldb-deflated" Controls, whether the files used to store Light source information should
 # be deflated using GZIP
 # -------------------------------------------------------------------------------------------
-
+# "stepsize-gamemode" Controls, which Gamemode is required to use /varlight stepsize
+# The Hierarchy is:
+#  1) Creative: Players can only use stepsize in creative mode (default)
+#  2) SURVIVAL: Players in survival and creative mode may use stepsize
+#  3) ADVENTURE: Players in adventure, survival and creative mode may use stepsize
+# Spectators cannot use VarLight, which is why they're not listed
+# -------------------------------------------------------------------------------------------
+# When "varlight-reclaim" is set to true, players will be able to mine light sources with
+# Silk Touch to get a "Glowing ..." (example: Glowing Block of Iron) that will automatically
+# create a light source when placed
+# Mining a Light source with Fortune will drop some of the glowstone dust (or whatever item
+# you're using)
+# When this value is set to false, mining light sources will always destroy the light source
+# completely and drop the normal block
+# -------------------------------------------------------------------------------------------
+# "log-debug" enables more logging messages. Turn this to true, if you are running into
+# Problems
+# -------------------------------------------------------------------------------------------
 
 item: "minecraft:glowstone_dust"
 autosave: 5
-autosave-logpersist: true
 requiredPermission: ''
 whitelist: []
 blacklist: []
 vldb-deflated: true
+stepsize-gamemode: "CREATIVE"
+varlight-reclaim: true
+log-debug: false

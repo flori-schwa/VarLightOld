@@ -25,7 +25,17 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
+    public boolean isCorrectTool(Material block, Material tool) {
+        throw new AbstractMethodError();
+    }
+
+    @Override
     public String materialToKey(Material material) {
+        throw new AbstractMethodError();
+    }
+
+    @Override
+    public String getLocalizedBlockName(Material material) {
         throw new AbstractMethodError();
     }
 
@@ -71,6 +81,16 @@ public class NmsAdapter implements INmsAdapter {
 
     @Override
     public ItemStack getVarLightDebugStick() {
+        throw new AbstractMethodError();
+    }
+
+    @Override
+    public ItemStack makeGlowingStack(ItemStack base, int lightLevel) {
+        throw new AbstractMethodError();
+    }
+
+    @Override
+    public int getGlowingValue(ItemStack glowingStack) {
         throw new AbstractMethodError();
     }
 

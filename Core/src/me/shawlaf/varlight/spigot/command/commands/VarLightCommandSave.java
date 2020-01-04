@@ -65,7 +65,7 @@ public class VarLightCommandSave extends VarLightSubCommand {
         WorldLightSourceManager manager = plugin.getManager(player.getWorld());
 
         if (manager != null) {
-            manager.save(player);
+            manager.save(player, true);
 
             return SUCCESS;
         } else {
@@ -77,7 +77,7 @@ public class VarLightCommandSave extends VarLightSubCommand {
 
     private int saveAll(CommandContext<CommandSender> context) {
         for (WorldLightSourceManager manager : plugin.getAllManagers()) {
-            manager.save(context.getSource());
+            manager.save(context.getSource(), true);
         }
 
         return SUCCESS;
@@ -93,7 +93,7 @@ public class VarLightCommandSave extends VarLightSubCommand {
             return FAILURE;
         }
 
-        manager.save(context.getSource());
+        manager.save(context.getSource(), true);
 
         return SUCCESS;
     }

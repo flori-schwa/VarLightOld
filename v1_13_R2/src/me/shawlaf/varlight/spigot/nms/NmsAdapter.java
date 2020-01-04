@@ -97,10 +97,25 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
+    public boolean isCorrectTool(Material block, Material tool) {
+        net.minecraft.server.v1_13_R2.Block nmsBlock = CraftMagicNumbers.getBlock(block);
+        Item item = CraftMagicNumbers.getItem(tool);
+
+        net.minecraft.server.v1_13_R2.ItemStack stack = new net.minecraft.server.v1_13_R2.ItemStack(item);
+
+        return item.getDestroySpeed(stack, nmsBlock.getBlockData()) > 1.0f;
+    }
+
+    @Override
     public String materialToKey(Material material) {
         return material.isBlock() ?
                 Optional.ofNullable(IRegistry.BLOCK.getKey(CraftMagicNumbers.getBlock(material))).map(Object::toString).orElse(null) :
                 Optional.ofNullable(IRegistry.ITEM.getKey(CraftMagicNumbers.getItem(material))).map(Objects::toString).orElse(null);
+    }
+
+    @Override
+    public String getLocalizedBlockName(Material material) {
+        return LocaleLanguage.a().a(CraftMagicNumbers.getBlock(material).m());
     }
 
     @Override
@@ -250,6 +265,42 @@ public class NmsAdapter implements INmsAdapter {
     @Override
     public void sendActionBarMessage(Player player, String message) {
         player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(message));
+    }
+
+    @Override
+    public org.bukkit.inventory.ItemStack makeGlowingStack(org.bukkit.inventory.ItemStack base, int lightLevel) {
+        net.minecraft.server.v1_13_R2.ItemStack nmsStack = new net.minecraft.server.v1_13_R2.ItemStack(
+                CraftMagicNumbers.getItem(base.getType()),
+                base.getAmount()
+        );
+
+        lightLevel &= 0xF;
+
+        nmsStack.a("varlight:glowing", new NBTTagInt(lightLevel));
+
+        org.bukkit.inventory.ItemStack stack = CraftItemStack.asBukkitCopy(nmsStack);
+
+        ItemMeta meta = stack.getItemMeta();
+
+        meta.setDisplayName(ChatColor.RESET + "" + ChatColor.GOLD + "Glowing " + getLocalizedBlockName(stack.getType()));
+        meta.setLore(Collections.singletonList(ChatColor.RESET + "Emitting Light: " + lightLevel));
+
+        stack.setItemMeta(meta);
+
+        return stack;
+    }
+
+    @Override
+    public int getGlowingValue(org.bukkit.inventory.ItemStack glowingStack) {
+        net.minecraft.server.v1_13_R2.ItemStack nmsStack = CraftItemStack.asNMSCopy(glowingStack);
+
+        NBTTagCompound tag = nmsStack.getTag();
+
+        if (tag == null || !tag.hasKey("varlight:glowing")) {
+            return -1;
+        }
+
+        return tag.getInt("varlight:glowing");
     }
 
     @Override
