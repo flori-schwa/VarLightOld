@@ -1,0 +1,1 @@
+@ant -Ddist="..\VarLight\dist\Core" -Dbasedir="..\VarLightCore" -f ..\VarLightCore\build.xml
