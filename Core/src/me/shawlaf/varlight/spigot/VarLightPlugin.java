@@ -177,7 +177,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         autosaveTask = Bukkit.getScheduler().runTaskTimer(this,
                 () -> {
                     for (WorldLightSourceManager manager : getAllManagers()) {
-                        manager.save(Bukkit.getConsoleSender());
+                        manager.save(Bukkit.getConsoleSender(), configuration.isLogDebug());
                     }
                 },
                 ticks, ticks
@@ -195,7 +195,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         // If PersistOnSave is enabled, PersistOnWorldSaveHandler.onWorldSave will automatically save the Light Sources
         if (configuration.getAutosaveInterval() >= 0) {
             for (WorldLightSourceManager l : getAllManagers()) {
-                l.save(Bukkit.getConsoleSender());
+                l.save(Bukkit.getConsoleSender(), configuration.isLogDebug());
             }
         }
 

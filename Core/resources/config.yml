@@ -8,9 +8,6 @@
 # A value less than zero will automatically save all custom light sources of a world as
 # soon as that world gets saved.
 # -------------------------------------------------------------------------------------------
-# "autosave-logpersist" Controls if information about the autosave should be printed
-# to the server console log
-# -------------------------------------------------------------------------------------------
 # "requiredPermission" controls the Permission node required to use the plugins functionality
 # -------------------------------------------------------------------------------------------
 # "whitelist" Controls in which worlds the plugin will function
@@ -35,13 +32,16 @@
 # When this value is set to false, mining light sources will always destroy the light source
 # completely and drop the normal block
 # -------------------------------------------------------------------------------------------
+# "log-debug" enables more logging messages. Turn this to true, if you are running into
+# Problems
+# -------------------------------------------------------------------------------------------
 
 item: "minecraft:glowstone_dust"
 autosave: 5
-autosave-logpersist: true
 requiredPermission: ''
 whitelist: []
 blacklist: []
 vldb-deflated: true
 stepsize-gamemode: "CREATIVE"
 varlight-reclaim: true
+log-debug: false

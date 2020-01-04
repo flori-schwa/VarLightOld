@@ -12,7 +12,6 @@ import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.RegionCoords;
 import org.bukkit.*;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -37,7 +36,9 @@ public class WorldLightSourceManager {
         Objects.requireNonNull(plugin);
         Objects.requireNonNull(world);
 
-        plugin.getLogger().info(String.format("Created a new Lightsource Persistor for world \"%s\"", world.getName()));
+        if (plugin.getConfiguration().isLogDebug()) {
+            plugin.getLogger().info(String.format("Created a new Lightsource Persistor for world \"%s\"", world.getName()));
+        }
 
         this.worldMap = new HashMap<>();
         this.plugin = plugin;
@@ -117,6 +118,7 @@ public class WorldLightSourceManager {
     public void setCustomLuminance(IntPosition position, int lightLevel) {
         createPersistentLightSource(position, lightLevel);
     }
+
     public void unloadChunk(Chunk chunk) {
         try {
             getRegionPersistor(new RegionCoords(chunk.getX() >> 5, chunk.getZ() >> 5)).unloadChunk(new ChunkCoords(chunk.getX(), chunk.getZ()));
@@ -160,7 +162,7 @@ public class WorldLightSourceManager {
         }
     }
 
-    public void save(CommandSender commandSender) {
+    public void save(CommandSender commandSender, boolean log) {
         int modified = 0, deleted = 0;
         List<RegionCoords> regionsToUnload = new ArrayList<>();
 
@@ -181,7 +183,7 @@ public class WorldLightSourceManager {
                         if (!persistor.file.delete()) {
                             throw new LightPersistFailedException("Could not delete file " + persistor.file.file.getAbsolutePath());
                         } else {
-                            if (plugin.getConfiguration().isLoggingPersist() || commandSender instanceof Player) {
+                            if (log) {
                                 CommandResult.info(plugin.getCommand(), commandSender, String.format("Deleted File %s", persistor.file.file.getName()));
                             }
 
@@ -217,7 +219,7 @@ public class WorldLightSourceManager {
             }
         }
 
-        if (plugin.getConfiguration().isLoggingPersist() || commandSender instanceof Player) { // Players will still receive the message if manually triggering a save
+        if (log) {
             commandSender.sendMessage(String.format("[VarLight] Light Sources persisted for World \"%s\", Files modified: %d, Files deleted: %d", world.getName(), modified, deleted));
         }
     }
