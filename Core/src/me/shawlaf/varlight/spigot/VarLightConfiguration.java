@@ -8,6 +8,7 @@ import org.bukkit.World;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -33,9 +34,11 @@ public class VarLightConfiguration {
         plugin.getConfig().addDefault(WorldListType.WHITELIST.configPath, new ArrayList<String>());
         plugin.getConfig().addDefault(WorldListType.BLACKLIST.configPath, new ArrayList<String>());
         plugin.getConfig().addDefault(CONFIG_KEY_VLDB_DEFLATED, true);
-        plugin.getConfig().addDefault(CONFIG_KEY_STEPSIZE_GAMEMODE, GameMode.CREATIVE);
+        plugin.getConfig().addDefault(CONFIG_KEY_STEPSIZE_GAMEMODE, GameMode.CREATIVE.name());
         plugin.getConfig().addDefault(CONFIG_KEY_VARLIGHT_RECLAIM, true);
         plugin.getConfig().addDefault(CONFIG_KEY_LOG_DEBUG, false);
+
+        plugin.getConfig().options().copyDefaults(true);
     }
 
     public String getRequiredPermissionNode() {
