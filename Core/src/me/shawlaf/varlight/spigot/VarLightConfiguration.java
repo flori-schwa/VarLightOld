@@ -21,6 +21,8 @@ public class VarLightConfiguration {
     public static final String CONFIG_KEY_STEPSIZE_GAMEMODE = "stepsize-gamemode";
     public static final String CONFIG_KEY_VARLIGHT_RECLAIM = "varlight-reclaim";
     public static final String CONFIG_KEY_LOG_DEBUG = "log-debug";
+    public static final String CONFIG_KEY_CHECK_UPDATE = "check-update";
+
     private final VarLightPlugin plugin;
 
     public VarLightConfiguration(VarLightPlugin plugin) {
@@ -37,6 +39,7 @@ public class VarLightConfiguration {
         plugin.getConfig().addDefault(CONFIG_KEY_STEPSIZE_GAMEMODE, GameMode.CREATIVE.name());
         plugin.getConfig().addDefault(CONFIG_KEY_VARLIGHT_RECLAIM, true);
         plugin.getConfig().addDefault(CONFIG_KEY_LOG_DEBUG, false);
+        plugin.getConfig().addDefault(CONFIG_KEY_CHECK_UPDATE, true);
 
         plugin.getConfig().options().copyDefaults(true);
     }
@@ -166,6 +169,10 @@ public class VarLightConfiguration {
 
     public List<World> getVarLightEnabledWorlds() {
         return getVarLightEnabledWorldNames().stream().map(Bukkit::getWorld).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
+    public boolean isCheckUpdateEnabled() {
+        return plugin.getConfig().getBoolean(CONFIG_KEY_CHECK_UPDATE);
     }
 
     public void save() {

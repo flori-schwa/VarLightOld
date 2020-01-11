@@ -35,6 +35,8 @@
 # "log-debug" enables more logging messages. Turn this to true, if you are running into
 # Problems
 # -------------------------------------------------------------------------------------------
+# If "check-update" is set to true, the plugin will check for newer versions on server startup
+# -------------------------------------------------------------------------------------------
 
 item: "minecraft:glowstone_dust"
 autosave: 5
@@ -45,3 +47,4 @@ vldb-deflated: true
 stepsize-gamemode: "CREATIVE"
 varlight-reclaim: true
 log-debug: false
+check-update: true

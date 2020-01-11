@@ -126,7 +126,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         NumericMajorMinorVersion current = NumericMajorMinorVersion.tryParse(getDescription().getVersion());
 
-        if (current != null) { // Development versions are not numeric
+        if (current != null && configuration.isCheckUpdateEnabled()) { // Development versions are not numeric
             Bukkit.getScheduler().runTaskAsynchronously(this, new UpdateCheck(getLogger(), current));
         }
 //        final PluginCommand varlightPluginCommand = getCommand("varlight");
