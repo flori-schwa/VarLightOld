@@ -11,11 +11,10 @@ import java.util.logging.Logger;
 
 public class UpdateCheck implements Runnable {
 
-    private final NumericMajorMinorVersion currentVersion;
-    private final Logger logger;
-
     private static final String BASE_URL_FORMAT = "https://api.spigotmc.org/legacy/update.php?resource=%s";
     private static final String PROJECT_ID = "65268";
+    private final NumericMajorMinorVersion currentVersion;
+    private final Logger logger;
 
     public UpdateCheck(Logger logger, NumericMajorMinorVersion currentVersion) {
         this.currentVersion = currentVersion;

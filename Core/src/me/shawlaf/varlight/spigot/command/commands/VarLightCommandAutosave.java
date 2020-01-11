@@ -46,6 +46,8 @@ public class VarLightCommandAutosave extends VarLightSubCommand {
                         ARG_NEW_INTERVAL.executes(context -> {
                             int newInterval = context.getArgument(ARG_NEW_INTERVAL.getName(), int.class);
 
+                            plugin.getAutosaveManager().update(newInterval);
+
                             if (newInterval > 0) {
                                 successBroadcast(this, context.getSource(), String.format("Updated Autosave interval to %d Minutes", newInterval));
                                 return VarLightCommand.SUCCESS;

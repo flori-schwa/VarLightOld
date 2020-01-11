@@ -58,7 +58,7 @@ public class NmsAdapter implements INmsAdapter, Listener {
     public NmsAdapter(VarLightPlugin plugin) {
         this.plugin = plugin;
 
-        if (!plugin.isLightApiInstalled()) {
+        if (plugin.isLightApiMissing()) {
             throw new VarLightInitializationException("LightAPI required!");
         }
 

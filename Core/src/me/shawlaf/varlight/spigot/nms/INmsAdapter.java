@@ -42,6 +42,10 @@ public interface INmsAdapter {
 
     }
 
+    default String getForMinecraftVersion() {
+        return this.getClass().getAnnotation(ForMinecraft.class).version();
+    }
+
     @Nullable Material keyToType(String namespacedKey, MaterialType type);
 
     boolean isCorrectTool(Material block, Material tool);

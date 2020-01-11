@@ -1,7 +1,6 @@
 package me.shawlaf.varlight.spigot;
 
 import me.shawlaf.varlight.spigot.command.VarLightCommand;
-import me.shawlaf.varlight.spigot.nms.ForMinecraft;
 import me.shawlaf.varlight.spigot.nms.INmsAdapter;
 import me.shawlaf.varlight.spigot.nms.NmsAdapter;
 import me.shawlaf.varlight.spigot.nms.VarLightInitializationException;
@@ -10,7 +9,6 @@ import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.spigot.persistence.migrate.LightDatabaseMigrator;
 import me.shawlaf.varlight.spigot.persistence.migrate.data.JsonToVLDBMigration;
 import me.shawlaf.varlight.spigot.persistence.migrate.data.VLDBMigration;
-import me.shawlaf.varlight.spigot.util.LightSourceUtil;
 import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.NumericMajorMinorVersion;
 import org.bukkit.*;
@@ -19,7 +17,6 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
-import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
@@ -29,12 +26,10 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 import static me.shawlaf.command.result.CommandResult.failure;
 import static me.shawlaf.command.result.CommandResult.info;
@@ -52,43 +47,30 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     private final Map<UUID, Integer> stepSizes = new HashMap<>();
     private final Map<UUID, WorldLightSourceManager> managers = new HashMap<>();
+    private final INmsAdapter nmsAdapter;
 
-    private INmsAdapter nmsAdapter;
+    private VarLightCommand command;
     private VarLightConfiguration configuration;
-    private BukkitTask autosaveTask;
-    private boolean shouldVLDBDeflate;
-    private boolean doLoad = true;
-    private PersistOnWorldSaveHandler persistOnWorldSaveHandler;
+    private AutosaveManager autosaveManager;
+
     private Material lightUpdateItem;
     private GameMode stepsizeGamemode;
-    private VarLightCommand command;
 
-    private void unsupportedOperation(String message) {
-        getLogger().severe("------------------------------------------------------");
-        getLogger().severe(message);
-        getLogger().severe("------------------------------------------------------");
+    private boolean shouldVLDBDeflate;
+    private boolean doLoad = true;
 
-        doLoad = false;
-    }
-
-    @Override
-    public void onLoad() {
-//        if ((int) ReflectionHelper.get(Bukkit.getServer(), "reloadCount") > 0) {
-//            unsupportedOperation("VarLight does not support /reload!");
-//            return;
-//        }
-
-        final String version;
-
+    {
         try {
-            version = NmsAdapter.class.getAnnotation(ForMinecraft.class).version();
             this.nmsAdapter = new NmsAdapter(this);
         } catch (Throwable e) { // Catch anything that goes wrong while initializing
             unsupportedOperation(String.format("Failed to initialize VarLight for Minecraft Version \"%s\": %s", Bukkit.getVersion(), e.getMessage()));
             throw e;
         }
+    }
 
-        getLogger().info(String.format("Loading VarLight for Minecraft version \"%s\"", version));
+    @Override
+    public void onLoad() {
+        getLogger().info(String.format("Loading VarLight for Minecraft version \"%s\"", nmsAdapter.getForMinecraftVersion()));
         nmsAdapter.onLoad();
     }
 
@@ -118,8 +100,8 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         loadLightUpdateItem();
         loadStepsizeGamemode();
-        initAutosave();
 
+        Bukkit.getPluginManager().registerEvents(this.autosaveManager = new AutosaveManager(this), this);
         Bukkit.getPluginManager().registerEvents(this, this);
 
         command = new VarLightCommand(this);
@@ -129,59 +111,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         if (current != null && configuration.isCheckUpdateEnabled()) { // Development versions are not numeric
             Bukkit.getScheduler().runTaskAsynchronously(this, new UpdateCheck(getLogger(), current));
         }
-//        final PluginCommand varlightPluginCommand = getCommand("varlight");
-//
-//        varlightPluginCommand.setExecutor(handler);
-//        varlightPluginCommand.setTabCompleter(handler);
-    }
-
-    public VarLightCommand getCommand() {
-        return command;
-    }
-
-    public boolean isLightApiInstalled() {
-        return Bukkit.getPluginManager().getPlugin("LightAPI") != null;
-    }
-
-    public boolean isPaper() {
-        return Package.getPackage("com.destroystokyo.paper") != null;
-    }
-
-    public void initAutosave() {
-        if (autosaveTask != null && !autosaveTask.isCancelled()) {
-            autosaveTask.cancel();
-            autosaveTask = null;
-        }
-
-        if (persistOnWorldSaveHandler != null) {
-            HandlerList.unregisterAll(persistOnWorldSaveHandler);
-            persistOnWorldSaveHandler = null;
-        }
-
-        int saveInterval = configuration.getAutosaveInterval();
-
-        if (saveInterval == 0) {
-            getLogger().warning("Autosave is disabled! All Light sources will be lost if the server crashes and Light sources were not manually saved!");
-            return;
-        }
-
-        if (saveInterval < 0) {
-            persistOnWorldSaveHandler = new PersistOnWorldSaveHandler(this);
-
-            Bukkit.getPluginManager().registerEvents(persistOnWorldSaveHandler, this);
-            return;
-        }
-
-        long ticks = TimeUnit.MINUTES.toSeconds(saveInterval) * TICK_RATE;
-
-        autosaveTask = Bukkit.getScheduler().runTaskTimer(this,
-                () -> {
-                    for (WorldLightSourceManager manager : getAllManagers()) {
-                        manager.save(Bukkit.getConsoleSender(), configuration.isLogDebug());
-                    }
-                },
-                ticks, ticks
-        );
     }
 
     @Override
@@ -200,41 +129,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         }
 
         saveConfig();
-    }
-
-    public void loadLightUpdateItem() {
-        this.lightUpdateItem = configuration.getLightUpdateItem();
-        getLogger().info(String.format("Using \"%s\" as the Light update item.", nmsAdapter.materialToKey(lightUpdateItem)));
-    }
-
-    public void loadStepsizeGamemode() {
-        this.stepsizeGamemode = configuration.getStepsizeGamemode();
-        getLogger().info(String.format("Using, \"%s\" as the Stepsize Gamemode", stepsizeGamemode.name()));
-    }
-
-    public boolean hasValidStepsizeGamemode(Player player) {
-        switch (stepsizeGamemode) {
-            case CREATIVE: {
-                return player.getGameMode() == GameMode.CREATIVE;
-            }
-
-            case SURVIVAL: {
-                return player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SURVIVAL;
-            }
-
-            case ADVENTURE: {
-                return player.getGameMode() != GameMode.SPECTATOR;
-            }
-
-            default:
-            case SPECTATOR: {
-                throw new IllegalStateException();
-            }
-        }
-    }
-
-    public Material getLightUpdateItem() {
-        return lightUpdateItem;
     }
 
     public void enableInWorld(World world) {
@@ -260,20 +154,60 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         return managers.get(Objects.requireNonNull(world).getUID());
     }
 
-    public boolean shouldVLDBDeflate() {
-        return shouldVLDBDeflate;
+    public INmsAdapter getNmsAdapter() {
+        return nmsAdapter;
+    }
+
+    public VarLightCommand getCommand() {
+        return command;
     }
 
     public VarLightConfiguration getConfiguration() {
         return configuration;
     }
 
-    public INmsAdapter getNmsAdapter() {
-        return nmsAdapter;
+    public void reloadConfig() {
+        super.reloadConfig();
+
+        loadLightUpdateItem();
+        loadStepsizeGamemode();
+
     }
 
-    private boolean isNullOrEmpty(String x) {
-        return x == null || x.isEmpty();
+    public AutosaveManager getAutosaveManager() {
+        return autosaveManager;
+    }
+
+    public Material getLightUpdateItem() {
+        return lightUpdateItem;
+    }
+
+    public void setUpdateItem(Material item) {
+        getConfig().set(VarLightConfiguration.CONFIG_KEY_VARLIGHT_ITEM, nmsAdapter.materialToKey(item));
+        saveConfig();
+
+        loadLightUpdateItem();
+    }
+
+    public boolean hasValidStepsizeGamemode(Player player) {
+        switch (stepsizeGamemode) {
+            case CREATIVE: {
+                return player.getGameMode() == GameMode.CREATIVE;
+            }
+
+            case SURVIVAL: {
+                return player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SURVIVAL;
+            }
+
+            case ADVENTURE: {
+                return player.getGameMode() != GameMode.SPECTATOR;
+            }
+
+            default:
+            case SPECTATOR: {
+                throw new IllegalStateException();
+            }
+        }
     }
 
     public void setStepSize(Player player, int stepSize) {
@@ -283,6 +217,16 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         this.stepSizes.put(player.getUniqueId(), stepSize);
     }
+
+    public boolean shouldVLDBDeflate() {
+        return shouldVLDBDeflate;
+    }
+
+    public boolean isLightApiMissing() {
+        return Bukkit.getPluginManager().getPlugin("LightAPI") == null;
+    }
+
+    // region Events
 
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
@@ -556,6 +500,13 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         handleBlockAffected(e.getBlock());
     }
 
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent e) {
+        stepSizes.remove(e.getPlayer().getUniqueId());
+    }
+
+    // endregion
+
     private void handleBlockAffected(Block block) {
         WorldLightSourceManager manager = getManager(block.getWorld());
 
@@ -590,15 +541,25 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     }
 
 
-    @EventHandler
-    public void onPlayerQuit(PlayerQuitEvent e) {
-        stepSizes.remove(e.getPlayer().getUniqueId());
+    private boolean isNullOrEmpty(String x) {
+        return x == null || x.isEmpty();
     }
 
-    public void setUpdateItem(Material item) {
-        getConfig().set(VarLightConfiguration.CONFIG_KEY_VARLIGHT_ITEM, nmsAdapter.materialToKey(item));
-        saveConfig();
+    private void unsupportedOperation(String message) {
+        getLogger().severe("------------------------------------------------------");
+        getLogger().severe(message);
+        getLogger().severe("------------------------------------------------------");
 
-        loadLightUpdateItem();
+        doLoad = false;
+    }
+
+    private void loadLightUpdateItem() {
+        this.lightUpdateItem = configuration.getLightUpdateItem();
+        getLogger().info(String.format("Using \"%s\" as the Light update item.", nmsAdapter.materialToKey(lightUpdateItem)));
+    }
+
+    private void loadStepsizeGamemode() {
+        this.stepsizeGamemode = configuration.getStepsizeGamemode();
+        getLogger().info(String.format("Using, \"%s\" as the Stepsize Gamemode", stepsizeGamemode.name()));
     }
 }
