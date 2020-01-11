@@ -37,6 +37,7 @@ public class VarLightCommandReload extends VarLightSubCommand {
         node.executes(
                 context -> {
                     plugin.reloadConfig();
+                    plugin.reload();
 
                     successBroadcast(this, context.getSource(), "Configuration reloaded!");
 

@@ -166,12 +166,9 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         return configuration;
     }
 
-    public void reloadConfig() {
-        super.reloadConfig();
-
+    public void reload() {
         loadLightUpdateItem();
         loadStepsizeGamemode();
-
     }
 
     public AutosaveManager getAutosaveManager() {
