@@ -432,6 +432,10 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             return;
         }
 
+        if (e.getItemInHand() == null) {
+            return;
+        }
+
         final ItemStack placedStack = e.getItemInHand().clone();
         final int emittingLight = nmsAdapter.getGlowingValue(placedStack);
         final Material before = e.getBlock().getType(); // We cannot always assume it's air, it could be water
