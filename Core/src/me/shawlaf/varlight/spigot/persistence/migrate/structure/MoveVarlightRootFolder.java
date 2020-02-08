@@ -2,7 +2,6 @@ package me.shawlaf.varlight.spigot.persistence.migrate.structure;
 
 import me.shawlaf.varlight.persistence.LightPersistFailedException;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
-import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 
@@ -15,7 +14,8 @@ import java.util.function.Predicate;
 
 public class MoveVarlightRootFolder implements Predicate<World> {
 
-    @NotNull private final VarLightPlugin plugin;
+    @NotNull
+    private final VarLightPlugin plugin;
 
     public MoveVarlightRootFolder(@NotNull VarLightPlugin plugin) {
         Objects.requireNonNull(plugin, "Plugin may not be null");
@@ -31,6 +31,10 @@ public class MoveVarlightRootFolder implements Predicate<World> {
 
         File oldVarLightFolder = new File(world.getWorldFolder(), "varlight");
         File newVarLightFolder = plugin.getNmsAdapter().getVarLightSaveDirectory(world);
+
+        if (oldVarLightFolder.equals(newVarLightFolder)) {
+            return false;
+        }
 
         if (oldVarLightFolder.exists() && oldVarLightFolder.isDirectory()) {
             File[] files = oldVarLightFolder.listFiles();
