@@ -36,56 +36,18 @@ public class WorldLightSourceManager {
         Objects.requireNonNull(plugin);
         Objects.requireNonNull(world);
 
-        if (plugin.getConfiguration().isLogDebug()) {
-            plugin.getLogger().info(String.format("Created a new Lightsource Persistor for world \"%s\"", world.getName()));
-        }
-
         this.worldMap = new HashMap<>();
         this.plugin = plugin;
         this.world = world;
 
         synchronized (worldMap) {
-            File varlightFolder = getVarLightSaveDirectory(world);
+            plugin.getNmsAdapter().getVarLightSaveDirectory(world); // Ensure the directory exists
 
-            new LightDatabaseMigrator(world).runMigrations(plugin.getLogger());
-
-            if (!varlightFolder.exists()) {
-                if (!varlightFolder.mkdir()) {
-                    throw new LightPersistFailedException("Could not create varlight directory in world \"" + world.getName() + "\"");
-                }
-            }
-        }
-    }
-
-    public static File getVarLightSaveDirectory(World world) {
-        File varlightDir = new File(getRegionRoot(world), "varlight");
-
-        if (!varlightDir.exists()) {
-            if (!varlightDir.mkdir()) {
-                throw new LightPersistFailedException();
-            }
+            new LightDatabaseMigrator(plugin, world).runMigrations(plugin.getLogger());
         }
 
-        return varlightDir;
-    }
-
-    public static File getRegionRoot(World world) {
-        switch (world.getEnvironment()) {
-            case NORMAL: {
-                return world.getWorldFolder();
-            }
-
-            case NETHER: {
-                return new File(world.getWorldFolder(), "DIM-1");
-            }
-
-            case THE_END: {
-                return new File(world.getWorldFolder(), "DIM1");
-            }
-
-            default: {
-                throw new IllegalStateException("wot");
-            }
+        if (plugin.getConfiguration().isLogDebug()) {
+            plugin.getLogger().info(String.format("Created a new Lightsource Persistor for world \"%s\"", world.getName()));
         }
     }
 
@@ -129,7 +91,7 @@ public class WorldLightSourceManager {
 
     @NotNull
     public List<PersistentLightSource> getAllLightSources() {
-        File[] files = getVarLightSaveDirectory(world).listFiles();
+        File[] files = plugin.getNmsAdapter().getVarLightSaveDirectory(world).listFiles();
 
         if (files == null) {
             synchronized (worldMap) {
@@ -283,7 +245,7 @@ public class WorldLightSourceManager {
         synchronized (worldMap) {
             if (!worldMap.containsKey(regionCoords)) {
                 try {
-                    worldMap.put(regionCoords, new RegionPersistor<PersistentLightSource>(getVarLightSaveDirectory(world), regionCoords.x, regionCoords.z, plugin.shouldVLDBDeflate()) {
+                    worldMap.put(regionCoords, new RegionPersistor<PersistentLightSource>(plugin.getNmsAdapter().getVarLightSaveDirectory(world), regionCoords.x, regionCoords.z, plugin.shouldVLDBDeflate()) {
                         @NotNull
                         @Override
                         protected PersistentLightSource[] createArray(int size) {

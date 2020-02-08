@@ -1,5 +1,6 @@
 package me.shawlaf.varlight.spigot.nms;
 
+import me.shawlaf.varlight.persistence.LightPersistFailedException;
 import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.NumericMajorMinorVersion;
 import org.bukkit.Chunk;
@@ -13,6 +14,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -89,6 +91,8 @@ public interface INmsAdapter {
     default boolean isVarLightDebugStick(ItemStack itemStack) {
         return itemStack.equals(getVarLightDebugStick());
     }
+
+    @NotNull File getRegionRoot(World world);
 
     @NotNull
     default NumericMajorMinorVersion getMinecraftVersion() {
@@ -167,5 +171,17 @@ public interface INmsAdapter {
         }
 
         return aNs.equals(bNs) && aK.equals(bK);
+    }
+
+    default File getVarLightSaveDirectory(World world) {
+        File varlightDir = new File(getRegionRoot(world), "varlight");
+
+        if (!varlightDir.exists()) {
+            if (!varlightDir.mkdirs()) {
+                throw new LightPersistFailedException("Could not create Varlight directory \"" + varlightDir.getAbsolutePath() +  "\"for world \"" + world.getName() + "\"");
+            }
+        }
+
+        return varlightDir;
     }
 }

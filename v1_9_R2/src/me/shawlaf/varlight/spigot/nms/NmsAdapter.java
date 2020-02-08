@@ -1,5 +1,6 @@
 package me.shawlaf.varlight.spigot.nms;
 
+import me.shawlaf.varlight.persistence.LightPersistFailedException;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.util.IntPosition;
 import net.md_5.bungee.api.ChatMessageType;
@@ -24,6 +25,7 @@ import org.bukkit.material.Redstone;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.util.*;
 
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.*;
@@ -317,6 +319,22 @@ public class NmsAdapter implements INmsAdapter {
         }
 
         return tag.getString("CustomType").equals("varlight:debug_stick");
+    }
+
+    @Override
+    public @NotNull File getRegionRoot(World world) {
+        WorldServer nmsWorld = ((CraftWorld) world).getHandle();
+
+        try {
+            ChunkProviderServer chunkProvider = ReflectionHelper.Safe.get(nmsWorld, "chunkProvider");
+            IChunkLoader chunkLoader = ReflectionHelper.Safe.get(chunkProvider, "chunkLoader");
+
+            ChunkRegionLoader regionLoader = ((ChunkRegionLoader) chunkLoader);
+
+            return ReflectionHelper.Safe.get(regionLoader, "d");
+        } catch (NoSuchFieldException | IllegalAccessException | ClassCastException e) {
+            throw new LightPersistFailedException("Failed to determine world folder", e);
+        }
     }
 
     @Override

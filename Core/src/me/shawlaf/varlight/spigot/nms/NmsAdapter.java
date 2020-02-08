@@ -4,12 +4,14 @@ import me.shawlaf.varlight.spigot.VarLightPlugin;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.util.Collection;
 
 @ForMinecraft(version = "UNDEFINED")
@@ -97,6 +99,11 @@ public class NmsAdapter implements INmsAdapter {
     @NotNull
     @Override
     public String getNumericMinecraftVersion() {
+        throw new AbstractMethodError();
+    }
+
+    @Override
+    public @NotNull File getRegionRoot(World world) {
         throw new AbstractMethodError();
     }
 

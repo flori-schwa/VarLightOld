@@ -17,6 +17,7 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Openable;
 import org.bukkit.block.data.Powerable;
 import org.bukkit.block.data.type.Piston;
+import org.bukkit.craftbukkit.v1_14_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_14_R1.block.CraftBlock;
 import org.bukkit.craftbukkit.v1_14_R1.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_14_R1.util.CraftMagicNumbers;
@@ -37,6 +38,7 @@ import ru.beykerykt.lightapi.LightAPI;
 import ru.beykerykt.lightapi.LightType;
 import ru.beykerykt.lightapi.chunks.ChunkInfo;
 
+import java.io.File;
 import java.util.*;
 
 @SuppressWarnings("deprecation")
@@ -309,6 +311,13 @@ public class NmsAdapter implements INmsAdapter, Listener {
         }
 
         return tag.getString("CustomType").equals("varlight:debug_stick");
+    }
+
+    @Override
+    public @NotNull File getRegionRoot(World world) {
+        WorldServer nmsWorld = ((CraftWorld) world).getHandle();
+
+        return nmsWorld.worldProvider.getDimensionManager().a(world.getWorldFolder());
     }
 
     @Override

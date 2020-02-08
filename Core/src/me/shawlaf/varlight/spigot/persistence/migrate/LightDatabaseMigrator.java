@@ -1,5 +1,6 @@
 package me.shawlaf.varlight.spigot.persistence.migrate;
 
+import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.spigot.persistence.migrate.structure.MoveVarlightRootFolder;
 import org.bukkit.World;
@@ -17,16 +18,17 @@ public class LightDatabaseMigrator {
     private static final List<Predicate<File>> DATA_MIGRATIONS = new ArrayList<>();
     private static final List<Predicate<World>> STRUCTURE_MIGRATIONS = new ArrayList<>();
 
-    static {
-        addStructureMigration(new MoveVarlightRootFolder());
-    }
-
     @NotNull
     private final World world;
+    @NotNull
+    private final VarLightPlugin plugin;
 
-    public LightDatabaseMigrator(@NotNull World world) {
+    public LightDatabaseMigrator(@NotNull VarLightPlugin plugin, @NotNull World world) {
+        Objects.requireNonNull(plugin, "Plugin may not be null!");
         Objects.requireNonNull(world, "World may not be null!");
+
         this.world = world;
+        this.plugin = plugin;
     }
 
     public static void addDataMigration(Predicate<File> migration) {
@@ -60,7 +62,7 @@ public class LightDatabaseMigrator {
         } while (or);
 
 
-        File saveDir = WorldLightSourceManager.getVarLightSaveDirectory(world);
+        File saveDir = plugin.getNmsAdapter().getVarLightSaveDirectory(world);
 
         do {
             or = false;

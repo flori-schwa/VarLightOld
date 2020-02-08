@@ -1,6 +1,7 @@
 package me.shawlaf.varlight.spigot.nms;
 
 
+import me.shawlaf.varlight.persistence.LightPersistFailedException;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.util.IntPosition;
 import net.md_5.bungee.api.ChatMessageType;
@@ -26,6 +27,7 @@ import org.bukkit.material.Openable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.util.*;
 
@@ -330,6 +332,13 @@ public class NmsAdapter implements INmsAdapter {
         }
 
         return tag.getString("CustomType").equals("varlight:debug_stick");
+    }
+
+    @Override
+    public @NotNull File getRegionRoot(World world) {
+        WorldServer nmsWorld = ((CraftWorld) world).getHandle();
+
+        return nmsWorld.worldProvider.getDimensionManager().a(world.getWorldFolder());
     }
 
     @Override

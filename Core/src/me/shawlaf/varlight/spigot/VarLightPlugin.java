@@ -9,6 +9,7 @@ import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.spigot.persistence.migrate.LightDatabaseMigrator;
 import me.shawlaf.varlight.spigot.persistence.migrate.data.JsonToVLDBMigration;
 import me.shawlaf.varlight.spigot.persistence.migrate.data.VLDBMigration;
+import me.shawlaf.varlight.spigot.persistence.migrate.structure.MoveVarlightRootFolder;
 import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.NumericMajorMinorVersion;
 import org.bukkit.*;
@@ -92,6 +93,8 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         LightDatabaseMigrator.addDataMigration(new JsonToVLDBMigration(this));
         LightDatabaseMigrator.addDataMigration(new VLDBMigration(this));
+
+        LightDatabaseMigrator.addStructureMigration(new MoveVarlightRootFolder(this));
 
         this.shouldVLDBDeflate = getConfig().getBoolean(VarLightConfiguration.CONFIG_KEY_VLDB_DEFLATED, true);
 
