@@ -7,4 +7,6 @@ Turn any block into a light source
 
 [Requires LightAPI for 1.14+](https://github.com/Qveshn/LightAPI)
 
+[Fabric Mod Version](https://github.com/flori-schwa/VarLightFabric)
+
 [Idea by cubfan](https://www.youtube.com/watch?v=FbuSkIbJ5I4)
