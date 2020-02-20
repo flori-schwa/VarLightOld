@@ -30,33 +30,37 @@ public class LightSourceUtil {
     };
 
     public static LightUpdateResult placeNewLightSource(VarLightPlugin plugin, Location location, int lightLevel) {
+        int fromLight = location.getBlock().getLightFromBlocks();
+
         if (!canNewLightSourceBePlaced(plugin, location)) {
-            return adjacentLightSource(plugin);
+            return adjacentLightSource(plugin, fromLight, lightLevel);
         }
 
         WorldLightSourceManager manager = plugin.getManager(location.getWorld());
 
         if (manager == null) {
-            return varLightNotActive(plugin, location.getWorld());
+            return varLightNotActive(plugin, location.getWorld(), fromLight, lightLevel);
         }
 
+        fromLight = manager.getCustomLuminance(toIntPosition(location), 0);
+
         if (lightLevel < 0) {
-            return zeroReached(plugin);
+            return zeroReached(plugin, fromLight, lightLevel);
         }
 
         if (lightLevel > 15) {
-            return fifteenReached(plugin);
+            return fifteenReached(plugin, fromLight, lightLevel);
         }
 
         if (plugin.getNmsAdapter().isIllegalBlock(location.getBlock())) {
-            return invalidBlock(plugin);
+            return invalidBlock(plugin, fromLight, lightLevel);
         }
 
-        LightUpdateEvent lightUpdateEvent = new LightUpdateEvent(location.getBlock(), manager.getCustomLuminance(toIntPosition(location), 0), lightLevel);
+        LightUpdateEvent lightUpdateEvent = new LightUpdateEvent(location.getBlock(), fromLight, lightLevel);
         Bukkit.getPluginManager().callEvent(lightUpdateEvent);
 
         if (lightUpdateEvent.isCancelled()) {
-            return cancelled(plugin);
+            return cancelled(plugin, fromLight, lightUpdateEvent.getToLight());
         }
 
         int lightTo = lightUpdateEvent.getToLight();
@@ -64,7 +68,7 @@ public class LightSourceUtil {
         plugin.getNmsAdapter().updateBlockLight(location, lightTo);
         manager.setCustomLuminance(location, lightTo);
 
-        return updated(plugin, lightTo);
+        return updated(plugin, fromLight, lightTo);
     }
 
     public static boolean canNewLightSourceBePlaced(VarLightPlugin plugin, Location location) {

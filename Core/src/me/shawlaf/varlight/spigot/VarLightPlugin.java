@@ -53,6 +53,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     private VarLightCommand command;
     private VarLightConfiguration configuration;
     private AutosaveManager autosaveManager;
+    private DebugManager debugManager;
 
     private Material lightUpdateItem;
     private GameMode stepsizeGamemode;
@@ -90,6 +91,8 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
             throw e;
         }
+
+        debugManager = new DebugManager(this);
 
         LightDatabaseMigrator.addDataMigration(new JsonToVLDBMigration(this));
         LightDatabaseMigrator.addDataMigration(new VLDBMigration(this));
@@ -167,6 +170,10 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     public VarLightConfiguration getConfiguration() {
         return configuration;
+    }
+
+    public DebugManager getDebugManager() {
+        return debugManager;
     }
 
     public void reload() {
@@ -332,6 +339,14 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
                 heldItem.setAmount(heldItem.getAmount() - Math.abs(mod));
             }
         }
+
+        int finalMod = mod;
+
+        debugManager.logDebugAction(player,
+                () -> "Edit Lightsource @ " + toShortBlockString(clickedBlock.getLocation()) + " " +
+                        (finalMod < 0 ? "LC" : "RC") + " " + result.getFromLight() + " -> " + result.getToLight() + " ==> " + result.getDebugMessage().toString(),
+                true
+        );
 
         result.displayMessage(e.getPlayer());
     }
@@ -565,5 +580,9 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     private void loadStepsizeGamemode() {
         this.stepsizeGamemode = configuration.getStepsizeGamemode();
         getLogger().info(String.format("Using, \"%s\" as the Stepsize Gamemode", stepsizeGamemode.name()));
+    }
+
+    private String toShortBlockString(Location location) {
+        return String.format("[%d, %d, %d]", location.getBlockX(), location.getBlockY(), location.getBlockZ());
     }
 }

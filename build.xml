@@ -248,7 +248,7 @@
             </libraries>
         </build>
 
-        <build version="MC-1.14+" src-dir="${v1_14_R1-src}" out-dir="${v1_14_R1-build}"
+        <build version="MC-1.14.x" src-dir="${v1_14_R1-src}" out-dir="${v1_14_R1-build}"
                api-version="1.14">
             <libraries>
                 <include name="**/spigot-1.14.4.jar"/>
@@ -256,7 +256,7 @@
             </libraries>
         </build>
 
-        <build version="MC-1.15.1" src-dir="${v1_15_R1-src}" out-dir="${v1_15_R1-build}"
+        <build version="MC-1.15.x" src-dir="${v1_15_R1-src}" out-dir="${v1_15_R1-build}"
                api-version="1.14">
             <libraries>
                 <include name="**/spigot-1.15.1.jar"/>

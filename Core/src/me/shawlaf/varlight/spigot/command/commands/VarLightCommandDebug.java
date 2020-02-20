@@ -1,5 +1,6 @@
 package me.shawlaf.varlight.spigot.command.commands;
 
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -22,10 +23,10 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.util.List;
 
+import static com.mojang.brigadier.arguments.BoolArgumentType.bool;
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
 import static com.mojang.brigadier.builder.RequiredArgumentBuilder.argument;
-import static me.shawlaf.command.result.CommandResult.failure;
-import static me.shawlaf.command.result.CommandResult.success;
+import static me.shawlaf.command.result.CommandResult.*;
 import static me.shawlaf.varlight.spigot.command.VarLightCommand.FAILURE;
 import static me.shawlaf.varlight.spigot.command.VarLightCommand.SUCCESS;
 
@@ -91,6 +92,22 @@ public class VarLightCommandDebug extends VarLightSubCommand {
 
                     return SUCCESS;
                 })
+        );
+
+        literalArgumentBuilder.then(
+                LiteralArgumentBuilder.<CommandSender>literal("logger")
+                        .requires(cs -> cs.hasPermission("varlight.admin"))
+                        .then(
+                                RequiredArgumentBuilder.<CommandSender, Boolean>argument("value", bool())
+                                        .executes(c -> {
+                                            boolean newStatus = BoolArgumentType.getBool(c, "value");
+                                            plugin.getDebugManager().setDebugEnabled(newStatus);
+
+                                            successBroadcast(this, c.getSource(), (newStatus ? "enabled" : "disabled") + " debug logging.", "varlight.admin");
+
+                                            return newStatus ? 1 : 0;
+                                        })
+                        )
         );
 
         return literalArgumentBuilder;
