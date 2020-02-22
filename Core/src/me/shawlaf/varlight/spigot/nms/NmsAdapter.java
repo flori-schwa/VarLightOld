@@ -62,7 +62,7 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public int getEmittingLightLevel(@NotNull Block block) {
+    public int getVanillaLuminance(@NotNull Block block) {
         throw new AbstractMethodError();
     }
 

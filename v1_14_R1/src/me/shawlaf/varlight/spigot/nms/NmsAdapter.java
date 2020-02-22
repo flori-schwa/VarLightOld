@@ -206,7 +206,7 @@ public class NmsAdapter implements INmsAdapter, Listener {
     }
 
     @Override
-    public int getEmittingLightLevel(@NotNull Block block) {
+    public int getVanillaLuminance(@NotNull Block block) {
         IBlockData blockData = ((CraftBlock) block).getNMS();
 
         return blockData.getBlock().a(blockData);
@@ -222,7 +222,7 @@ public class NmsAdapter implements INmsAdapter, Listener {
             return true;
         }
 
-        if (getEmittingLightLevel(block) > 0) {
+        if (this.getVanillaLuminance(block) > 0) {
             return true;
         }
 

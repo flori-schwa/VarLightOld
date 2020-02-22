@@ -64,7 +64,7 @@ public interface INmsAdapter {
 
     void updateBlockLight(@NotNull Location at, int lightLevel);
 
-    int getEmittingLightLevel(@NotNull Block block);
+    int getVanillaLuminance(@NotNull Block block);
 
     void sendChunkUpdates(@NotNull Chunk chunk, int mask);
 
