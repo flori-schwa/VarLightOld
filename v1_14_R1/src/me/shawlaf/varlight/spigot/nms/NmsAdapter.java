@@ -359,7 +359,6 @@ public class NmsAdapter implements INmsAdapter, Listener {
                 return;
             }
 
-
             for (BlockFace blockFace : CHECK_FACES) {
                 Location relative = theBlock.getLocation().add(blockFace.getDirection());
 

@@ -70,7 +70,7 @@ public class WorldLightSourceManager {
             return def.getAsInt();
         }
 
-        return lightSource.getEmittingLight();
+        return lightSource.getCustomLuminance();
     }
 
     public void setCustomLuminance(Location location, int lightLevel) {

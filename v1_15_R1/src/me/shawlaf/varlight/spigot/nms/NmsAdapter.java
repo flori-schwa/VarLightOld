@@ -1,8 +1,11 @@
 package me.shawlaf.varlight.spigot.nms;
 
 import me.shawlaf.varlight.spigot.VarLightPlugin;
+import me.shawlaf.varlight.spigot.nms.wrappers.WrappedILightAccess;
 import me.shawlaf.varlight.spigot.persistence.PersistentLightSource;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
+import me.shawlaf.varlight.util.ChunkCoords;
+import me.shawlaf.varlight.util.IntPosition;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.server.v1_15_R1.*;
@@ -34,12 +37,13 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import ru.beykerykt.lightapi.LightAPI;
-import ru.beykerykt.lightapi.LightType;
 import ru.beykerykt.lightapi.chunks.ChunkInfo;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.util.*;
+
+import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
 
 @SuppressWarnings("deprecation")
 @ForMinecraft(version = "1.15.1")
@@ -60,9 +64,9 @@ public class NmsAdapter implements INmsAdapter, Listener {
     public NmsAdapter(VarLightPlugin plugin) {
         this.plugin = plugin;
 
-        if (plugin.isLightApiMissing()) {
-            throw new VarLightInitializationException("LightAPI required!");
-        }
+//        if (plugin.isLightApiMissing()) {
+//            throw new VarLightInitializationException("LightAPI required!");
+//        }
 
         net.minecraft.server.v1_15_R1.ItemStack nmsStack = new net.minecraft.server.v1_15_R1.ItemStack(Items.STICK);
 
@@ -82,6 +86,23 @@ public class NmsAdapter implements INmsAdapter, Listener {
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
+    @Override
+    public void onWorldEnable(@NotNull World world) {
+        WorldServer nmsWorld = getNmsWorld(world);
+        WrappedILightAccess wrappedILightAccess = new WrappedILightAccess(plugin, nmsWorld);
+
+        LightEngineThreaded let = nmsWorld.getChunkProvider().getLightEngine();
+
+        LightEngineBlock leb = ((LightEngineBlock) let.a(EnumSkyBlock.BLOCK));
+
+        try {
+            Field lightAccessField = LightEngineLayer.class.getDeclaredField("a");
+
+            ReflectionHelper.Safe.set(leb, lightAccessField, wrappedILightAccess);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new VarLightInitializationException("Failed to inject custom ILightAccess into \"" + world.getName() + "\"'s Light Engine: " + e.getMessage(), e);
+        }
+    }
 
     @Override
     @Nullable
@@ -160,46 +181,71 @@ public class NmsAdapter implements INmsAdapter, Listener {
         throw new RuntimeException("Not used in combination with LightAPI");
     }
 
+    private void updateLight(WorldServer worldServer, ChunkCoords chunkCoords) {
+        LightEngineThreaded let = worldServer.getChunkProvider().getLightEngine();
+
+        let.a(worldServer.getChunkAt(chunkCoords.x, chunkCoords.z), false).thenRun(() -> {
+            Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, () -> {
+                for (ChunkCoords toUpdate : collectChunkPositionsToUpdate(chunkCoords)) {
+                    ChunkCoordIntPair chunkCoordIntPair = new ChunkCoordIntPair(toUpdate.x, toUpdate.z);
+                    PacketPlayOutLightUpdate ppolu = new PacketPlayOutLightUpdate(chunkCoordIntPair, let);
+
+                    worldServer.getChunkProvider().playerChunkMap.a(chunkCoordIntPair, false)
+                            .forEach(e -> e.playerConnection.sendPacket(ppolu));
+                }
+            });
+        });
+    }
+
     @Override
     public void updateBlockLight(@NotNull Location at, int lightLevel) {
         Objects.requireNonNull(at);
         Objects.requireNonNull(at.getWorld());
 
-        if (!LightAPI.deleteLight(at, false)) {
-            throw new LightUpdateFailedException("LightAPI not enabled or deleteLight Event cancelled!");
-        }
+        WorldServer nmsWorld = getNmsWorld(at.getWorld());
+        IntPosition pos = toIntPosition(at);
+        BlockPosition blockPosition = new BlockPosition(pos.x, pos.y, pos.z);
+        LightEngineThreaded let = nmsWorld.getChunkProvider().getLightEngine();
+        LightEngineBlock leb = ((LightEngineBlock) let.a(EnumSkyBlock.BLOCK));
 
-        if (lightLevel > 0) {
-            if (!LightAPI.createLight(at, lightLevel, false)) {
-                throw new LightUpdateFailedException("LightAPI not enabled or createLight Event cancelled!");
-            }
-        }
+        leb.a(blockPosition);                       // Check Block
+        updateLight(nmsWorld, pos.toChunkCoords()); // Update neighbouring Chunks and send updates to players
 
-        List<Chunk> chunksToUpdate = collectChunksToUpdate(at);
-        List<ChunkInfo> chunkSectionsToUpdate = new ArrayList<>();
-
-        final int sectionY = at.getBlockY() >> 4;
-
-        for (Chunk chunk : chunksToUpdate) {
-            final int chunkX = chunk.getX(), chunkZ = chunk.getZ();
-
-            chunkSectionsToUpdate.add(toChunkInfo(at.getWorld(), chunkX, sectionY, chunkZ));
-//            chunkSectionsToUpdate.add(new ChunkInfo(at.getWorld(), chunk.getX(), sectionY, chunk.getZ(), at.getWorld().getPlayers()));
-
-            if (sectionY < 16) {
-                chunkSectionsToUpdate.add(toChunkInfo(at.getWorld(), chunkX, sectionY + 1, chunkZ));
-//                chunkSectionsToUpdate.add(new ChunkInfo(at.getWorld(), chunk.getX(), sectionY + 1, chunk.getZ(), at.getWorld().getPlayers()));
-            }
-
-            if (sectionY > 0) {
-                chunkSectionsToUpdate.add(toChunkInfo(at.getWorld(), chunkX, sectionY - 1, chunkZ));
-//                chunkSectionsToUpdate.add(new ChunkInfo(at.getWorld(), chunk.getX(), sectionY - 1, chunk.getZ(), at.getWorld().getPlayers()));
-            }
-        }
-
-        for (ChunkInfo chunkInfo : chunkSectionsToUpdate) {
-            LightAPI.updateChunk(chunkInfo, LightType.BLOCK);
-        }
+//        if (!LightAPI.deleteLight(at, false)) {
+//            throw new LightUpdateFailedException("LightAPI not enabled or deleteLight Event cancelled!");
+//        }
+//
+//        if (lightLevel > 0) {
+//            if (!LightAPI.createLight(at, lightLevel, false)) {
+//                throw new LightUpdateFailedException("LightAPI not enabled or createLight Event cancelled!");
+//            }
+//        }
+//
+//        List<Chunk> chunksToUpdate = collectChunksToUpdate(at);
+//        List<ChunkInfo> chunkSectionsToUpdate = new ArrayList<>();
+//
+//        final int sectionY = at.getBlockY() >> 4;
+//
+//        for (Chunk chunk : chunksToUpdate) {
+//            final int chunkX = chunk.getX(), chunkZ = chunk.getZ();
+//
+//            chunkSectionsToUpdate.add(toChunkInfo(at.getWorld(), chunkX, sectionY, chunkZ));
+////            chunkSectionsToUpdate.add(new ChunkInfo(at.getWorld(), chunk.getX(), sectionY, chunk.getZ(), at.getWorld().getPlayers()));
+//
+//            if (sectionY < 16) {
+//                chunkSectionsToUpdate.add(toChunkInfo(at.getWorld(), chunkX, sectionY + 1, chunkZ));
+////                chunkSectionsToUpdate.add(new ChunkInfo(at.getWorld(), chunk.getX(), sectionY + 1, chunk.getZ(), at.getWorld().getPlayers()));
+//            }
+//
+//            if (sectionY > 0) {
+//                chunkSectionsToUpdate.add(toChunkInfo(at.getWorld(), chunkX, sectionY - 1, chunkZ));
+////                chunkSectionsToUpdate.add(new ChunkInfo(at.getWorld(), chunk.getX(), sectionY - 1, chunk.getZ(), at.getWorld().getPlayers()));
+//            }
+//        }
+//
+//        for (ChunkInfo chunkInfo : chunkSectionsToUpdate) {
+//            LightAPI.updateChunk(chunkInfo, LightType.BLOCK);
+//        }
     }
 
     private ChunkInfo toChunkInfo(World world, int x, int sectionY, int z) {
@@ -259,6 +305,14 @@ public class NmsAdapter implements INmsAdapter, Listener {
     public String getNumericMinecraftVersion() {
         return MinecraftServer.getServer().getVersion();
     }
+
+    // region Util
+
+    private WorldServer getNmsWorld(World world) {
+        return ((CraftWorld) world).getHandle();
+    }
+
+    // endregion
 
     // region Events
 
@@ -351,7 +405,7 @@ public class NmsAdapter implements INmsAdapter, Listener {
 
     @Override
     public void handleBlockUpdate(BlockEvent e) {
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+        Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, () -> {
             Block theBlock = e.getBlock();
 
             WorldLightSourceManager manager = plugin.getManager(theBlock.getWorld());
@@ -359,7 +413,6 @@ public class NmsAdapter implements INmsAdapter, Listener {
             if (manager == null) {
                 return;
             }
-
 
             for (BlockFace blockFace : CHECK_FACES) {
                 Location relative = theBlock.getLocation().add(blockFace.getDirection());
@@ -372,11 +425,11 @@ public class NmsAdapter implements INmsAdapter, Listener {
 
                 int customLuminance = pls.getCustomLuminance();
 
-                if (pls.isInvalid() && areKeysEqual(materialToKey(relative.getBlock().getType()), pls.getType())) {
-                    updateBlockLight(relative, customLuminance);
+                if (customLuminance > 0) {
+                    updateLight(getNmsWorld(relative.getWorld()), toIntPosition(relative).toChunkCoords());
                 }
             }
-        }, 2L);
+        });
     }
 
     // endregion

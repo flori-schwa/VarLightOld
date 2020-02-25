@@ -65,8 +65,8 @@ public class LightSourceUtil {
 
         int lightTo = lightUpdateEvent.getToLight();
 
-        plugin.getNmsAdapter().updateBlockLight(location, lightTo);
         manager.setCustomLuminance(location, lightTo);
+        plugin.getNmsAdapter().updateBlockLight(location, lightTo);
 
         return updated(plugin, fromLight, lightTo);
     }

@@ -1,6 +1,7 @@
 package me.shawlaf.varlight.spigot.nms;
 
 import me.shawlaf.varlight.persistence.LightPersistFailedException;
+import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.NumericMajorMinorVersion;
 import org.bukkit.Chunk;
@@ -19,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
 
@@ -131,24 +133,32 @@ public interface INmsAdapter {
         Objects.requireNonNull(location);
         Objects.requireNonNull(world);
 
-        int chunkX = location.getChunkX();
-        int chunkZ = location.getChunkZ();
+        return collectChunkPositionsToUpdate(location).stream().map(cc -> world.getChunkAt(cc.x, cc.z)).collect(Collectors.toList());
+    }
 
-        List<Chunk> chunksToUpdate = new ArrayList<>();
+    @NotNull
+    default List<ChunkCoords> collectChunkPositionsToUpdate(@NotNull IntPosition center) {
+        Objects.requireNonNull(center);
 
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dz = -1; dz <= 1; dz++) {
-                int x = chunkX + dx;
-                int z = chunkZ + dz;
+        return collectChunkPositionsToUpdate(center.toChunkCoords());
+    }
 
-                if (!world.isChunkLoaded(x, z)) {
-                    continue;
-                }
+    @NotNull
+    default List<ChunkCoords> collectChunkPositionsToUpdate(@NotNull ChunkCoords center) {
+        Objects.requireNonNull(center);
 
-                chunksToUpdate.add(world.getChunkAt(x, z));
+        int cx = center.x;
+        int cz = center.z;
+
+        List<ChunkCoords> list = new ArrayList<>(9);
+
+        for (int dz = -1; dz <= 1; ++dz) {
+            for (int dx = -1; dx <= 1; ++dx) {
+                list.add(new ChunkCoords(cx + dx, cz + dz));
             }
         }
-        return chunksToUpdate;
+
+        return list;
     }
 
     default boolean areKeysEqual(String keyA, String keyB) {
@@ -178,7 +188,7 @@ public interface INmsAdapter {
 
         if (!varlightDir.exists()) {
             if (!varlightDir.mkdirs()) {
-                throw new LightPersistFailedException("Could not create Varlight directory \"" + varlightDir.getAbsolutePath() +  "\"for world \"" + world.getName() + "\"");
+                throw new LightPersistFailedException("Could not create Varlight directory \"" + varlightDir.getAbsolutePath() + "\"for world \"" + world.getName() + "\"");
             }
         }
 
