@@ -23,7 +23,7 @@ import java.util.Map;
 // Normally, WorldServer.getChunkProvider gets passed as the ILightAccess parameter to the constructor of LightEngineThreaded
 public class WrappedILightAccess implements ILightAccess, Listener {
 
-    private final Map<ChunkCoords, IBlockAccess> wrapped = Collections.synchronizedMap(new HashMap<>());
+    private final Map<ChunkCoords, IBlockAccess> proxies = Collections.synchronizedMap(new HashMap<>());
 
     private final VarLightPlugin plugin;
     private final WorldServer world;
@@ -73,15 +73,15 @@ public class WrappedILightAccess implements ILightAccess, Listener {
     public IBlockAccess c(int i, int i1) {
         ChunkCoords chunkCoords = new ChunkCoords(i, i1);
 
-        synchronized (wrapped) {
+        synchronized (proxies) {
             IBlockAccess res = createProxy(chunkCoords);
 
-            if (res != null && !wrapped.containsKey(chunkCoords)) {
-                wrapped.put(chunkCoords, createProxy(chunkCoords));
+            if (res != null && !proxies.containsKey(chunkCoords)) {
+                proxies.put(chunkCoords, createProxy(chunkCoords));
             }
         }
 
-        return wrapped.get(chunkCoords);
+        return proxies.get(chunkCoords);
     }
 
     @Override
@@ -108,12 +108,12 @@ public class WrappedILightAccess implements ILightAccess, Listener {
 
         Chunk chunk = e.getChunk();
 
-        wrapped.remove(new ChunkCoords(chunk.getX(), chunk.getZ()));
+        proxies.remove(new ChunkCoords(chunk.getX(), chunk.getZ()));
     }
 
     @EventHandler
     public void onWorldUnload(WorldUnloadEvent e) {
-        wrapped.clear();
+        proxies.clear();
         HandlerList.unregisterAll(this);
     }
 }
