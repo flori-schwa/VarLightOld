@@ -18,10 +18,10 @@
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="inheritedJdk" />
-    <orderEntry type="library" name="spigot-1.13.2" level="project" />
     <orderEntry type="library" name="annotations-17.0.0" level="project" />
     <orderEntry type="library" name="SpigotCommandApi-1.7" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="org.projectlombok:lombok:1.18.10" level="project" />
     <orderEntry type="library" name="VarLightCore" level="project" />
+    <orderEntry type="library" name="spigot-1.14.4" level="project" />
   </component>
 </module>

@@ -38,11 +38,7 @@ public interface INmsAdapter {
 
     }
 
-    default void onWorldEnable(@NotNull World world) {
-
-    }
-
-    default void handleBlockUpdate(BlockEvent blockEvent) {
+    default void enableVarLightInWorld(@NotNull World world) {
 
     }
 
@@ -52,8 +48,6 @@ public interface INmsAdapter {
 
     @Nullable Material keyToType(String namespacedKey, MaterialType type);
 
-    boolean isCorrectTool(Material block, Material tool);
-
     String materialToKey(Material material);
 
     String getLocalizedBlockName(Material material);
@@ -62,30 +56,21 @@ public interface INmsAdapter {
 
     boolean isIllegalLightUpdateItem(Material material);
 
-    boolean isBlockTransparent(@NotNull Block block);
+    void updateLight(@NotNull Location at, int lightLevel);
 
-    void updateBlockLight(@NotNull Location at, int lightLevel);
+    void updateLight(Chunk chunk);
+
+    void updateBlocks(Chunk chunk);
 
     int getVanillaLuminance(@NotNull Block block);
 
-    void sendChunkUpdates(@NotNull Chunk chunk, int mask);
-
-    default void sendChunkUpdates(@NotNull Chunk chunk) {
-        sendChunkUpdates(chunk, (1 << 16) - 1);
-    }
-
     boolean isIllegalBlock(@NotNull Block block);
-
-    void sendActionBarMessage(Player player, String message);
 
     ItemStack getVarLightDebugStick();
 
     ItemStack makeGlowingStack(ItemStack base, int lightLevel);
 
     int getGlowingValue(ItemStack glowingStack);
-
-    @Nullable
-    Block getTargetBlockExact(Player player, int maxDistance);
 
     @NotNull
     String getNumericMinecraftVersion();
@@ -99,26 +84,6 @@ public interface INmsAdapter {
     @NotNull
     default NumericMajorMinorVersion getMinecraftVersion() {
         return new NumericMajorMinorVersion(getNumericMinecraftVersion());
-    }
-
-    default int getChunkBitMask(@NotNull Location location) {
-        Objects.requireNonNull(location);
-
-        return getChunkBitMask(location.getBlockY() / 16);
-    }
-
-    default int getChunkBitMask(int sectionY) {
-        int mask = 1 << sectionY;
-
-        if (sectionY == 0) {
-            return mask | 2;
-        }
-
-        if (sectionY == 15) {
-            return mask | 0x4000;
-        }
-
-        return mask | (1 << (sectionY - 1)) | (1 << (sectionY + 1));
     }
 
     @NotNull
@@ -161,34 +126,12 @@ public interface INmsAdapter {
         return list;
     }
 
-    default boolean areKeysEqual(String keyA, String keyB) {
-        String aNs = "minecraft", aK, bNs = "minecraft", bK;
-
-        int i;
-
-        if ((i = keyA.indexOf(':')) > 0) { // Key is namespaced
-            aNs = keyA.substring(0, i);
-            aK = keyA.substring(i + 1);
-        } else {
-            aK = keyA;
-        }
-
-        if ((i = keyB.indexOf(':')) > 0) { // Key is namespaced
-            bNs = keyB.substring(0, i);
-            bK = keyB.substring(i + 1);
-        } else {
-            bK = keyB;
-        }
-
-        return aNs.equals(bNs) && aK.equals(bK);
-    }
-
     default File getVarLightSaveDirectory(World world) {
         File varlightDir = new File(getRegionRoot(world), "varlight");
 
         if (!varlightDir.exists()) {
             if (!varlightDir.mkdirs()) {
-                throw new LightPersistFailedException("Could not create Varlight directory \"" + varlightDir.getAbsolutePath() + "\"for world \"" + world.getName() + "\"");
+                throw new LightPersistFailedException(String.format("Could not create Varlight directory \"%s\"for world \"%s\"", varlightDir.getAbsolutePath(), world.getName()));
             }
         }
 

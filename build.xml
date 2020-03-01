@@ -113,7 +113,7 @@
                target="${javac-src-lvl}">
             <classpath>
                 <fileset dir="${lib-dir}">
-                    <include name="**/spigot-1.13.2.jar"/>
+                    <include name="**/spigot-1.14.4.jar"/>
                     <include name="**/${lib-light-api}"/>
                     <include name="**/${lib-annotations}"/>
                     <include name="**/${lib-command-api}"/>

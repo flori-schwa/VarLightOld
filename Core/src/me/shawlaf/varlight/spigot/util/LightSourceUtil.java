@@ -4,13 +4,13 @@ import lombok.experimental.UtilityClass;
 import me.shawlaf.varlight.spigot.LightUpdateResult;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.event.LightUpdateEvent;
-import me.shawlaf.varlight.spigot.persistence.PersistentLightSource;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.util.NumericMajorMinorVersion;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+
+import java.util.Objects;
 
 import static me.shawlaf.varlight.spigot.LightUpdateResult.*;
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
@@ -30,9 +30,13 @@ public class LightSourceUtil {
     };
 
     public static LightUpdateResult placeNewLightSource(VarLightPlugin plugin, Location location, int lightLevel) {
+        return placeNewLightSource(plugin, location, lightLevel, true);
+    }
+
+    public static LightUpdateResult placeNewLightSource(VarLightPlugin plugin, Location location, int lightLevel, boolean doUpdate) {
         int fromLight = location.getBlock().getLightFromBlocks();
 
-        WorldLightSourceManager manager = plugin.getManager(location.getWorld());
+        WorldLightSourceManager manager = plugin.getManager(Objects.requireNonNull(location.getWorld()));
 
         if (manager == null) {
             return varLightNotActive(plugin, location.getWorld(), fromLight, lightLevel);
@@ -62,7 +66,10 @@ public class LightSourceUtil {
         int lightTo = lightUpdateEvent.getToLight();
 
         manager.setCustomLuminance(location, lightTo);
-        plugin.getNmsAdapter().updateBlockLight(location, lightTo);
+
+        if (doUpdate) {
+            plugin.getNmsAdapter().updateLight(location, lightTo);
+        }
 
         return updated(plugin, fromLight, lightTo);
     }

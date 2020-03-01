@@ -74,7 +74,7 @@ public class MinecraftTypeArgumentType implements ArgumentType<Material> {
     }
 
     @Override
-    public <S> Material parse(StringReader stringReader) throws CommandSyntaxException {
+    public Material parse(StringReader stringReader) throws CommandSyntaxException {
         return plugin.getNmsAdapter().keyToType(readKey(stringReader), type);
     }
 

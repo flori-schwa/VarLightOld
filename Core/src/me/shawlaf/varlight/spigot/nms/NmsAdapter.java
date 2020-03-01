@@ -6,7 +6,6 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,11 +22,6 @@ public class NmsAdapter implements INmsAdapter {
 
     @Override
     public @Nullable Material keyToType(String namespacedKey, MaterialType type) {
-        throw new AbstractMethodError();
-    }
-
-    @Override
-    public boolean isCorrectTool(Material block, Material tool) {
         throw new AbstractMethodError();
     }
 
@@ -52,12 +46,17 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public boolean isBlockTransparent(@NotNull Block block) {
+    public void updateLight(@NotNull Location at, int lightLevel) {
         throw new AbstractMethodError();
     }
 
     @Override
-    public void updateBlockLight(@NotNull Location at, int lightLevel) {
+    public void updateLight(Chunk chunk) {
+        throw new AbstractMethodError();
+    }
+
+    @Override
+    public void updateBlocks(Chunk chunk) {
         throw new AbstractMethodError();
     }
 
@@ -67,17 +66,7 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public void sendChunkUpdates(@NotNull Chunk chunk, int mask) {
-        throw new AbstractMethodError();
-    }
-
-    @Override
     public boolean isIllegalBlock(@NotNull Block block) {
-        throw new AbstractMethodError();
-    }
-
-    @Override
-    public void sendActionBarMessage(Player player, String message) {
         throw new AbstractMethodError();
     }
 
@@ -107,8 +96,4 @@ public class NmsAdapter implements INmsAdapter {
         throw new AbstractMethodError();
     }
 
-    @Override
-    public Block getTargetBlockExact(Player player, int maxDistance) {
-        throw new AbstractMethodError();
-    }
 }

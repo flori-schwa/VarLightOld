@@ -30,7 +30,7 @@ public class VarLightConfiguration {
         plugin.saveDefaultConfig();
 
         plugin.getConfig().addDefault(CONFIG_KEY_VARLIGHT_ITEM, plugin.getNmsAdapter().materialToKey(Material.GLOWSTONE_DUST));
-        plugin.getConfig().addDefault(CONFIG_KEY_AUTOSAVE, 5);
+        plugin.getConfig().addDefault(CONFIG_KEY_AUTOSAVE, -1); // Persist Light sources on world save
         plugin.getConfig().addDefault(CONFIG_KEY_REQUIRED_PERMISSION, "");
         plugin.getConfig().addDefault(WorldListType.WHITELIST.configPath, new ArrayList<String>());
         plugin.getConfig().addDefault(WorldListType.BLACKLIST.configPath, new ArrayList<String>());

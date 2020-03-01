@@ -2,19 +2,15 @@ package me.shawlaf.varlight.spigot.nms;
 
 import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.nms.wrappers.WrappedILightAccess;
-import me.shawlaf.varlight.spigot.persistence.PersistentLightSource;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.server.v1_15_R1.*;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.AnaloguePowerable;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Openable;
@@ -24,49 +20,29 @@ import org.bukkit.craftbukkit.v1_15_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_15_R1.block.CraftBlock;
 import org.bukkit.craftbukkit.v1_15_R1.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_15_R1.util.CraftMagicNumbers;
-import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockEvent;
-import org.bukkit.event.block.BlockFromToEvent;
-import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import ru.beykerykt.lightapi.chunks.ChunkInfo;
 
 import java.io.File;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.StreamSupport;
 
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
 
 @SuppressWarnings("deprecation")
-@ForMinecraft(version = "1.15.1")
-public class NmsAdapter implements INmsAdapter, Listener {
-
-    private static final BlockFace[] CHECK_FACES = new BlockFace[]{
-            BlockFace.UP,
-            BlockFace.DOWN,
-            BlockFace.WEST,
-            BlockFace.EAST,
-            BlockFace.NORTH,
-            BlockFace.SOUTH
-    };
+@ForMinecraft(version = "1.15.x")
+public class NmsAdapter implements INmsAdapter {
 
     private final VarLightPlugin plugin;
     private final ItemStack varlightDebugStick;
 
     public NmsAdapter(VarLightPlugin plugin) {
         this.plugin = plugin;
-
-//        if (plugin.isLightApiMissing()) {
-//            throw new VarLightInitializationException("LightAPI required!");
-//        }
 
         net.minecraft.server.v1_15_R1.ItemStack nmsStack = new net.minecraft.server.v1_15_R1.ItemStack(Items.STICK);
 
@@ -82,12 +58,7 @@ public class NmsAdapter implements INmsAdapter, Listener {
     }
 
     @Override
-    public void onEnable() {
-        Bukkit.getPluginManager().registerEvents(this, plugin);
-    }
-
-    @Override
-    public void onWorldEnable(@NotNull World world) {
+    public void enableVarLightInWorld(@NotNull World world) {
         WorldServer nmsWorld = getNmsWorld(world);
         WrappedILightAccess wrappedILightAccess = new WrappedILightAccess(plugin, nmsWorld);
 
@@ -120,16 +91,6 @@ public class NmsAdapter implements INmsAdapter, Listener {
         }
 
         return null;
-    }
-
-    @Override
-    public boolean isCorrectTool(Material block, Material tool) {
-        net.minecraft.server.v1_15_R1.Block nmsBlock = CraftMagicNumbers.getBlock(block);
-        Item item = CraftMagicNumbers.getItem(tool);
-
-        net.minecraft.server.v1_15_R1.ItemStack stack = new net.minecraft.server.v1_15_R1.ItemStack(item);
-
-        return item.getDestroySpeed(stack, nmsBlock.getBlockData()) > 1.0f;
     }
 
     @Override
@@ -177,15 +138,53 @@ public class NmsAdapter implements INmsAdapter, Listener {
     }
 
     @Override
-    public boolean isBlockTransparent(@NotNull Block block) {
-        throw new RuntimeException("Not used in combination with LightAPI");
+    public void updateLight(Chunk chunk) {
+        WorldServer nmsWorld = getNmsWorld(chunk.getWorld());
+        ChunkCoords chunkCoords = new ChunkCoords(chunk.getX(), chunk.getZ());
+
+        updateLight(nmsWorld, chunkCoords);
+    }
+
+    @Override
+    public void updateBlocks(Chunk chunk) {
+        WorldServer world = getNmsWorld(chunk.getWorld());
+        ChunkCoords chunkCoords = new ChunkCoords(chunk.getX(), chunk.getZ());
+
+        WorldLightSourceManager manager = plugin.getManager(chunk.getWorld());
+
+        if (manager == null) {
+            return;
+        }
+
+        IBlockAccess blockAccess = world.getChunkProvider().c(chunk.getX(), chunk.getZ());
+
+        Function<BlockPosition, Integer> h = bPos -> manager.getCustomLuminance(new IntPosition(bPos.getX(), bPos.getY(), bPos.getZ()), () -> blockAccess.h(bPos));
+
+        LightEngineBlock leb = ((LightEngineBlock) world.e().a(EnumSkyBlock.BLOCK));
+
+        StreamSupport.stream(BlockPosition.b(
+                chunkCoords.getCornerAX(),
+                chunkCoords.getCornerAY(),
+                chunkCoords.getCornerAZ(),
+                chunkCoords.getCornerBX(),
+                chunkCoords.getCornerBY(),
+                chunkCoords.getCornerBZ()
+        ).spliterator(), false).filter(bPos -> h.apply(bPos) > 0).forEach(leb::a);
     }
 
     private void updateLight(WorldServer worldServer, ChunkCoords chunkCoords) {
-        LightEngineThreaded let = worldServer.getChunkProvider().getLightEngine();
+        LightEngine let = worldServer.e();
 
-        let.a(worldServer.getChunkAt(chunkCoords.x, chunkCoords.z), false).thenRun(() -> {
-            Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, () -> {
+        WorldLightSourceManager manager = plugin.getManager(worldServer.getWorld());
+
+        if (manager == null) {
+            return;
+        }
+
+        IChunkAccess iChunkAccess = worldServer.getChunkProvider().a(chunkCoords.x, chunkCoords.z);
+
+        ((LightEngineThreaded) let).a(iChunkAccess, false).thenRun(() -> {
+            Bukkit.getScheduler().runTask(plugin, () -> {
                 for (ChunkCoords toUpdate : collectChunkPositionsToUpdate(chunkCoords)) {
                     ChunkCoordIntPair chunkCoordIntPair = new ChunkCoordIntPair(toUpdate.x, toUpdate.z);
                     PacketPlayOutLightUpdate ppolu = new PacketPlayOutLightUpdate(chunkCoordIntPair, let);
@@ -198,7 +197,7 @@ public class NmsAdapter implements INmsAdapter, Listener {
     }
 
     @Override
-    public void updateBlockLight(@NotNull Location at, int lightLevel) {
+    public void updateLight(@NotNull Location at, int lightLevel) { // TODO remove lightLevel parameter
         Objects.requireNonNull(at);
         Objects.requireNonNull(at.getWorld());
 
@@ -210,46 +209,6 @@ public class NmsAdapter implements INmsAdapter, Listener {
 
         leb.a(blockPosition);                       // Check Block
         updateLight(nmsWorld, pos.toChunkCoords()); // Update neighbouring Chunks and send updates to players
-
-//        if (!LightAPI.deleteLight(at, false)) {
-//            throw new LightUpdateFailedException("LightAPI not enabled or deleteLight Event cancelled!");
-//        }
-//
-//        if (lightLevel > 0) {
-//            if (!LightAPI.createLight(at, lightLevel, false)) {
-//                throw new LightUpdateFailedException("LightAPI not enabled or createLight Event cancelled!");
-//            }
-//        }
-//
-//        List<Chunk> chunksToUpdate = collectChunksToUpdate(at);
-//        List<ChunkInfo> chunkSectionsToUpdate = new ArrayList<>();
-//
-//        final int sectionY = at.getBlockY() >> 4;
-//
-//        for (Chunk chunk : chunksToUpdate) {
-//            final int chunkX = chunk.getX(), chunkZ = chunk.getZ();
-//
-//            chunkSectionsToUpdate.add(toChunkInfo(at.getWorld(), chunkX, sectionY, chunkZ));
-////            chunkSectionsToUpdate.add(new ChunkInfo(at.getWorld(), chunk.getX(), sectionY, chunk.getZ(), at.getWorld().getPlayers()));
-//
-//            if (sectionY < 16) {
-//                chunkSectionsToUpdate.add(toChunkInfo(at.getWorld(), chunkX, sectionY + 1, chunkZ));
-////                chunkSectionsToUpdate.add(new ChunkInfo(at.getWorld(), chunk.getX(), sectionY + 1, chunk.getZ(), at.getWorld().getPlayers()));
-//            }
-//
-//            if (sectionY > 0) {
-//                chunkSectionsToUpdate.add(toChunkInfo(at.getWorld(), chunkX, sectionY - 1, chunkZ));
-////                chunkSectionsToUpdate.add(new ChunkInfo(at.getWorld(), chunk.getX(), sectionY - 1, chunk.getZ(), at.getWorld().getPlayers()));
-//            }
-//        }
-//
-//        for (ChunkInfo chunkInfo : chunkSectionsToUpdate) {
-//            LightAPI.updateChunk(chunkInfo, LightType.BLOCK);
-//        }
-    }
-
-    private ChunkInfo toChunkInfo(World world, int x, int sectionY, int z) {
-        return new ChunkInfo(world, x, sectionY * 16, z, world.getPlayers());
     }
 
     @Override
@@ -257,10 +216,6 @@ public class NmsAdapter implements INmsAdapter, Listener {
         IBlockData blockData = ((CraftBlock) block).getNMS();
 
         return blockData.getBlock().a(blockData);
-    }
-
-    @Override
-    public void sendChunkUpdates(@NotNull Chunk chunk, int mask) {
     }
 
     @Override
@@ -290,45 +245,10 @@ public class NmsAdapter implements INmsAdapter, Listener {
         return !block.getType().isSolid() || !block.getType().isOccluding();
     }
 
-    @Override
-    public void sendActionBarMessage(Player player, String message) {
-        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(message));
-    }
-
-    @Override
-    public Block getTargetBlockExact(Player player, int maxDistance) {
-        return player.getTargetBlockExact(maxDistance);
-    }
-
     @NotNull
     @Override
     public String getNumericMinecraftVersion() {
         return MinecraftServer.getServer().getVersion();
-    }
-
-    // region Util
-
-    private WorldServer getNmsWorld(World world) {
-        return ((CraftWorld) world).getHandle();
-    }
-
-    // endregion
-
-    // region Events
-
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onBlockPlace(BlockPlaceEvent e) {
-        handleBlockUpdate(e);
-    }
-
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onBlockBreak(BlockBreakEvent e) {
-        handleBlockUpdate(e);
-    }
-
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onFluid(BlockFromToEvent e) {
-        handleBlockUpdate(e);
     }
 
     @Override
@@ -403,33 +323,10 @@ public class NmsAdapter implements INmsAdapter, Listener {
         return nmsWorld.worldProvider.getDimensionManager().a(world.getWorldFolder());
     }
 
-    @Override
-    public void handleBlockUpdate(BlockEvent e) {
-//        Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, () -> {
-//            Block theBlock = e.getBlock();
-//
-//            WorldLightSourceManager manager = plugin.getManager(theBlock.getWorld());
-//
-//            if (manager == null) {
-//                return;
-//            }
-//
-//            for (BlockFace blockFace : CHECK_FACES) {
-//                Location relative = theBlock.getLocation().add(blockFace.getDirection());
-//
-//                PersistentLightSource pls = manager.getPersistentLightSource(relative);
-//
-//                if (pls == null) {
-//                    continue;
-//                }
-//
-//                int customLuminance = pls.getCustomLuminance();
-//
-//                if (customLuminance > 0) {
-//                    updateLight(getNmsWorld(relative.getWorld()), toIntPosition(relative).toChunkCoords());
-//                }
-//            }
-//        });
+    // region Util
+
+    private WorldServer getNmsWorld(World world) {
+        return ((CraftWorld) world).getHandle();
     }
 
     // endregion

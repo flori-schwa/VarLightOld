@@ -1,10 +1,6 @@
 package me.shawlaf.varlight.spigot.nms;
 
 import me.shawlaf.varlight.spigot.VarLightPlugin;
-import me.shawlaf.varlight.spigot.persistence.PersistentLightSource;
-import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.server.v1_14_R1.*;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
@@ -21,14 +17,7 @@ import org.bukkit.craftbukkit.v1_14_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_14_R1.block.CraftBlock;
 import org.bukkit.craftbukkit.v1_14_R1.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_14_R1.util.CraftMagicNumbers;
-import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockEvent;
-import org.bukkit.event.block.BlockFromToEvent;
-import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -42,7 +31,7 @@ import java.io.File;
 import java.util.*;
 
 @SuppressWarnings("deprecation")
-@ForMinecraft(version = "1.14+")
+@ForMinecraft(version = "1.14.x")
 public class NmsAdapter implements INmsAdapter, Listener {
 
     private static final BlockFace[] CHECK_FACES = new BlockFace[]{
@@ -101,16 +90,6 @@ public class NmsAdapter implements INmsAdapter, Listener {
     }
 
     @Override
-    public boolean isCorrectTool(Material block, Material tool) {
-        net.minecraft.server.v1_14_R1.Block nmsBlock = CraftMagicNumbers.getBlock(block);
-        Item item = CraftMagicNumbers.getItem(tool);
-
-        net.minecraft.server.v1_14_R1.ItemStack stack = new net.minecraft.server.v1_14_R1.ItemStack(item);
-
-        return item.getDestroySpeed(stack, nmsBlock.getBlockData()) > 1.0f;
-    }
-
-    @Override
     public String materialToKey(Material material) {
         return material.isBlock() ?
                 IRegistry.BLOCK.getKey(CraftMagicNumbers.getBlock(material)).toString() :
@@ -155,12 +134,7 @@ public class NmsAdapter implements INmsAdapter, Listener {
     }
 
     @Override
-    public boolean isBlockTransparent(@NotNull Block block) {
-        throw new RuntimeException("Not used in combination with LightAPI");
-    }
-
-    @Override
-    public void updateBlockLight(@NotNull Location at, int lightLevel) {
+    public void updateLight(@NotNull Location at, int lightLevel) {
         Objects.requireNonNull(at);
         Objects.requireNonNull(at.getWorld());
 
@@ -213,7 +187,13 @@ public class NmsAdapter implements INmsAdapter, Listener {
     }
 
     @Override
-    public void sendChunkUpdates(@NotNull Chunk chunk, int mask) {
+    public void updateLight(Chunk chunk) {
+        // TODO
+    }
+
+    @Override
+    public void updateBlocks(Chunk chunk) {
+        // TODO
     }
 
     @Override
@@ -241,11 +221,6 @@ public class NmsAdapter implements INmsAdapter, Listener {
         }
 
         return !block.getType().isSolid() || !block.getType().isOccluding();
-    }
-
-    @Override
-    public void sendActionBarMessage(Player player, String message) {
-        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(message));
     }
 
     @Override
@@ -320,62 +295,9 @@ public class NmsAdapter implements INmsAdapter, Listener {
         return nmsWorld.worldProvider.getDimensionManager().a(world.getWorldFolder());
     }
 
-    @Override
-    public Block getTargetBlockExact(Player player, int maxDistance) {
-        return player.getTargetBlockExact(maxDistance);
-    }
-
     @NotNull
     @Override
     public String getNumericMinecraftVersion() {
         return MinecraftServer.getServer().getVersion();
     }
-
-    // region Events
-
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onBlockPlace(BlockPlaceEvent e) {
-        handleBlockUpdate(e);
-    }
-
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onBlockBreak(BlockBreakEvent e) {
-        handleBlockUpdate(e);
-    }
-
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onFluid(BlockFromToEvent e) {
-        handleBlockUpdate(e);
-    }
-
-    @Override
-    public void handleBlockUpdate(BlockEvent e) {
-//        Bukkit.getScheduler().runTaskLater(plugin, () -> {
-//            Block theBlock = e.getBlock();
-//
-//            WorldLightSourceManager manager = plugin.getManager(theBlock.getWorld());
-//
-//            if (manager == null) {
-//                return;
-//            }
-//
-//            for (BlockFace blockFace : CHECK_FACES) {
-//                Location relative = theBlock.getLocation().add(blockFace.getDirection());
-//
-//                PersistentLightSource pls = manager.getPersistentLightSource(relative);
-//
-//                if (pls == null) {
-//                    continue;
-//                }
-//
-//                int customLuminance = manager.getCustomLuminance();
-//
-//                if (pls.isInvalid() && areKeysEqual(materialToKey(relative.getBlock().getType()), pls.getType())) {
-//                    updateBlockLight(relative, customLuminance);
-//                }
-//            }
-//        }, 1L);
-    }
-
-    // endregion
 }

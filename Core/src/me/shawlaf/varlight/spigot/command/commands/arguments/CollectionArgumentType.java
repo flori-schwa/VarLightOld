@@ -37,7 +37,7 @@ public class CollectionArgumentType<T> implements ArgumentType<Collection<T>> {
     }
 
     @Override
-    public <S> Collection<T> parse(StringReader stringReader) throws CommandSyntaxException {
+    public Collection<T> parse(StringReader stringReader) throws CommandSyntaxException {
         List<T> list = new ArrayList<>();
 
         while (stringReader.canRead()) {

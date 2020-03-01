@@ -1,5 +1,7 @@
 package me.shawlaf.varlight.spigot;
 
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
@@ -158,7 +160,7 @@ public abstract class LightUpdateResult {
         }
 
         if (commandSender instanceof Player) {
-            plugin.getNmsAdapter().sendActionBarMessage((Player) commandSender, message);
+            ((Player) commandSender).spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(message));
         } else {
             commandSender.sendMessage(message);
         }

@@ -93,7 +93,7 @@ public class PersistentLightSource implements ICustomLightSource {
             return;
         }
 
-        plugin.getNmsAdapter().updateBlockLight(toLocation(position, world), emittingLight);
+        plugin.getNmsAdapter().updateLight(toLocation(position, world), emittingLight);
         manager.createPersistentLightSource(position, emittingLight);
         migrated = true;
     }

@@ -12,6 +12,7 @@ import me.shawlaf.varlight.spigot.nms.MaterialType;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.spigot.util.LightSourceUtil;
 import me.shawlaf.varlight.spigot.util.RegionIterator;
+import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -22,6 +23,8 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Predicate;
 
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
@@ -167,6 +170,8 @@ public class VarLightCommandFill extends VarLightSubCommand {
 
         IntPosition next;
 
+        Set<ChunkCoords> chunksToUpdate = new HashSet<>();
+
         while (regionIterator.hasNext()) {
             next = regionIterator.next();
             Block block = toBlock(next, world);
@@ -183,13 +188,23 @@ public class VarLightCommandFill extends VarLightSubCommand {
                 continue;
             }
 
-            LightUpdateResult result = LightSourceUtil.placeNewLightSource(plugin, block.getLocation(), lightLevel);
+            LightUpdateResult result = LightSourceUtil.placeNewLightSource(plugin, block.getLocation(), lightLevel, false);
 
             if (!result.successful()) {
                 ++failed;
             } else {
                 ++updated;
             }
+
+            chunksToUpdate.addAll(plugin.getNmsAdapter().collectChunkPositionsToUpdate(new ChunkCoords(block.getX() >> 4, block.getZ() >> 4)));
+        }
+
+        for (ChunkCoords chunkCoords : chunksToUpdate) {
+            plugin.getNmsAdapter().updateBlocks(world.getChunkAt(chunkCoords.x, chunkCoords.z));
+        }
+
+        for (ChunkCoords chunkCoords : chunksToUpdate) {
+            plugin.getNmsAdapter().updateLight(world.getChunkAt(chunkCoords.x, chunkCoords.z));
         }
 
         successBroadcast(this, source, String.format("Successfully updated %d Light sources in Region [%d, %d, %d] to [%d, %d, %d]. (Total blocks: %d, Invalid Blocks: %d, Skipped Blocks: %d, Failed Blocks: %d)",
