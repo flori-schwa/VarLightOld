@@ -32,10 +32,6 @@ public class LightSourceUtil {
     public static LightUpdateResult placeNewLightSource(VarLightPlugin plugin, Location location, int lightLevel) {
         int fromLight = location.getBlock().getLightFromBlocks();
 
-        if (!canNewLightSourceBePlaced(plugin, location)) {
-            return adjacentLightSource(plugin, fromLight, lightLevel);
-        }
-
         WorldLightSourceManager manager = plugin.getManager(location.getWorld());
 
         if (manager == null) {
@@ -69,28 +65,6 @@ public class LightSourceUtil {
         plugin.getNmsAdapter().updateBlockLight(location, lightTo);
 
         return updated(plugin, fromLight, lightTo);
-    }
-
-    public static boolean canNewLightSourceBePlaced(VarLightPlugin plugin, Location location) {
-        WorldLightSourceManager manager = plugin.getManager(location.getWorld());
-
-        if (manager == null) {
-            return false;
-        }
-
-        if (plugin.getNmsAdapter().getMinecraftVersion().newerOrEquals(MC1_14)) {
-            for (BlockFace blockFace : CHECK_ADJACENT) {
-                Block relative = location.getBlock().getRelative(blockFace);
-
-                PersistentLightSource pls = manager.getPersistentLightSource(relative.getLocation());
-
-                if (pls != null && !pls.isInvalid()) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
     }
 
 }

@@ -35,7 +35,7 @@ import java.util.*;
 import static me.shawlaf.command.result.CommandResult.failure;
 import static me.shawlaf.command.result.CommandResult.info;
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
-import static me.shawlaf.varlight.spigot.util.LightSourceUtil.canNewLightSourceBePlaced;
+import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toLocation;
 import static me.shawlaf.varlight.spigot.util.LightSourceUtil.placeNewLightSource;
 
 public class VarLightPlugin extends JavaPlugin implements Listener {
@@ -58,7 +58,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     private Material lightUpdateItem;
     private GameMode stepsizeGamemode;
 
-    private boolean shouldVLDBDeflate;
+    private boolean shouldDeflate;
     private boolean doLoad = true;
 
     {
@@ -99,7 +99,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         LightDatabaseMigrator.addStructureMigration(new MoveVarlightRootFolder(this));
 
-        this.shouldVLDBDeflate = getConfig().getBoolean(VarLightConfiguration.CONFIG_KEY_VLDB_DEFLATED, true);
+        this.shouldDeflate = getConfig().getBoolean(VarLightConfiguration.CONFIG_KEY_NLS_DEFLATED, true);
 
         configuration = new VarLightConfiguration(this);
         configuration.getVarLightEnabledWorlds().forEach(this::enableInWorld);
@@ -225,8 +225,8 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         this.stepSizes.put(player.getUniqueId(), stepSize);
     }
 
-    public boolean shouldVLDBDeflate() {
-        return shouldVLDBDeflate;
+    public boolean shouldDeflate() {
+        return shouldDeflate;
     }
 
     public boolean isLightApiMissing() {
@@ -273,16 +273,16 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
             Block clickedBlock = e.getClickedBlock();
 
-            PersistentLightSource pls = manager.getPersistentLightSource(clickedBlock.getLocation());
+            int customLuminance = manager.getCustomLuminance(toIntPosition(clickedBlock), 0);
 
-            if (pls == null) {
+            if (customLuminance == 0) {
                 info(command, e.getPlayer(),
                         String.format("No custom light source present at Position [%d, %d, %d]",
                                 clickedBlock.getX(), clickedBlock.getY(), clickedBlock.getZ()),
                         ChatColor.RED
                 );
             } else {
-                info(command, e.getPlayer(), pls.toCompactString(true), ChatColor.GREEN);
+                info(command, e.getPlayer(), String.format("Custom Light Source with Light Level %d Present and Position %s", customLuminance, toIntPosition(clickedBlock).toShortString()), ChatColor.GREEN);
             }
 
             return;
@@ -351,14 +351,14 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         result.displayMessage(e.getPlayer());
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
-    public void onChunkUnload(ChunkUnloadEvent e) {
-        WorldLightSourceManager manager = getManager(e.getWorld());
-
-        if (manager != null) {
-            manager.unloadChunk(e.getChunk());
-        }
-    }
+//    @EventHandler(priority = EventPriority.MONITOR)
+//    public void onChunkUnload(ChunkUnloadEvent e) {
+//        WorldLightSourceManager manager = getManager(e.getWorld());
+//
+//        if (manager != null) {
+//            manager.unloadChunk(e.getChunk());
+//        }
+//    }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent e) {
@@ -395,10 +395,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         } else {
             heldItem = e.getPlayer().getInventory().getItemInHand();
         }
-
-//        if (!nmsAdapter.isCorrectTool(theBlock.getType(), heldItem.getType())) {
-//            return;
-//        }
 
         int fortuneLvl = heldItem.getEnchantmentLevel(Enchantment.LOOT_BONUS_BLOCKS);
 
@@ -454,8 +450,8 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-        final ItemStack placedStack = e.getItemInHand().clone();
-        final int emittingLight = nmsAdapter.getGlowingValue(placedStack);
+        final ItemStack handCopy = e.getItemInHand().clone();
+        final int emittingLight = nmsAdapter.getGlowingValue(handCopy);
         final Material before = e.getBlock().getType(); // We cannot always assume it's air, it could be water
 
         WorldLightSourceManager manager = getManager(e.getBlock().getWorld());
@@ -471,24 +467,15 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
                 return;
             }
 
-            if (!canNewLightSourceBePlaced(this, e.getBlock().getLocation())) {
-                e.setCancelled(true);
-                e.setBuild(false);
-
-                nmsAdapter.handleBlockUpdate(e);
-
-                return;
-            }
-
             Bukkit.getScheduler().runTaskLater(this,
                     () -> {
                         LightUpdateResult lightUpdateResult = placeNewLightSource(this, e.getBlock().getLocation(), emittingLight);
 
                         if (!lightUpdateResult.successful()) {
                             e.getBlock().setType(before);
-                            placedStack.setAmount(1);
 
-                            e.getBlock().getWorld().dropItemNaturally(e.getBlock().getLocation(), placedStack);
+                            handCopy.setAmount(1);
+                            e.getBlock().getWorld().dropItemNaturally(e.getBlock().getLocation(), handCopy);
                         }
                     }, 1L);
         }
@@ -519,6 +506,19 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         handleBlockAffected(e.getBlock());
     }
 
+//    @EventHandler
+//    public void onBlockPhysics(BlockPhysicsEvent e) {
+//        WorldLightSourceManager manager = getManager(e.getBlock().getWorld());
+//
+//        if (manager == null) {
+//            return;
+//        }
+//
+//        Location source = e.getSourceBlock().getLocation();
+//
+//        PersistentLightSource pls = manager.getPersistentLightSource(source);
+//    }
+
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent e) {
         stepSizes.remove(e.getPlayer().getUniqueId());
@@ -535,9 +535,9 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         IntPosition position = toIntPosition(block.getLocation());
 
-        PersistentLightSource pls = manager.getPersistentLightSource(block.getLocation());
+        int customLuminance = manager.getCustomLuminance(position, 0);
 
-        if (pls != null) {
+        if (customLuminance != 0) {
             manager.setCustomLuminance(position, 0);
         }
     }
@@ -551,9 +551,9 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         for (Block block : blocks) {
             IntPosition position = toIntPosition(block.getLocation());
-            PersistentLightSource pls = manager.getPersistentLightSource(block.getLocation());
+            int customLuminance = manager.getCustomLuminance(position, 0);
 
-            if (pls != null) {
+            if (customLuminance != 0) {
                 manager.setCustomLuminance(position, 0);
             }
         }

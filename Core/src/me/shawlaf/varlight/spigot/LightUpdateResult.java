@@ -115,26 +115,6 @@ public abstract class LightUpdateResult {
         };
     }
 
-    public static LightUpdateResult adjacentLightSource(VarLightPlugin plugin, int fromLight, int toLight) {
-        return new LightUpdateResult(plugin, fromLight, toLight) {
-            @NotNull
-            @Override
-            public String getMessage() {
-                return "There is another Light source directly adjacent to this block";
-            }
-
-            @Override
-            public @NotNull NamespacedKey getDebugMessage() {
-                return new NamespacedKey(plugin, "adjacent_lightsource");
-            }
-
-            @Override
-            public boolean successful() {
-                return false;
-            }
-        };
-    }
-
     public static LightUpdateResult varLightNotActive(VarLightPlugin plugin, World world, int fromLight, int toLight) {
         return new LightUpdateResult(plugin, fromLight, toLight) {
             @Override

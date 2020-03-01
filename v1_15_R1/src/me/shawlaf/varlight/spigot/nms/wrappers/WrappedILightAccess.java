@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-// Normally, WorldServer.getChunkProvider gets passed as the ILightAccess parameter to the constructor of LightEngineThreaded
 public class WrappedILightAccess implements ILightAccess, Listener {
 
     private final Map<ChunkCoords, IBlockAccess> proxies = Collections.synchronizedMap(new HashMap<>());
@@ -95,6 +94,7 @@ public class WrappedILightAccess implements ILightAccess, Listener {
     }
 
     private ILightAccess getWrapped() {
+        // Normally, WorldServer.getChunkProvider gets passed as the ILightAccess parameter to the constructor of LightEngineThreaded
         return world.getChunkProvider();
     }
 

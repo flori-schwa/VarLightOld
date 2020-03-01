@@ -16,6 +16,8 @@ import static me.shawlaf.varlight.spigot.command.VarLightCommand.SUCCESS;
 
 public class VarLightCommandMigrate extends VarLightSubCommand {
 
+    // TODO TEST IF THIS IS STILL REQUIRED
+
     public VarLightCommandMigrate(VarLightPlugin plugin) {
         super(plugin, "migrate");
     }

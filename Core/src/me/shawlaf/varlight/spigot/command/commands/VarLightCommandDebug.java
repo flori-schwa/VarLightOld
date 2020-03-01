@@ -4,14 +4,13 @@ import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
-import me.shawlaf.command.exception.CommandException;
-import me.shawlaf.varlight.persistence.RegionPersistor;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.command.VarLightSubCommand;
-import me.shawlaf.varlight.spigot.persistence.PersistentLightSource;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.util.ChunkCoords;
+import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.RegionCoords;
+import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.HoverEvent;
@@ -20,7 +19,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
 import java.util.List;
 
 import static com.mojang.brigadier.arguments.BoolArgumentType.bool;
@@ -185,14 +183,7 @@ public class VarLightCommandDebug extends VarLightSubCommand {
             return;
         }
 
-        RegionPersistor<PersistentLightSource> persistor = manager.getRegionPersistor(new RegionCoords(regionX, regionZ));
-        List<PersistentLightSource> all;
-
-        try {
-            all = persistor.loadAll();
-        } catch (IOException e) {
-            throw CommandException.severeException("Failed to load light sources!", e);
-        }
+        List<IntPosition> all = manager.getNLSFile(new RegionCoords(regionX, regionZ)).getAllLightSources();
 
         player.sendMessage(String.format("Light sources in region (%d | %d): [%d]", regionX, regionZ, all.size()));
         listInternal(player, all);
@@ -208,31 +199,30 @@ public class VarLightCommandDebug extends VarLightSubCommand {
 
         ChunkCoords chunkCoords = new ChunkCoords(chunkX, chunkZ);
 
-        RegionPersistor<PersistentLightSource> persistor = manager.getRegionPersistor(chunkCoords.toRegionCoords());
-        List<PersistentLightSource> all;
-
-        if (!persistor.isChunkLoaded(chunkCoords)) {
-            try {
-                persistor.loadChunk(chunkCoords);
-            } catch (IOException e) {
-                throw CommandException.severeException("Failed to load light sources!", e);
-            }
-        }
-
-        all = persistor.getCache(chunkCoords);
+        List<IntPosition> all = manager.getNLSFile(chunkCoords.toRegionCoords()).getAllLightSources(chunkCoords);
 
         player.sendMessage(String.format("Light sources in chunk (%d | %d): [%d]", chunkX, chunkZ, all.size()));
         listInternal(player, all);
     }
 
-    private void listInternal(Player player, List<PersistentLightSource> list) {
-        for (PersistentLightSource lightSource : list) {
+    @SuppressWarnings("ConstantConditions")
+    // All Methods that call this Method already assert that the WorldLightSourceManager exists!
+    private void listInternal(Player player, List<IntPosition> list) {
+        WorldLightSourceManager manager = plugin.getManager(player.getWorld());
 
-            TextComponent textComponent = new TextComponent(lightSource.toCompactString(true));
+        for (IntPosition lightSource : list) {
+            TextComponent textComponent = new TextComponent(String.format(
+                    "%s = %d (%s)",
+                    lightSource.toShortString(),
+                    manager.getCustomLuminance(lightSource, 0),
+                    plugin.getNmsAdapter().materialToKey(player.getWorld().getBlockAt(lightSource.x, lightSource.y, lightSource.z).getType()))
+            );
+
+            textComponent.setColor(ChatColor.GREEN);
 
             textComponent.setClickEvent(new ClickEvent(
                     ClickEvent.Action.RUN_COMMAND,
-                    String.format("/tp %d %d %d", lightSource.getPosition().x, lightSource.getPosition().y, lightSource.getPosition().z)
+                    String.format("/tp %d %d %d", lightSource.x, lightSource.y, lightSource.z)
             ));
 
             textComponent.setHoverEvent(new HoverEvent(

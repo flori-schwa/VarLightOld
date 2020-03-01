@@ -57,7 +57,7 @@ public class VLDBMigration implements Predicate<File> {
             try (FileOutputStream fileOutputStream = new FileOutputStream(newFile)) {
                 VLDBOutputStream out;
 
-                if (plugin.shouldVLDBDeflate()) {
+                if (plugin.shouldDeflate()) {
                     out = new VLDBOutputStream(new GZIPOutputStream(fileOutputStream));
                 } else {
                     out = new VLDBOutputStream(fileOutputStream);

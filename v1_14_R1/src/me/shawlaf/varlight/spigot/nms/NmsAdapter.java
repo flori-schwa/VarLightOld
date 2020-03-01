@@ -350,31 +350,31 @@ public class NmsAdapter implements INmsAdapter, Listener {
 
     @Override
     public void handleBlockUpdate(BlockEvent e) {
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            Block theBlock = e.getBlock();
-
-            WorldLightSourceManager manager = plugin.getManager(theBlock.getWorld());
-
-            if (manager == null) {
-                return;
-            }
-
-            for (BlockFace blockFace : CHECK_FACES) {
-                Location relative = theBlock.getLocation().add(blockFace.getDirection());
-
-                PersistentLightSource pls = manager.getPersistentLightSource(relative);
-
-                if (pls == null) {
-                    continue;
-                }
-
-                int customLuminance = pls.getCustomLuminance();
-
-                if (pls.isInvalid() && areKeysEqual(materialToKey(relative.getBlock().getType()), pls.getType())) {
-                    updateBlockLight(relative, customLuminance);
-                }
-            }
-        }, 1L);
+//        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+//            Block theBlock = e.getBlock();
+//
+//            WorldLightSourceManager manager = plugin.getManager(theBlock.getWorld());
+//
+//            if (manager == null) {
+//                return;
+//            }
+//
+//            for (BlockFace blockFace : CHECK_FACES) {
+//                Location relative = theBlock.getLocation().add(blockFace.getDirection());
+//
+//                PersistentLightSource pls = manager.getPersistentLightSource(relative);
+//
+//                if (pls == null) {
+//                    continue;
+//                }
+//
+//                int customLuminance = manager.getCustomLuminance();
+//
+//                if (pls.isInvalid() && areKeysEqual(materialToKey(relative.getBlock().getType()), pls.getType())) {
+//                    updateBlockLight(relative, customLuminance);
+//                }
+//            }
+//        }, 1L);
     }
 
     // endregion

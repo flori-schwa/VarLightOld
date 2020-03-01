@@ -16,7 +16,7 @@ public class VarLightConfiguration {
     public static final String CONFIG_KEY_VARLIGHT_ITEM = "item";
     public static final String CONFIG_KEY_REQUIRED_PERMISSION = "requiredPermission";
     public static final String CONFIG_KEY_AUTOSAVE = "autosave";
-    public static final String CONFIG_KEY_VLDB_DEFLATED = "vldb-deflated";
+    public static final String CONFIG_KEY_NLS_DEFLATED = "nls-deflated";
     public static final String CONFIG_KEY_STEPSIZE_GAMEMODE = "stepsize-gamemode";
     public static final String CONFIG_KEY_VARLIGHT_RECLAIM = "varlight-reclaim";
     public static final String CONFIG_KEY_LOG_DEBUG = "log-debug";
@@ -34,7 +34,7 @@ public class VarLightConfiguration {
         plugin.getConfig().addDefault(CONFIG_KEY_REQUIRED_PERMISSION, "");
         plugin.getConfig().addDefault(WorldListType.WHITELIST.configPath, new ArrayList<String>());
         plugin.getConfig().addDefault(WorldListType.BLACKLIST.configPath, new ArrayList<String>());
-        plugin.getConfig().addDefault(CONFIG_KEY_VLDB_DEFLATED, true);
+        plugin.getConfig().addDefault(CONFIG_KEY_NLS_DEFLATED, true);
         plugin.getConfig().addDefault(CONFIG_KEY_STEPSIZE_GAMEMODE, GameMode.CREATIVE.name());
         plugin.getConfig().addDefault(CONFIG_KEY_VARLIGHT_RECLAIM, true);
         plugin.getConfig().addDefault(CONFIG_KEY_LOG_DEBUG, false);

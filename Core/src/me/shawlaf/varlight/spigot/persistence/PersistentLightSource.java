@@ -13,6 +13,7 @@ import java.util.Objects;
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toBlock;
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toLocation;
 
+@Deprecated
 public class PersistentLightSource implements ICustomLightSource {
 
     private final IntPosition position;
