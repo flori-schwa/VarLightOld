@@ -11,9 +11,11 @@ import me.shawlaf.varlight.spigot.command.VarLightSubCommand;
 import me.shawlaf.varlight.spigot.nms.MaterialType;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.spigot.util.LightSourceUtil;
+import me.shawlaf.varlight.spigot.util.ProgressReport;
 import me.shawlaf.varlight.spigot.util.RegionIterator;
 import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -164,62 +166,68 @@ public class VarLightCommandFill extends VarLightSubCommand {
             return FAILURE;
         }
 
-        int total = 0, illegal = 0, updated = 0, skipped = 0, failed = 0;
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            int totalSize = regionIterator.getSize();
+            ProgressReport progressReport = totalSize < 1_000_000 ? ProgressReport.EMPTY : new ProgressReport(plugin, source, String.format("Fill from %s to %s", a.toShortString(), b.toShortString()), totalSize);
 
-        regionIterator.reset();
+            int total = 0, illegal = 0, updated = 0, skipped = 0, failed = 0;
 
-        IntPosition next;
+            IntPosition next;
 
-        Set<ChunkCoords> chunksToUpdate = new HashSet<>();
+            Set<ChunkCoords> chunksToUpdate = new HashSet<>();
 
-        while (regionIterator.hasNext()) {
-            next = regionIterator.next();
-            Block block = toBlock(next, world);
+            while (regionIterator.hasNext()) {
+                next = regionIterator.next();
+                Block block = toBlock(next, world);
+                progressReport.reportProgress(++total);
 
-            ++total;
+                if (!filter.test(block.getType())) {
+                    ++skipped;
+                    continue;
+                }
 
-            if (!filter.test(block.getType())) {
-                ++skipped;
-                continue;
+                if (plugin.getNmsAdapter().isIllegalBlock(block)) {
+                    ++illegal;
+                    continue;
+                }
+
+                LightUpdateResult result = LightSourceUtil.placeNewLightSource(plugin, block.getLocation(), lightLevel, false);
+
+                if (!result.successful()) {
+                    ++failed;
+                } else {
+                    ++updated;
+                }
+
+                chunksToUpdate.addAll(plugin.getNmsAdapter().collectChunkPositionsToUpdate(new ChunkCoords(block.getX() >> 4, block.getZ() >> 4)));
             }
 
-            if (plugin.getNmsAdapter().isIllegalBlock(block)) {
-                ++illegal;
-                continue;
-            }
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                for (ChunkCoords chunkCoords : chunksToUpdate) {
+                    plugin.getNmsAdapter().updateBlocks(world.getChunkAt(chunkCoords.x, chunkCoords.z));
+                }
 
-            LightUpdateResult result = LightSourceUtil.placeNewLightSource(plugin, block.getLocation(), lightLevel, false);
+                for (ChunkCoords chunkCoords : chunksToUpdate) {
+                    plugin.getNmsAdapter().updateLight(world.getChunkAt(chunkCoords.x, chunkCoords.z));
+                }
+            });
 
-            if (!result.successful()) {
-                ++failed;
-            } else {
-                ++updated;
-            }
+            progressReport.finish();
 
-            chunksToUpdate.addAll(plugin.getNmsAdapter().collectChunkPositionsToUpdate(new ChunkCoords(block.getX() >> 4, block.getZ() >> 4)));
-        }
-
-        for (ChunkCoords chunkCoords : chunksToUpdate) {
-            plugin.getNmsAdapter().updateBlocks(world.getChunkAt(chunkCoords.x, chunkCoords.z));
-        }
-
-        for (ChunkCoords chunkCoords : chunksToUpdate) {
-            plugin.getNmsAdapter().updateLight(world.getChunkAt(chunkCoords.x, chunkCoords.z));
-        }
-
-        successBroadcast(this, source, String.format("Successfully updated %d Light sources in Region [%d, %d, %d] to [%d, %d, %d]. (Total blocks: %d, Invalid Blocks: %d, Skipped Blocks: %d, Failed Blocks: %d)",
-                updated,
-                regionIterator.pos1.x,
-                regionIterator.pos1.y,
-                regionIterator.pos1.z,
-                regionIterator.pos2.x,
-                regionIterator.pos2.y,
-                regionIterator.pos2.z,
-                total,
-                illegal,
-                skipped,
-                failed
-        ));
+            successBroadcast(this, source, String.format("Successfully updated %d Light sources in Region [%d, %d, %d] to [%d, %d, %d]. (Total blocks: %d, Invalid Blocks: %d, Skipped Blocks: %d, Failed Blocks: %d)",
+                    updated,
+                    regionIterator.pos1.x,
+                    regionIterator.pos1.y,
+                    regionIterator.pos1.z,
+                    regionIterator.pos2.x,
+                    regionIterator.pos2.y,
+                    regionIterator.pos2.z,
+                    total,
+                    illegal,
+                    skipped,
+                    failed
+            ));
+        });
 
         return SUCCESS;
     }

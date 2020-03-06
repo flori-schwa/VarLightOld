@@ -10,14 +10,12 @@ import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.*;
-import org.bukkit.block.Block;
 import org.bukkit.block.data.AnaloguePowerable;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Openable;
 import org.bukkit.block.data.Powerable;
 import org.bukkit.block.data.type.Piston;
 import org.bukkit.craftbukkit.v1_15_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_15_R1.block.CraftBlock;
 import org.bukkit.craftbukkit.v1_15_R1.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_15_R1.util.CraftMagicNumbers;
 import org.bukkit.inventory.ItemFlag;
@@ -93,6 +91,7 @@ public class NmsAdapter implements INmsAdapter {
         return null;
     }
 
+    @NotNull
     @Override
     public String materialToKey(Material material) {
         return material.isBlock() ?
@@ -100,11 +99,13 @@ public class NmsAdapter implements INmsAdapter {
                 IRegistry.ITEM.getKey(CraftMagicNumbers.getItem(material)).toString();
     }
 
+    @NotNull
     @Override
     public String getLocalizedBlockName(Material material) {
         return LocaleLanguage.a().a(CraftMagicNumbers.getBlock(material).k());
     }
 
+    @NotNull
     @Override
     public Collection<String> getTypes(MaterialType type) {
         List<String> types = new ArrayList<>();
@@ -138,11 +139,8 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public void updateLight(Chunk chunk) {
-        WorldServer nmsWorld = getNmsWorld(chunk.getWorld());
-        ChunkCoords chunkCoords = new ChunkCoords(chunk.getX(), chunk.getZ());
-
-        updateLight(nmsWorld, chunkCoords);
+    public void updateLight(World world, ChunkCoords chunkCoords) {
+        updateLight(getNmsWorld(world), chunkCoords);
     }
 
     @Override
@@ -212,37 +210,31 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public int getVanillaLuminance(@NotNull Block block) {
-        IBlockData blockData = ((CraftBlock) block).getNMS();
-
-        return blockData.getBlock().a(blockData);
-    }
-
-    @Override
-    public boolean isIllegalBlock(@NotNull Block block) {
-        if (!block.getType().isBlock()) {
+    public boolean isIllegalBlock(@NotNull Material material) {
+        if (!material.isBlock()) {
             return true;
         }
 
-        if (this.getVanillaLuminance(block) > 0) {
+        // If the Block is a vanilla Light source
+        if (CraftMagicNumbers.getBlock(material).getBlockData().h() > 0) {
             return true;
         }
 
-        BlockData blockData = block.getType().createBlockData();
+        BlockData blockData = material.createBlockData();
 
         if (blockData instanceof Powerable || blockData instanceof AnaloguePowerable || blockData instanceof Openable || blockData instanceof Piston) {
             return true;
         }
 
-        if (block.getType() == Material.SLIME_BLOCK) {
+        if (material == Material.SLIME_BLOCK) {
             return true;
         }
 
-        if (block.getType() == Material.BLUE_ICE) {
-            return false; // Packed ice is solid and occluding but blue ice isn't?
+        if (material == Material.BLUE_ICE) {
+            return false;
         }
 
-        return !block.getType().isSolid() || !block.getType().isOccluding();
+        return !material.isSolid() || !material.isOccluding();
     }
 
     @NotNull
@@ -251,6 +243,7 @@ public class NmsAdapter implements INmsAdapter {
         return MinecraftServer.getServer().getVersion();
     }
 
+    @NotNull
     @Override
     public ItemStack getVarLightDebugStick() {
         net.minecraft.server.v1_15_R1.ItemStack nmsStack = CraftItemStack.asNMSCopy(varlightDebugStick);

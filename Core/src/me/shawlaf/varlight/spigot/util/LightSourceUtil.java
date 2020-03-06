@@ -5,10 +5,8 @@ import me.shawlaf.varlight.spigot.LightUpdateResult;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.event.LightUpdateEvent;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
-import me.shawlaf.varlight.util.NumericMajorMinorVersion;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.block.BlockFace;
 
 import java.util.Objects;
 
@@ -17,17 +15,6 @@ import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition
 
 @UtilityClass
 public class LightSourceUtil {
-
-    public static final NumericMajorMinorVersion MC1_14 = new NumericMajorMinorVersion("1.14");
-
-    private static final BlockFace[] CHECK_ADJACENT = new BlockFace[]{
-            BlockFace.UP,
-            BlockFace.DOWN,
-            BlockFace.NORTH,
-            BlockFace.EAST,
-            BlockFace.SOUTH,
-            BlockFace.WEST
-    };
 
     public static LightUpdateResult placeNewLightSource(VarLightPlugin plugin, Location location, int lightLevel) {
         return placeNewLightSource(plugin, location, lightLevel, true);
@@ -42,7 +29,7 @@ public class LightSourceUtil {
             return varLightNotActive(plugin, location.getWorld(), fromLight, lightLevel);
         }
 
-        fromLight = manager.getCustomLuminance(toIntPosition(location), 0);
+        fromLight = manager.getCustomLuminance(IntPositionExtension.toIntPosition(location), 0);
 
         if (lightLevel < 0) {
             return zeroReached(plugin, fromLight, lightLevel);
@@ -56,7 +43,7 @@ public class LightSourceUtil {
             return invalidBlock(plugin, fromLight, lightLevel);
         }
 
-        LightUpdateEvent lightUpdateEvent = new LightUpdateEvent(location.getBlock(), fromLight, lightLevel);
+        LightUpdateEvent lightUpdateEvent = new LightUpdateEvent(location.getBlock(), fromLight, lightLevel, !Bukkit.getServer().isPrimaryThread());
         Bukkit.getPluginManager().callEvent(lightUpdateEvent);
 
         if (lightUpdateEvent.isCancelled()) {

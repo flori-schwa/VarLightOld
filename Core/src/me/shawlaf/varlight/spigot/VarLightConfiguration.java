@@ -5,6 +5,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,8 +44,9 @@ public class VarLightConfiguration {
         plugin.getConfig().options().copyDefaults(true);
     }
 
-    public String getRequiredPermissionNode() {
-        return plugin.getConfig().getString(CONFIG_KEY_REQUIRED_PERMISSION);
+    @NotNull public String getRequiredPermissionNode() {
+        //noinspection ConstantConditions The String literal "" is NOT null
+        return plugin.getConfig().getString(CONFIG_KEY_REQUIRED_PERMISSION, "");
     }
 
     public void setRequiredPermissionNode(String permissionNode) {
@@ -54,6 +56,7 @@ public class VarLightConfiguration {
     }
 
     public Material getLightUpdateItem() {
+        @SuppressWarnings("ConstantConditions") // No, it will not be null, because "minecraft:glowstone_dust" is certainly not null.
         String configMaterial = plugin.getConfig().getString(CONFIG_KEY_VARLIGHT_ITEM, "minecraft:glowstone_dust").toLowerCase();
 
         Material material = plugin.getNmsAdapter().keyToType(configMaterial, MaterialType.ITEM);

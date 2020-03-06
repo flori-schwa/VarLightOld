@@ -6,8 +6,8 @@ import me.shawlaf.varlight.spigot.nms.NmsAdapter;
 import me.shawlaf.varlight.spigot.nms.VarLightInitializationException;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.spigot.persistence.migrate.LightDatabaseMigrator;
-import me.shawlaf.varlight.spigot.persistence.migrate.data.JsonToVLDBMigration;
-import me.shawlaf.varlight.spigot.persistence.migrate.data.VLDBMigration;
+import me.shawlaf.varlight.spigot.persistence.migrate.data.JsonToNLSMigration;
+import me.shawlaf.varlight.spigot.persistence.migrate.data.VLDBToNLSMigration;
 import me.shawlaf.varlight.spigot.persistence.migrate.structure.MoveVarlightRootFolder;
 import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.NumericMajorMinorVersion;
@@ -15,12 +15,14 @@ import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.*;
-import org.bukkit.event.entity.EntityChangeBlockEvent;
-import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPhysicsEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
@@ -43,6 +45,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     private final Map<UUID, Integer> stepSizes = new HashMap<>();
     private final Map<UUID, WorldLightSourceManager> managers = new HashMap<>();
+
     private final INmsAdapter nmsAdapter;
 
     private VarLightCommand command;
@@ -87,16 +90,16 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             throw e;
         }
 
+        configuration = new VarLightConfiguration(this);
         debugManager = new DebugManager(this);
 
-        LightDatabaseMigrator.addDataMigration(new JsonToVLDBMigration(this));
-        LightDatabaseMigrator.addDataMigration(new VLDBMigration(this));
+        LightDatabaseMigrator.addDataMigration(new JsonToNLSMigration(this));
+        LightDatabaseMigrator.addDataMigration(new VLDBToNLSMigration(this));
 
         LightDatabaseMigrator.addStructureMigration(new MoveVarlightRootFolder(this));
 
         this.shouldDeflate = getConfig().getBoolean(VarLightConfiguration.CONFIG_KEY_NLS_DEFLATED, true);
 
-        configuration = new VarLightConfiguration(this);
         configuration.getVarLightEnabledWorlds().forEach(this::enableInWorld);
 
         loadLightUpdateItem();
@@ -244,7 +247,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-        if (nmsAdapter.isVarLightDebugStick(e.getItem())) {
+        if (e.getItem() != null && nmsAdapter.isVarLightDebugStick(e.getItem())) {
             e.setCancelled(true);
 
             if (!e.getPlayer().hasPermission("varlight.admin.debug")) {
@@ -253,16 +256,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             }
 
             if (e.getAction() != Action.RIGHT_CLICK_BLOCK) {
-                if (e.getAction() == Action.RIGHT_CLICK_AIR) {
-                    if (e.getPlayer().isSneaking()) {
-                        Bukkit.dispatchCommand(e.getPlayer(), "varlight debug list -r");
-                    } else {
-                        Bukkit.dispatchCommand(e.getPlayer(), "varlight debug list -c");
-                    }
-
-                    return;
-                }
-
                 return;
             }
 
@@ -283,13 +276,13 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-        if (e.isCancelled() || (e.getAction() != Action.RIGHT_CLICK_BLOCK && e.getAction() != Action.LEFT_CLICK_BLOCK)) {
+        if (e.useInteractedBlock() == Event.Result.DENY || (e.getAction() != Action.RIGHT_CLICK_BLOCK && e.getAction() != Action.LEFT_CLICK_BLOCK)) {
             return;
         }
 
         String requiredPermission = configuration.getRequiredPermissionNode();
 
-        if (!isNullOrEmpty(requiredPermission) && !e.getPlayer().hasPermission(requiredPermission)) {
+        if (!requiredPermission.isEmpty() && !e.getPlayer().hasPermission(requiredPermission)) {
             return;
         }
 
@@ -349,7 +342,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void playerBreakLightSource(BlockBreakEvent e) {
         if (!configuration.hasReclaim()) {
-            checkLightSourceBlockBroken(e.getBlock());
             return;
         }
 
@@ -367,8 +359,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         if (emittingLight <= 0) {
             return;
         }
-
-        checkLightSourceBlockBroken(theBlock);
 
         if (e.getPlayer().getGameMode() == GameMode.CREATIVE) {
             return;
@@ -464,18 +454,23 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-//        System.out.println("Updated Block: " + toIntPosition(e.getBlock()).toShortString() + " (" + e.getBlock().getType().name() + ")");
-//        System.out.println("Source: " + toIntPosition(e.getSourceBlock()).toShortString() + " (" + e.getSourceBlock().getType().name() + ")");
-//        System.out.println("Changed Type: " + e.getChangedType().name());
-//        System.out.println("------------------------");
-
-        Location block = e.getBlock().getLocation();
-        IntPosition blockPos = toIntPosition(block);
-
+        IntPosition blockPos = toIntPosition(e.getBlock());
         int lum = manager.getCustomLuminance(blockPos, 0);
 
         if (lum > 0) {
-            nmsAdapter.updateLight(e.getBlock().getWorld().getChunkAt(block));
+            if (e.getBlock() == e.getSourceBlock()) {
+                // The Light Source Block was changed
+
+                // See World.notifyAndUpdatePhysics(BlockPosition, Chunk, IBlockData, IBlockData, IBlockData, int)
+                if (nmsAdapter.isIllegalBlock(e.getChangedType())) {
+                    manager.setCustomLuminance(blockPos, 0);
+                } else {
+                    nmsAdapter.updateLight(e.getBlock().getWorld(), blockPos.toChunkCoords()); // Probably not possible, but /shrug
+                }
+            } else {
+                // The Light source Block received an update from another Block
+                nmsAdapter.updateLight(e.getBlock().getWorld(), blockPos.toChunkCoords());
+            }
         }
     }
 
@@ -484,69 +479,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         stepSizes.remove(e.getPlayer().getUniqueId());
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onPistonExtend(BlockPistonExtendEvent e) {
-        handleAreaAffected(e.getBlock().getWorld(), e.getBlocks());
-    }
-
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onPistonRetract(BlockPistonRetractEvent e) {
-        handleAreaAffected(e.getBlock().getWorld(), e.getBlocks());
-    }
-
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onBlockExplode(BlockExplodeEvent e) {
-        handleAreaAffected(e.getBlock().getWorld(), e.blockList());
-    }
-
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onEntityExplode(EntityExplodeEvent e) {
-        handleAreaAffected(e.getLocation().getWorld(), e.blockList());
-    }
-
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onEntityChangeBlock(EntityChangeBlockEvent e) {
-        checkLightSourceBlockBroken(e.getBlock());
-    }
-
-    private void checkLightSourceBlockBroken(Block block) {
-        WorldLightSourceManager manager = getManager(block.getWorld());
-
-        if (manager == null) {
-            return;
-        }
-
-        IntPosition position = toIntPosition(block.getLocation());
-
-        int customLuminance = manager.getCustomLuminance(position, 0);
-
-        if (customLuminance != 0) {
-            manager.setCustomLuminance(position, 0);
-        }
-    }
-
-    private void handleAreaAffected(World world, List<Block> blocks) {
-        WorldLightSourceManager manager = getManager(world);
-
-        if (manager == null) {
-            return;
-        }
-
-        for (Block block : blocks) {
-            IntPosition position = toIntPosition(block);
-            int lum = manager.getCustomLuminance(position, 0);
-
-            if (lum > 0) {
-                manager.setCustomLuminance(position, 0);
-            }
-        }
-    }
-
     // endregion
-
-    private boolean isNullOrEmpty(String x) {
-        return x == null || x.isEmpty();
-    }
 
     private void unsupportedOperation(String message) {
         getLogger().severe("------------------------------------------------------");

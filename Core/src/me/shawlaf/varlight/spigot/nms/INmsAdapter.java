@@ -9,8 +9,6 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Player;
-import org.bukkit.event.block.BlockEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,6 +23,35 @@ import java.util.stream.Collectors;
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
 
 public interface INmsAdapter {
+
+    @Nullable Material keyToType(String namespacedKey, MaterialType type);
+
+    @NotNull String materialToKey(Material material);
+
+    @NotNull String getLocalizedBlockName(Material material);
+
+    @NotNull Collection<String> getTypes(MaterialType type);
+
+    boolean isIllegalLightUpdateItem(Material material);
+
+    void updateLight(@NotNull Location at, int lightLevel);
+
+    void updateLight(World world, ChunkCoords chunkCoords);
+
+    void updateBlocks(Chunk chunk);
+
+    boolean isIllegalBlock(@NotNull Material material);
+
+    @NotNull ItemStack getVarLightDebugStick();
+
+    ItemStack makeGlowingStack(ItemStack base, int lightLevel);
+
+    int getGlowingValue(ItemStack glowingStack);
+
+    @NotNull
+    String getNumericMinecraftVersion();
+
+    @NotNull File getRegionRoot(World world);
 
     default void onLoad() {
 
@@ -46,40 +73,17 @@ public interface INmsAdapter {
         return this.getClass().getAnnotation(ForMinecraft.class).version();
     }
 
-    @Nullable Material keyToType(String namespacedKey, MaterialType type);
-
-    String materialToKey(Material material);
-
-    String getLocalizedBlockName(Material material);
-
-    Collection<String> getTypes(MaterialType type);
-
-    boolean isIllegalLightUpdateItem(Material material);
-
-    void updateLight(@NotNull Location at, int lightLevel);
-
-    void updateLight(Chunk chunk);
-
-    void updateBlocks(Chunk chunk);
-
-    int getVanillaLuminance(@NotNull Block block);
-
-    boolean isIllegalBlock(@NotNull Block block);
-
-    ItemStack getVarLightDebugStick();
-
-    ItemStack makeGlowingStack(ItemStack base, int lightLevel);
-
-    int getGlowingValue(ItemStack glowingStack);
-
-    @NotNull
-    String getNumericMinecraftVersion();
-
     default boolean isVarLightDebugStick(ItemStack itemStack) {
         return itemStack.equals(getVarLightDebugStick());
     }
 
-    @NotNull File getRegionRoot(World world);
+    default boolean isIllegalBlock(@NotNull Block block) {
+        return isIllegalBlock(block.getType());
+    }
+
+    default void updateLight(Chunk chunk) {
+        updateLight(chunk.getWorld(), new ChunkCoords(chunk.getX(), chunk.getZ()));
+    }
 
     @NotNull
     default NumericMajorMinorVersion getMinecraftVersion() {

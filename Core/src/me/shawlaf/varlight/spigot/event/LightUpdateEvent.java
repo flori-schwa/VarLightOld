@@ -1,31 +1,41 @@
 package me.shawlaf.varlight.spigot.event;
 
-import me.shawlaf.varlight.spigot.VarLightPlugin;
+import me.shawlaf.varlight.util.IntPosition;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.event.Cancellable;
+import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.block.BlockEvent;
-
-import java.util.Optional;
 
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
 
-public class LightUpdateEvent extends BlockEvent implements Cancellable {
+public class LightUpdateEvent extends Event implements Cancellable {
 
     public static final HandlerList HANDLERS = new HandlerList();
     private final int fromLight;
+    private final World world;
+    private final IntPosition position;
+
     private int toLight;
     private boolean cancelled = false;
 
-    public LightUpdateEvent(VarLightPlugin varLightPlugin, Block block, int mod) {
-        this(block, block.getLightFromBlocks(),
-                Optional.ofNullable(varLightPlugin.getManager(block.getWorld()))
-                        .map(w -> w.getCustomLuminance(toIntPosition(block), 0)).orElse(0) + mod);
+    public LightUpdateEvent(Block theBlock, int fromLight, int toLight) {
+        this(theBlock, fromLight, toLight, false);
     }
 
-    public LightUpdateEvent(Block theBlock, int fromLight, int toLight) {
-        super(theBlock);
+    public LightUpdateEvent(Block theBlock, int fromLight, int toLight, boolean async) {
+        this(theBlock.getWorld(), toIntPosition(theBlock), fromLight, toLight, async);
+    }
 
+    public LightUpdateEvent(World world, IntPosition position, int fromLight, int toLight) {
+        this(world, position, fromLight, toLight, false);
+    }
+
+    public LightUpdateEvent(World world, IntPosition position, int fromLight, int toLight, boolean async) {
+        super(async);
+
+        this.world = world;
+        this.position = position;
         this.fromLight = fromLight & 0xF;
         this.toLight = toLight & 0xF;
     }

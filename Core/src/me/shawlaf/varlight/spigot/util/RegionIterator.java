@@ -1,18 +1,21 @@
 package me.shawlaf.varlight.spigot.util;
 
+import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
 import org.bukkit.World;
 
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 
 public class RegionIterator implements Iterator<IntPosition> {
 
     public final IntPosition pos1, pos2;
     private final int modX, modY, modZ;
-    private final boolean isSingleBlock;
-    private boolean returnedSingleBlock = false;
 
-    private int x, y, z;
+    private boolean done = false;
+
+    private int nextX, nextY, nextZ;
 
     public RegionIterator(IntPosition pos1, IntPosition pos2) {
         if (pos1.compareTo(pos2) < 0) {
@@ -31,9 +34,15 @@ public class RegionIterator implements Iterator<IntPosition> {
         this.modY = binaryStep(this.pos2.y - this.pos1.y);
         this.modZ = binaryStep(this.pos2.z - this.pos1.z);
 
-        this.isSingleBlock = pos1.equals(pos2);
-
         reset();
+    }
+
+    public int getSize() {
+        int xSize = Math.abs(pos2.x - pos1.x) + 1;
+        int ySize = Math.abs(pos2.y - pos1.y) + 1;
+        int zSize = Math.abs(pos2.z - pos1.z) + 1;
+
+        return xSize * ySize * zSize;
     }
 
     private static int binaryStep(int x) {
@@ -65,14 +74,20 @@ public class RegionIterator implements Iterator<IntPosition> {
     }
 
     public boolean isRegionLoaded(World world) {
-        reset();
-        IntPosition next;
+        RegionIterator clone = new RegionIterator(pos1, pos2);
 
-        while (hasNext()) {
-            next = next();
+        Set<ChunkCoords> testedChunks = new HashSet<>();
+        ChunkCoords coords;
 
-            if (!world.isChunkLoaded(next.getChunkX(), next.getChunkZ())) {
-                return false;
+        while (clone.hasNext()) {
+            coords = clone.next().toChunkCoords();
+
+            if (!testedChunks.contains(coords)) {
+                if (!world.isChunkLoaded(coords.x, coords.z)) {
+                    return false;
+                }
+
+                testedChunks.add(coords);
             }
         }
 
@@ -80,58 +95,109 @@ public class RegionIterator implements Iterator<IntPosition> {
     }
 
     public void reset() {
-        this.x = this.pos1.x;
-        this.y = this.pos1.y;
-        this.z = this.pos1.z - modZ; // to include the first block in the region
+        this.nextX = this.pos1.x;
+        this.nextY = this.pos1.y;
+        this.nextZ = this.pos1.z;
 
-        if (isSingleBlock) {
-            returnedSingleBlock = false;
-        }
+        done = false;
     }
 
     @Override
     public boolean hasNext() {
-        return isSingleBlock ? !returnedSingleBlock : !(this.x == pos2.x && this.y == pos2.y && this.z == pos2.z);
+        return !done;
+//        return isSingleBlock ? !returnedSingleBlock : !(this.nextX == pos2.x && this.nextY == pos2.y && this.nextZ == pos2.z);
+    }
+
+    private boolean incrementZ() {
+        nextZ += modZ;
+        return zInRange(nextZ);
+    }
+
+    private boolean incrementX() {
+        nextX += modX;
+        return xInRange(nextX);
+    }
+
+    private boolean incrementY() {
+        nextY += modY;
+        return yInRange(nextY);
+    }
+
+    private void incrementNext() {
+        if (modZ != 0) {
+            if (!incrementZ()) {
+                nextZ = pos1.z;
+            } else {
+                return;
+            }
+        }
+
+        if (modX != 0) {
+            if (!incrementX()) {
+                nextX = pos1.x;
+            } else {
+                return;
+            }
+        }
+
+        if (modY != 0) {
+            if (incrementY()) {
+                return;
+            }
+        }
+
+        done = true;
     }
 
     @Override
     public IntPosition next() {
-        if (isSingleBlock && !returnedSingleBlock) {
-            returnedSingleBlock = true;
-            return pos1;
-        } else if (isSingleBlock) {
+
+        if (done) {
             throw new IndexOutOfBoundsException("Already Iterated over entire region!");
         }
 
-        if (modZ != 0) {
-            this.z += modZ;
+        IntPosition next = new IntPosition(nextX, nextY, nextZ);
+        incrementNext();
 
-            if (zInRange(z)) {
-                return new IntPosition(x, y, z);
-            }
-        }
-
-        this.z = pos1.z;
-
-        if (modX != 0) {
-            this.x += modX;
-
-            if (xInRange(x)) {
-                return new IntPosition(x, y, z);
-            }
-        }
-
-        this.x = pos1.x;
-
-
-        if (modY != 0) {
-            this.y += modY;
-
-            if (yInRange(y)) {
-                return new IntPosition(x, y, z);
-            }
-        }
-
-        throw new IndexOutOfBoundsException("Already Iterated over entire region!");
+        return next;
+//
+//
+//        if (isSingleBlock && !returnedSingleBlock) {
+//            returnedSingleBlock = true;
+//            return pos1;
+//        } else if (isSingleBlock) {
+//            throw new IndexOutOfBoundsException("Already Iterated over entire region!");
+//        }
+//
+//        if (modZ != 0) {
+//            this.nextZ += modZ;
+//
+//            if (zInRange(nextZ)) {
+//                return new IntPosition(nextX, nextY, nextZ);
+//            }
+//        }
+//
+//        this.nextZ = pos1.z;
+//
+//        if (modX != 0) {
+//            this.nextX += modX;
+//
+//            if (xInRange(nextX)) {
+//                return new IntPosition(nextX, nextY, nextZ);
+//            }
+//        }
+//
+//        this.nextX = pos1.x;
+//
+//
+//        if (modY != 0) {
+//            this.nextY += modY;
+//
+//            if (yInRange(nextY)) {
+//                return new IntPosition(nextX, nextY, nextZ);
+//            }
+//        }
+//
+//        throw new IndexOutOfBoundsException("Already Iterated over entire region!");
     }
 }

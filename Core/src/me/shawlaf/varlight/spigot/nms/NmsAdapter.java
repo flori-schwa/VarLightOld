@@ -1,11 +1,11 @@
 package me.shawlaf.varlight.spigot.nms;
 
 import me.shawlaf.varlight.spigot.VarLightPlugin;
+import me.shawlaf.varlight.util.ChunkCoords;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.block.Block;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,16 +25,19 @@ public class NmsAdapter implements INmsAdapter {
         throw new AbstractMethodError();
     }
 
+    @NotNull
     @Override
     public String materialToKey(Material material) {
         throw new AbstractMethodError();
     }
 
+    @NotNull
     @Override
     public String getLocalizedBlockName(Material material) {
         throw new AbstractMethodError();
     }
 
+    @NotNull
     @Override
     public Collection<String> getTypes(MaterialType type) {
         throw new AbstractMethodError();
@@ -51,7 +54,7 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public void updateLight(Chunk chunk) {
+    public void updateLight(World world, ChunkCoords chunkCoords) {
         throw new AbstractMethodError();
     }
 
@@ -61,15 +64,11 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public int getVanillaLuminance(@NotNull Block block) {
+    public boolean isIllegalBlock(@NotNull Material block) {
         throw new AbstractMethodError();
     }
 
-    @Override
-    public boolean isIllegalBlock(@NotNull Block block) {
-        throw new AbstractMethodError();
-    }
-
+    @NotNull
     @Override
     public ItemStack getVarLightDebugStick() {
         throw new AbstractMethodError();
