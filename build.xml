@@ -10,31 +10,13 @@
     <property name="core-build" location="${build}/Core"/>
     <property name="core-res" location="Core/resources"/>
 
-    <property name="v1_8_R3-src" location="v1_8_R3/src"/>
-    <property name="v1_8_R3-build" location="${build}/v1_8_R3"/>
-
-    <property name="v1_9_R2-src" location="v1_9_R2/src"/>
-    <property name="v1_9_R2-build" location="${build}/v1_9_R2"/>
-
-    <property name="v1_10_R1-src" location="v1_10_R1/src"/>
-    <property name="v1_10_R1-build" location="${build}/v1_10_R1"/>
-
-    <property name="v1_11_R1-src" location="v1_11_R1/src"/>
-    <property name="v1_11_R1-build" location="${build}/v1_11_R1"/>
-
-    <property name="v1_12_R1-src" location="v1_12_R1/src"/>
-    <property name="v1_12_R1-build" location="${build}/v1_12_R1"/>
-
-    <property name="v1_13_R2-src" location="v1_13_R2/src"/>
-    <property name="v1_13_R2-build" location="${build}/v1_13_R2"/>
-
     <property name="v1_14_R1-src" location="v1_14_R1/src"/>
     <property name="v1_14_R1-build" location="${build}/v1_14_R1"/>
 
     <property name="v1_15_R1-src" location="v1_15_R1/src"/>
     <property name="v1_15_R1-build" location="${build}/v1_15_R1"/>
 
-    <property name="paper-version" value="226"/>
+<!--    <property name="paper-version" value="226"/>-->
     <property name="use-compiler" value="modern"/>
 
     <property name="lib-dir" location="lib"/>
@@ -59,12 +41,6 @@
     <target name="init" depends="clean">
         <mkdir dir="${build}"/>
         <mkdir dir="${core-build}"/>
-        <mkdir dir="${v1_8_R3-build}"/>
-        <mkdir dir="${v1_9_R2-build}"/>
-        <mkdir dir="${v1_10_R1-build}"/>
-        <mkdir dir="${v1_11_R1-build}"/>
-        <mkdir dir="${v1_12_R1-build}"/>
-        <mkdir dir="${v1_13_R2-build}"/>
         <mkdir dir="${v1_14_R1-build}"/>
         <mkdir dir="${v1_15_R1-build}"/>
         <mkdir dir="${dist}"/>
@@ -181,15 +157,15 @@
                api-version="1.14">
             <libraries>
                 <include name="**/spigot-1.14.4.jar"/>
-                <include name="**/${lib-light-api}"/>
+<!--                <include name="**/${lib-light-api}"/>-->
             </libraries>
         </build>
 
         <build version="MC-1.15.x" src-dir="${v1_15_R1-src}" out-dir="${v1_15_R1-build}"
                api-version="1.14">
             <libraries>
-                <include name="**/spigot-1.15.1.jar"/>
-                <include name="**/${lib-light-api}"/>
+                <include name="**/spigot-1.15.2.jar"/>
+<!--                <include name="**/${lib-light-api}"/>-->
             </libraries>
         </build>
     </target>
