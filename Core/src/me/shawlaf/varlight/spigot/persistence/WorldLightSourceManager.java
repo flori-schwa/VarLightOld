@@ -2,13 +2,10 @@ package me.shawlaf.varlight.spigot.persistence;
 
 import me.shawlaf.command.result.CommandResult;
 import me.shawlaf.varlight.persistence.LightPersistFailedException;
-import me.shawlaf.varlight.persistence.RegionPersistor;
 import me.shawlaf.varlight.persistence.nls.NLSFile;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
-import me.shawlaf.varlight.spigot.nms.MaterialType;
 import me.shawlaf.varlight.spigot.persistence.migrate.LightDatabaseMigrator;
 import me.shawlaf.varlight.util.ChunkCoords;
-import me.shawlaf.varlight.util.FileUtil;
 import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.RegionCoords;
 import org.bukkit.Location;
@@ -20,30 +17,23 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.IntSupplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
 
 public class WorldLightSourceManager {
 
-    @Deprecated
-    private final Map<RegionCoords, RegionPersistor<PersistentLightSource>> worldMapOld;
     private final Map<RegionCoords, NLSFile> worldMap = new HashMap<>();
     private final VarLightPlugin plugin;
     private final World world;
-
-    private long lastMigrateNotice = 0;
 
     public WorldLightSourceManager(VarLightPlugin plugin, World world) {
         Objects.requireNonNull(plugin);
         Objects.requireNonNull(world);
 
-        this.worldMapOld = new HashMap<>();
         this.plugin = plugin;
         this.world = world;
 
-        synchronized (worldMapOld) {
+        synchronized (worldMap) {
             plugin.getNmsAdapter().getVarLightSaveDirectory(world); // Ensure the directory exists
 
             new LightDatabaseMigrator(plugin, world).runMigrations(plugin.getLogger());
@@ -162,90 +152,6 @@ public class WorldLightSourceManager {
             }
 
             return worldMap.get(regionCoords);
-        }
-    }
-
-    @NotNull
-    public List<PersistentLightSource> getAllLightSources() {
-        File[] files = plugin.getNmsAdapter().getVarLightSaveDirectory(world).listFiles();
-
-        if (files == null) {
-            synchronized (worldMapOld) {
-                return worldMapOld.values().stream().flatMap(regionPersistor -> {
-                    try {
-                        return regionPersistor.loadAll().stream();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-
-                        return Stream.empty();
-                    }
-                }).collect(Collectors.toList());
-            }
-        }
-
-        for (File regionFile : files) {
-            getRegionPersistor(FileUtil.parseRegionCoordsFromFileName(regionFile.getName()));
-        }
-
-        synchronized (worldMapOld) {
-            return worldMapOld.values().stream().flatMap(regionPersistor -> {
-                try {
-                    return regionPersistor.loadAll().stream();
-                } catch (IOException e) {
-                    e.printStackTrace();
-
-                    return Stream.empty();
-                }
-            }).collect(Collectors.toList());
-        }
-    }
-
-    @NotNull
-    @Deprecated
-    PersistentLightSource createPersistentLightSource(IntPosition intPosition, int emittingLight) {
-        PersistentLightSource persistentLightSource = new PersistentLightSource(plugin, world, intPosition, emittingLight);
-        persistentLightSource.migrated = plugin.getNmsAdapter().getMinecraftVersion().newerOrEquals(VarLightPlugin.MC1_14_2);
-
-        try {
-            getRegionPersistor(new RegionCoords(intPosition)).put(persistentLightSource);
-        } catch (IOException e) {
-            throw new LightPersistFailedException(e);
-        }
-
-        return persistentLightSource;
-    }
-
-    @NotNull
-    @Deprecated
-    private RegionPersistor<PersistentLightSource> getRegionPersistor(RegionCoords regionCoords) {
-        synchronized (worldMapOld) {
-            if (!worldMapOld.containsKey(regionCoords)) {
-                try {
-                    worldMapOld.put(regionCoords, new RegionPersistor<PersistentLightSource>(plugin.getNmsAdapter().getVarLightSaveDirectory(world), regionCoords.x, regionCoords.z, plugin.shouldDeflate()) {
-                        @NotNull
-                        @Override
-                        protected PersistentLightSource[] createArray(int size) {
-                            return new PersistentLightSource[size];
-                        }
-
-                        @NotNull
-                        @Override
-                        protected PersistentLightSource[][] createMultiArr(int size) {
-                            return new PersistentLightSource[size][];
-                        }
-
-                        @NotNull
-                        @Override
-                        protected PersistentLightSource createInstance(IntPosition position, int lightLevel, boolean migrated, String material) {
-                            return new PersistentLightSource(position, plugin.getNmsAdapter().keyToType(material, MaterialType.BLOCK), migrated, world, plugin, lightLevel);
-                        }
-                    });
-                } catch (IOException e) {
-                    throw new LightPersistFailedException(e);
-                }
-            }
-
-            return worldMapOld.get(regionCoords);
         }
     }
 }

@@ -70,8 +70,30 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     @Override
     public void onLoad() {
+        if (!doLoad) {
+            return;
+        }
+
         getLogger().info(String.format("Loading VarLight for Minecraft version \"%s\"", nmsAdapter.getForMinecraftVersion()));
-        nmsAdapter.onLoad();
+
+        configuration = new VarLightConfiguration(this);
+        debugManager = new DebugManager(this);
+
+        LightDatabaseMigrator.addDataMigration(new JsonToNLSMigration(this));
+        LightDatabaseMigrator.addDataMigration(new VLDBToNLSMigration(this));
+
+        LightDatabaseMigrator.addStructureMigration(new MoveVarlightRootFolder(this));
+
+        this.shouldDeflate = getConfig().getBoolean(VarLightConfiguration.CONFIG_KEY_NLS_DEFLATED, true);
+
+        try {
+            nmsAdapter.onLoad();
+        } catch (VarLightInitializationException e) {
+            doLoad = false;
+            Bukkit.getPluginManager().disablePlugin(this);
+
+            throw e;
+        }
     }
 
     @Override
@@ -89,16 +111,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
             throw e;
         }
-
-        configuration = new VarLightConfiguration(this);
-        debugManager = new DebugManager(this);
-
-        LightDatabaseMigrator.addDataMigration(new JsonToNLSMigration(this));
-        LightDatabaseMigrator.addDataMigration(new VLDBToNLSMigration(this));
-
-        LightDatabaseMigrator.addStructureMigration(new MoveVarlightRootFolder(this));
-
-        this.shouldDeflate = getConfig().getBoolean(VarLightConfiguration.CONFIG_KEY_NLS_DEFLATED, true);
 
         configuration.getVarLightEnabledWorlds().forEach(this::enableInWorld);
 
@@ -136,6 +148,8 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     }
 
     public void enableInWorld(World world) {
+        getLogger().info(String.format("Enabling in World [%s]", world.getName()));
+
         managers.put(
                 world.getUID(),
                 new WorldLightSourceManager(this, world)
