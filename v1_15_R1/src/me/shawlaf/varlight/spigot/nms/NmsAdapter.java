@@ -3,10 +3,10 @@ package me.shawlaf.varlight.spigot.nms;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.nms.wrappers.WrappedILightAccess;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
+import me.shawlaf.varlight.spigot.util.ReflectionHelper;
 import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
 import net.minecraft.server.v1_15_R1.*;
-import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.*;
@@ -32,7 +32,6 @@ import java.util.stream.StreamSupport;
 
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
 
-@SuppressWarnings("deprecation")
 @ForMinecraft(version = "1.15.x")
 public class NmsAdapter implements INmsAdapter {
 
@@ -139,26 +138,25 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public void updateLight(World world, ChunkCoords chunkCoords) {
-        updateLight(getNmsWorld(world), chunkCoords);
+    public void updateChunk(World world, ChunkCoords chunkCoords) {
+        updateChunk(getNmsWorld(world), chunkCoords);
     }
 
     @Override
-    public void updateBlocks(Chunk chunk) {
-        WorldServer world = getNmsWorld(chunk.getWorld());
-        ChunkCoords chunkCoords = new ChunkCoords(chunk.getX(), chunk.getZ());
+    public void updateBlocks(World world, ChunkCoords chunkCoords) {
+        WorldServer nmsWorld = getNmsWorld(world);
 
-        WorldLightSourceManager manager = plugin.getManager(chunk.getWorld());
+        WorldLightSourceManager manager = plugin.getManager(world);
 
         if (manager == null) {
             return;
         }
 
-        IBlockAccess blockAccess = world.getChunkProvider().c(chunk.getX(), chunk.getZ());
+        IBlockAccess blockAccess = nmsWorld.getChunkProvider().c(chunkCoords.x, chunkCoords.z);
 
         Function<BlockPosition, Integer> h = bPos -> manager.getCustomLuminance(new IntPosition(bPos.getX(), bPos.getY(), bPos.getZ()), () -> blockAccess.h(bPos));
 
-        LightEngineBlock leb = ((LightEngineBlock) world.e().a(EnumSkyBlock.BLOCK));
+        LightEngineBlock leb = ((LightEngineBlock) nmsWorld.e().a(EnumSkyBlock.BLOCK));
 
         StreamSupport.stream(BlockPosition.b(
                 chunkCoords.getCornerAX(),
@@ -170,7 +168,7 @@ public class NmsAdapter implements INmsAdapter {
         ).spliterator(), false).filter(bPos -> h.apply(bPos) > 0).forEach(leb::a);
     }
 
-    private void updateLight(WorldServer worldServer, ChunkCoords chunkCoords) {
+    private void updateChunk(WorldServer worldServer, ChunkCoords chunkCoords) {
         LightEngine let = worldServer.e();
 
         WorldLightSourceManager manager = plugin.getManager(worldServer.getWorld());
@@ -195,7 +193,7 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public void updateLight(@NotNull Location at, int lightLevel) { // TODO remove lightLevel parameter
+    public void updateBlocksAndChunk(@NotNull Location at) { // TODO remove lightLevel parameter
         Objects.requireNonNull(at);
         Objects.requireNonNull(at.getWorld());
 
@@ -206,7 +204,7 @@ public class NmsAdapter implements INmsAdapter {
         LightEngineBlock leb = ((LightEngineBlock) let.a(EnumSkyBlock.BLOCK));
 
         leb.a(blockPosition);                       // Check Block
-        updateLight(nmsWorld, pos.toChunkCoords()); // Update neighbouring Chunks and send updates to players
+        updateChunk(nmsWorld, pos.toChunkCoords()); // Update neighbouring Chunks and send updates to players
     }
 
     @Override
@@ -235,12 +233,6 @@ public class NmsAdapter implements INmsAdapter {
         }
 
         return !material.isSolid() || !material.isOccluding();
-    }
-
-    @NotNull
-    @Override
-    public String getNumericMinecraftVersion() {
-        return MinecraftServer.getServer().getVersion();
     }
 
     @NotNull
@@ -316,11 +308,7 @@ public class NmsAdapter implements INmsAdapter {
         return nmsWorld.worldProvider.getDimensionManager().a(world.getWorldFolder());
     }
 
-    // region Util
-
     private WorldServer getNmsWorld(World world) {
         return ((CraftWorld) world).getHandle();
     }
-
-    // endregion
 }

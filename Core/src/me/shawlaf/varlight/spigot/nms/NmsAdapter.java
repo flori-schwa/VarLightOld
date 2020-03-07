@@ -2,7 +2,6 @@ package me.shawlaf.varlight.spigot.nms;
 
 import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.util.ChunkCoords;
-import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -25,21 +24,18 @@ public class NmsAdapter implements INmsAdapter {
         throw new AbstractMethodError();
     }
 
-    @NotNull
     @Override
-    public String materialToKey(Material material) {
+    public @NotNull String materialToKey(Material material) {
         throw new AbstractMethodError();
     }
 
-    @NotNull
     @Override
-    public String getLocalizedBlockName(Material material) {
+    public @NotNull String getLocalizedBlockName(Material material) {
         throw new AbstractMethodError();
     }
 
-    @NotNull
     @Override
-    public Collection<String> getTypes(MaterialType type) {
+    public @NotNull Collection<String> getTypes(MaterialType type) {
         throw new AbstractMethodError();
     }
 
@@ -49,28 +45,27 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public void updateLight(@NotNull Location at, int lightLevel) {
+    public void updateBlocksAndChunk(@NotNull Location at) {
         throw new AbstractMethodError();
     }
 
     @Override
-    public void updateLight(World world, ChunkCoords chunkCoords) {
+    public void updateChunk(World world, ChunkCoords chunkCoords) {
         throw new AbstractMethodError();
     }
 
     @Override
-    public void updateBlocks(Chunk chunk) {
+    public void updateBlocks(World world, ChunkCoords chunkCoords) {
         throw new AbstractMethodError();
     }
 
     @Override
-    public boolean isIllegalBlock(@NotNull Material block) {
+    public boolean isIllegalBlock(@NotNull Material material) {
         throw new AbstractMethodError();
     }
 
-    @NotNull
     @Override
-    public ItemStack getVarLightDebugStick() {
+    public @NotNull ItemStack getVarLightDebugStick() {
         throw new AbstractMethodError();
     }
 
@@ -84,15 +79,8 @@ public class NmsAdapter implements INmsAdapter {
         throw new AbstractMethodError();
     }
 
-    @NotNull
-    @Override
-    public String getNumericMinecraftVersion() {
-        throw new AbstractMethodError();
-    }
-
     @Override
     public @NotNull File getRegionRoot(World world) {
         throw new AbstractMethodError();
     }
-
 }

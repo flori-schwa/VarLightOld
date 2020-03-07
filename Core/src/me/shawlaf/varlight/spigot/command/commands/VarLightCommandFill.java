@@ -204,11 +204,11 @@ public class VarLightCommandFill extends VarLightSubCommand {
 
             Bukkit.getScheduler().runTask(plugin, () -> {
                 for (ChunkCoords chunkCoords : chunksToUpdate) {
-                    plugin.getNmsAdapter().updateBlocks(world.getChunkAt(chunkCoords.x, chunkCoords.z));
+                    plugin.getNmsAdapter().updateBlocks(world, chunkCoords);
                 }
 
                 for (ChunkCoords chunkCoords : chunksToUpdate) {
-                    plugin.getNmsAdapter().updateLight(world.getChunkAt(chunkCoords.x, chunkCoords.z));
+                    plugin.getNmsAdapter().updateChunk(world, chunkCoords);
                 }
             });
 

@@ -80,6 +80,15 @@ public class WorldLightSourceManager {
 
         synchronized (worldMap) {
             for (NLSFile nlsFile : worldMap.values()) {
+
+                try {
+                    if (nlsFile.save()) {
+                        ++modified;
+                    }
+                } catch (IOException e) {
+                    throw new LightPersistFailedException(e);
+                }
+
                 List<ChunkCoords> affected = nlsFile.getAffectedChunks();
 
                 if (affected.size() == 0) {
@@ -97,14 +106,6 @@ public class WorldLightSourceManager {
 
                     regionsToUnload.add(nlsFile.getRegionCoords());
                     continue;
-                }
-
-                try {
-                    if (nlsFile.save()) {
-                        ++modified;
-                    }
-                } catch (IOException e) {
-                    throw new LightPersistFailedException(e);
                 }
 
                 boolean anyLoaded = false;

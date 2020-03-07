@@ -55,7 +55,7 @@ public class LightSourceUtil {
         manager.setCustomLuminance(location, lightTo);
 
         if (doUpdate) {
-            plugin.getNmsAdapter().updateLight(location, lightTo);
+            plugin.getNmsAdapter().updateBlocksAndChunk(location);
         }
 
         return updated(plugin, fromLight, lightTo);

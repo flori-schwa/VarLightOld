@@ -151,7 +151,6 @@ public class RegionIterator implements Iterator<IntPosition> {
 
     @Override
     public IntPosition next() {
-
         if (done) {
             throw new IndexOutOfBoundsException("Already Iterated over entire region!");
         }
@@ -160,44 +159,5 @@ public class RegionIterator implements Iterator<IntPosition> {
         incrementNext();
 
         return next;
-//
-//
-//        if (isSingleBlock && !returnedSingleBlock) {
-//            returnedSingleBlock = true;
-//            return pos1;
-//        } else if (isSingleBlock) {
-//            throw new IndexOutOfBoundsException("Already Iterated over entire region!");
-//        }
-//
-//        if (modZ != 0) {
-//            this.nextZ += modZ;
-//
-//            if (zInRange(nextZ)) {
-//                return new IntPosition(nextX, nextY, nextZ);
-//            }
-//        }
-//
-//        this.nextZ = pos1.z;
-//
-//        if (modX != 0) {
-//            this.nextX += modX;
-//
-//            if (xInRange(nextX)) {
-//                return new IntPosition(nextX, nextY, nextZ);
-//            }
-//        }
-//
-//        this.nextX = pos1.x;
-//
-//
-//        if (modY != 0) {
-//            this.nextY += modY;
-//
-//            if (yInRange(nextY)) {
-//                return new IntPosition(nextX, nextY, nextZ);
-//            }
-//        }
-//
-//        throw new IndexOutOfBoundsException("Already Iterated over entire region!");
     }
 }

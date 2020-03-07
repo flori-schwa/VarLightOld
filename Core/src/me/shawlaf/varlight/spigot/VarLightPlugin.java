@@ -39,8 +39,6 @@ import static me.shawlaf.varlight.spigot.util.LightSourceUtil.placeNewLightSourc
 
 public class VarLightPlugin extends JavaPlugin implements Listener {
 
-    public static final NumericMajorMinorVersion
-            MC1_14_2 = new NumericMajorMinorVersion("1.14.2");
     public static final long TICK_RATE = 20L;
 
     private final Map<UUID, Integer> stepSizes = new HashMap<>();
@@ -479,11 +477,11 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
                 if (nmsAdapter.isIllegalBlock(e.getChangedType())) {
                     manager.setCustomLuminance(blockPos, 0);
                 } else {
-                    nmsAdapter.updateLight(e.getBlock().getWorld(), blockPos.toChunkCoords()); // Probably not possible, but /shrug
+                    nmsAdapter.updateChunk(e.getBlock().getWorld(), blockPos.toChunkCoords()); // Probably not possible, but /shrug
                 }
             } else {
                 // The Light source Block received an update from another Block
-                nmsAdapter.updateLight(e.getBlock().getWorld(), blockPos.toChunkCoords());
+                nmsAdapter.updateChunk(e.getBlock().getWorld(), blockPos.toChunkCoords());
             }
         }
     }

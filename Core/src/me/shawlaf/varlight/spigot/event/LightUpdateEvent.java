@@ -49,6 +49,14 @@ public class LightUpdateEvent extends Event implements Cancellable {
         return HANDLERS;
     }
 
+    public World getWorld() {
+        return world;
+    }
+
+    public IntPosition getPosition() {
+        return position;
+    }
+
     public int getFromLight() {
         return fromLight & 0xF;
     }

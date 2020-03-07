@@ -3,7 +3,6 @@ package me.shawlaf.varlight.spigot.nms;
 import me.shawlaf.varlight.persistence.LightPersistFailedException;
 import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
-import me.shawlaf.varlight.util.NumericMajorMinorVersion;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -34,11 +33,11 @@ public interface INmsAdapter {
 
     boolean isIllegalLightUpdateItem(Material material);
 
-    void updateLight(@NotNull Location at, int lightLevel);
+    void updateBlocksAndChunk(@NotNull Location at);
 
-    void updateLight(World world, ChunkCoords chunkCoords);
+    void updateChunk(World world, ChunkCoords chunkCoords);
 
-    void updateBlocks(Chunk chunk);
+    void updateBlocks(World world, ChunkCoords chunkCoords);
 
     boolean isIllegalBlock(@NotNull Material material);
 
@@ -47,9 +46,6 @@ public interface INmsAdapter {
     ItemStack makeGlowingStack(ItemStack base, int lightLevel);
 
     int getGlowingValue(ItemStack glowingStack);
-
-    @NotNull
-    String getNumericMinecraftVersion();
 
     @NotNull File getRegionRoot(World world);
 
@@ -81,13 +77,12 @@ public interface INmsAdapter {
         return isIllegalBlock(block.getType());
     }
 
-    default void updateLight(Chunk chunk) {
-        updateLight(chunk.getWorld(), new ChunkCoords(chunk.getX(), chunk.getZ()));
+    default void updateChunk(Chunk chunk) {
+        updateChunk(chunk.getWorld(), new ChunkCoords(chunk.getX(), chunk.getZ()));
     }
 
-    @NotNull
-    default NumericMajorMinorVersion getMinecraftVersion() {
-        return new NumericMajorMinorVersion(getNumericMinecraftVersion());
+    default void updateBlocks(Chunk chunk) {
+        updateBlocks(chunk.getWorld(), new ChunkCoords(chunk.getX(), chunk.getZ()));
     }
 
     @NotNull

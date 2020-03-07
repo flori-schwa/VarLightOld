@@ -1,4 +1,4 @@
-package me.shawlaf.varlight.spigot.nms;
+package me.shawlaf.varlight.spigot.util;
 
 import java.lang.reflect.*;
 import java.util.function.Consumer;
