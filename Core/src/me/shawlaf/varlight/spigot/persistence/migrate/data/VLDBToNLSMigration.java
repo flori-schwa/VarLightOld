@@ -1,6 +1,5 @@
 package me.shawlaf.varlight.spigot.persistence.migrate.data;
 
-import lombok.SneakyThrows;
 import me.shawlaf.varlight.persistence.BasicCustomLightSource;
 import me.shawlaf.varlight.persistence.migrate.Migration;
 import me.shawlaf.varlight.persistence.nls.NLSFile;
@@ -21,10 +20,8 @@ public class VLDBToNLSMigration implements Migration<File> {
         this.plugin = plugin;
     }
 
-
-    @SneakyThrows(IOException.class)
     @Override
-    public boolean migrate(File file) {
+    public boolean migrate(File file) throws IOException {
         boolean isVLDBOld = file.getName().toLowerCase().endsWith(".vldb");
         boolean isVLDBNew = file.getName().toLowerCase().endsWith(".vldb2");
 

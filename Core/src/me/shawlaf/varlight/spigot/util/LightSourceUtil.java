@@ -11,7 +11,6 @@ import org.bukkit.Location;
 import java.util.Objects;
 
 import static me.shawlaf.varlight.spigot.LightUpdateResult.*;
-import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
 
 @UtilityClass
 public class LightSourceUtil {

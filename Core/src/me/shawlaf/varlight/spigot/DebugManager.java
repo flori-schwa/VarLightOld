@@ -8,8 +8,8 @@ import java.util.function.Supplier;
 
 public class DebugManager {
 
-    private boolean debugEnabled;
     private final VarLightPlugin plugin;
+    private boolean debugEnabled;
 
     public DebugManager(VarLightPlugin plugin) {
         this.plugin = plugin;

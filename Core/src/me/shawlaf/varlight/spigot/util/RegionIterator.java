@@ -37,16 +37,16 @@ public class RegionIterator implements Iterator<IntPosition> {
         reset();
     }
 
+    private static int binaryStep(int x) {
+        return Integer.compare(x, 0);
+    }
+
     public int getSize() {
         int xSize = Math.abs(pos2.x - pos1.x) + 1;
         int ySize = Math.abs(pos2.y - pos1.y) + 1;
         int zSize = Math.abs(pos2.z - pos1.z) + 1;
 
         return xSize * ySize * zSize;
-    }
-
-    private static int binaryStep(int x) {
-        return Integer.compare(x, 0);
     }
 
     private boolean xInRange(int x) {

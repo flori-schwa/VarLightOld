@@ -1,7 +1,6 @@
 package me.shawlaf.varlight.spigot.persistence.migrate.data;
 
 import com.google.gson.Gson;
-import lombok.SneakyThrows;
 import me.shawlaf.varlight.persistence.BasicCustomLightSource;
 import me.shawlaf.varlight.persistence.migrate.Migration;
 import me.shawlaf.varlight.persistence.nls.NLSFile;
@@ -22,8 +21,7 @@ public class JsonToNLSMigration implements Migration<File> {
     }
 
     @Override
-    @SneakyThrows(IOException.class)
-    public boolean migrate(File jsonFile) {
+    public boolean migrate(File jsonFile) throws Exception {
 
         Objects.requireNonNull(jsonFile, "DB file may not be null!");
 

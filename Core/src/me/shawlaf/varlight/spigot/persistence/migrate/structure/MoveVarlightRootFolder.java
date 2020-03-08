@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Objects;
-import java.util.function.Predicate;
 
 public class MoveVarlightRootFolder implements Migration<World> {
 

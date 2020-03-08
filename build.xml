@@ -16,7 +16,7 @@
     <property name="v1_15_R1-src" location="v1_15_R1/src"/>
     <property name="v1_15_R1-build" location="${build}/v1_15_R1"/>
 
-<!--    <property name="paper-version" value="226"/>-->
+    <!--    <property name="paper-version" value="226"/>-->
     <property name="use-compiler" value="modern"/>
 
     <property name="lib-dir" location="lib"/>
@@ -157,7 +157,7 @@
                api-version="1.14">
             <libraries>
                 <include name="**/spigot-1.14.4.jar"/>
-<!--                <include name="**/${lib-light-api}"/>-->
+                <!--                <include name="**/${lib-light-api}"/>-->
             </libraries>
         </build>
 
@@ -165,7 +165,7 @@
                api-version="1.14">
             <libraries>
                 <include name="**/spigot-1.15.2.jar"/>
-<!--                <include name="**/${lib-light-api}"/>-->
+                <!--                <include name="**/${lib-light-api}"/>-->
             </libraries>
         </build>
     </target>
