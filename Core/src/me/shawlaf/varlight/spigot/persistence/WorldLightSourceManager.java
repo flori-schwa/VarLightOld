@@ -4,7 +4,7 @@ import me.shawlaf.command.result.CommandResult;
 import me.shawlaf.varlight.persistence.LightPersistFailedException;
 import me.shawlaf.varlight.persistence.nls.NLSFile;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
-import me.shawlaf.varlight.spigot.persistence.migrate.LightDatabaseMigrator;
+import me.shawlaf.varlight.spigot.persistence.migrate.LightDatabaseMigratorSpigot;
 import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.RegionCoords;
@@ -36,7 +36,7 @@ public class WorldLightSourceManager {
         synchronized (worldMap) {
             plugin.getNmsAdapter().getVarLightSaveDirectory(world); // Ensure the directory exists
 
-            new LightDatabaseMigrator(plugin, world).runMigrations(plugin.getLogger());
+            plugin.getDatabaseMigrator().runMigrations(world);
         }
 
         if (plugin.getConfiguration().isLogDebug()) {

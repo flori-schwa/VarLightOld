@@ -1,6 +1,7 @@
 package me.shawlaf.varlight.spigot.persistence.migrate.structure;
 
 import me.shawlaf.varlight.persistence.LightPersistFailedException;
+import me.shawlaf.varlight.persistence.migrate.Migration;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
 import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
@@ -12,7 +13,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.Objects;
 import java.util.function.Predicate;
 
-public class MoveVarlightRootFolder implements Predicate<World> {
+public class MoveVarlightRootFolder implements Migration<World> {
 
     @NotNull
     private final VarLightPlugin plugin;
@@ -24,7 +25,7 @@ public class MoveVarlightRootFolder implements Predicate<World> {
 
 
     @Override
-    public boolean test(World world) {
+    public boolean migrate(World world) {
         if (world.getEnvironment() == World.Environment.NORMAL) {
             return false;
         }

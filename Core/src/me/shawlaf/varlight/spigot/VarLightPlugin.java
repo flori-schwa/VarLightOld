@@ -5,7 +5,7 @@ import me.shawlaf.varlight.spigot.nms.INmsAdapter;
 import me.shawlaf.varlight.spigot.nms.NmsAdapter;
 import me.shawlaf.varlight.spigot.nms.VarLightInitializationException;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
-import me.shawlaf.varlight.spigot.persistence.migrate.LightDatabaseMigrator;
+import me.shawlaf.varlight.spigot.persistence.migrate.LightDatabaseMigratorSpigot;
 import me.shawlaf.varlight.spigot.persistence.migrate.data.JsonToNLSMigration;
 import me.shawlaf.varlight.spigot.persistence.migrate.data.VLDBToNLSMigration;
 import me.shawlaf.varlight.spigot.persistence.migrate.structure.MoveVarlightRootFolder;
@@ -50,6 +50,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     private VarLightConfiguration configuration;
     private AutosaveManager autosaveManager;
     private DebugManager debugManager;
+    private LightDatabaseMigratorSpigot databaseMigrator;
 
     private Material lightUpdateItem;
     private GameMode stepsizeGamemode;
@@ -76,11 +77,16 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         configuration = new VarLightConfiguration(this);
         debugManager = new DebugManager(this);
+        databaseMigrator = new LightDatabaseMigratorSpigot(this);
 
-        LightDatabaseMigrator.addDataMigration(new JsonToNLSMigration(this));
-        LightDatabaseMigrator.addDataMigration(new VLDBToNLSMigration(this));
+        databaseMigrator.addDataMigrations(
+                new JsonToNLSMigration(this),
+                new VLDBToNLSMigration(this)
+        );
 
-        LightDatabaseMigrator.addStructureMigration(new MoveVarlightRootFolder(this));
+        databaseMigrator.addStructureMigrations(
+                new MoveVarlightRootFolder(this)
+        );
 
         this.shouldDeflate = getConfig().getBoolean(VarLightConfiguration.CONFIG_KEY_NLS_DEFLATED, true);
 
@@ -184,6 +190,10 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     public DebugManager getDebugManager() {
         return debugManager;
+    }
+
+    public LightDatabaseMigratorSpigot getDatabaseMigrator() {
+        return databaseMigrator;
     }
 
     public void reload() {

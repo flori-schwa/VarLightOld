@@ -3,6 +3,7 @@ package me.shawlaf.varlight.spigot.persistence.migrate.data;
 import com.google.gson.Gson;
 import lombok.SneakyThrows;
 import me.shawlaf.varlight.persistence.BasicCustomLightSource;
+import me.shawlaf.varlight.persistence.migrate.Migration;
 import me.shawlaf.varlight.persistence.nls.NLSFile;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.util.FileUtil;
@@ -11,9 +12,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Objects;
-import java.util.function.Predicate;
 
-public class JsonToNLSMigration implements Predicate<File> {
+public class JsonToNLSMigration implements Migration<File> {
 
     private final VarLightPlugin plugin;
 
@@ -23,7 +23,7 @@ public class JsonToNLSMigration implements Predicate<File> {
 
     @Override
     @SneakyThrows(IOException.class)
-    public boolean test(File jsonFile) {
+    public boolean migrate(File jsonFile) {
 
         Objects.requireNonNull(jsonFile, "DB file may not be null!");
 
