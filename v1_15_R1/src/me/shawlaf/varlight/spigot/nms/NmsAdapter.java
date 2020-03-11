@@ -181,8 +181,8 @@ public class NmsAdapter implements INmsAdapter {
 
         ((LightEngineThreaded) let).a(iChunkAccess, false).thenRun(() -> {
             Bukkit.getScheduler().runTask(plugin, () -> {
-                for (ChunkCoords toUpdate : collectChunkPositionsToUpdate(chunkCoords)) {
-                    ChunkCoordIntPair chunkCoordIntPair = new ChunkCoordIntPair(toUpdate.x, toUpdate.z);
+                for (ChunkCoords toSendClientUpdate : collectChunkPositionsToUpdate(chunkCoords)) {
+                    ChunkCoordIntPair chunkCoordIntPair = new ChunkCoordIntPair(toSendClientUpdate.x, toSendClientUpdate.z);
                     PacketPlayOutLightUpdate ppolu = new PacketPlayOutLightUpdate(chunkCoordIntPair, let);
 
                     worldServer.getChunkProvider().playerChunkMap.a(chunkCoordIntPair, false)

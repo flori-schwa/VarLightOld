@@ -5,12 +5,14 @@ import me.shawlaf.varlight.spigot.LightUpdateResult;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.event.LightUpdateEvent;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
+import me.shawlaf.varlight.util.ChunkCoords;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 
 import java.util.Objects;
 
 import static me.shawlaf.varlight.spigot.LightUpdateResult.*;
+import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
 
 @UtilityClass
 public class LightSourceUtil {
@@ -28,7 +30,7 @@ public class LightSourceUtil {
             return varLightNotActive(plugin, location.getWorld(), fromLight, lightLevel);
         }
 
-        fromLight = manager.getCustomLuminance(IntPositionExtension.toIntPosition(location), 0);
+        fromLight = manager.getCustomLuminance(toIntPosition(location), 0);
 
         if (lightLevel < 0) {
             return zeroReached(plugin, fromLight, lightLevel);
@@ -54,7 +56,8 @@ public class LightSourceUtil {
         manager.setCustomLuminance(location, lightTo);
 
         if (doUpdate) {
-            plugin.getNmsAdapter().updateBlocksAndChunk(location);
+            plugin.getLightUpdateScheduler().enqueueChunks(false, true, location.getWorld(), new ChunkCoords(location.getBlockX() >> 4, location.getBlockZ() >> 4));
+            plugin.getLightUpdateScheduler().enqueueChunks(true, false, location.getWorld(), plugin.getNmsAdapter().collectChunkPositionsToUpdate(toIntPosition(location)));
         }
 
         return updated(plugin, fromLight, lightTo);

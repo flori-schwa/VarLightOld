@@ -51,6 +51,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     private AutosaveManager autosaveManager;
     private DebugManager debugManager;
     private LightDatabaseMigratorSpigot databaseMigrator;
+    private LightUpdateScheduler lightUpdateScheduler;
 
     private Material lightUpdateItem;
     private GameMode stepsizeGamemode;
@@ -88,6 +89,8 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
                 new MoveVarlightRootFolder(this)
         );
 
+        lightUpdateScheduler = new LightUpdateScheduler();
+
         this.shouldDeflate = getConfig().getBoolean(VarLightConfiguration.CONFIG_KEY_NLS_DEFLATED, true);
 
         try {
@@ -115,6 +118,8 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
             throw e;
         }
+
+        lightUpdateScheduler.start(this);
 
         configuration.getVarLightEnabledWorlds().forEach(this::enableInWorld);
 
@@ -196,6 +201,10 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         return databaseMigrator;
     }
 
+    public LightUpdateScheduler getLightUpdateScheduler() {
+        return lightUpdateScheduler;
+    }
+
     public void reload() {
         loadLightUpdateItem();
         loadStepsizeGamemode();
@@ -247,10 +256,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     public boolean shouldDeflate() {
         return shouldDeflate;
-    }
-
-    public boolean isLightApiMissing() {
-        return Bukkit.getPluginManager().getPlugin("LightAPI") == null;
     }
 
     // region Events
@@ -487,11 +492,12 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
                 if (nmsAdapter.isIllegalBlock(e.getChangedType())) {
                     manager.setCustomLuminance(blockPos, 0);
                 } else {
-                    nmsAdapter.updateChunk(e.getBlock().getWorld(), blockPos.toChunkCoords()); // Probably not possible, but /shrug
+                    lightUpdateScheduler.enqueueChunks(true, false, e.getBlock().getWorld(), blockPos.toChunkCoords()); // Probably not possible, but /shrug
+//                    nmsAdapter.updateChunk(e.getBlock().getWorld(), blockPos.toChunkCoords());
                 }
             } else {
                 // The Light source Block received an update from another Block
-                nmsAdapter.updateChunk(e.getBlock().getWorld(), blockPos.toChunkCoords());
+                lightUpdateScheduler.enqueueChunks(true, false, e.getBlock().getWorld(), blockPos.toChunkCoords());
             }
         }
     }

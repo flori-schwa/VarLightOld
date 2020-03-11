@@ -77,14 +77,6 @@ public interface INmsAdapter {
         return isIllegalBlock(block.getType());
     }
 
-    default void updateChunk(Chunk chunk) {
-        updateChunk(chunk.getWorld(), new ChunkCoords(chunk.getX(), chunk.getZ()));
-    }
-
-    default void updateBlocks(Chunk chunk) {
-        updateBlocks(chunk.getWorld(), new ChunkCoords(chunk.getX(), chunk.getZ()));
-    }
-
     @NotNull
     default List<Chunk> collectChunksToUpdate(@NotNull Location location) {
         Objects.requireNonNull(location);
