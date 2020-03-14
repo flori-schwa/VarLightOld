@@ -10,11 +10,6 @@ import net.minecraft.server.v1_15_R1.*;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.*;
-import org.bukkit.block.data.AnaloguePowerable;
-import org.bukkit.block.data.BlockData;
-import org.bukkit.block.data.Openable;
-import org.bukkit.block.data.Powerable;
-import org.bukkit.block.data.type.Piston;
 import org.bukkit.craftbukkit.v1_15_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_15_R1.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_15_R1.util.CraftMagicNumbers;
@@ -201,30 +196,32 @@ public class NmsAdapter implements INmsAdapter {
 
     @Override
     public boolean isIllegalBlock(@NotNull Material material) {
-        if (!material.isBlock()) {
-            return true;
-        }
+        return !(plugin.getAllowedBlocks().isTagged(material) || (plugin.getConfiguration().isAllowExperimentalBlocks() && plugin.getExperimentalBlocks().isTagged(material)));
 
-        // If the Block is a vanilla Light source
-        if (CraftMagicNumbers.getBlock(material).getBlockData().h() > 0) {
-            return true;
-        }
-
-        BlockData blockData = material.createBlockData();
-
-        if (blockData instanceof Powerable || blockData instanceof AnaloguePowerable || blockData instanceof Openable || blockData instanceof Piston) {
-            return true;
-        }
-
-        if (material == Material.SLIME_BLOCK) {
-            return true;
-        }
-
-        if (material == Material.BLUE_ICE) {
-            return false;
-        }
-
-        return !material.isSolid() || !material.isOccluding();
+//        if (!material.isBlock()) {
+//            return true;
+//        }
+//
+//        // If the Block is a vanilla Light source
+//        if (CraftMagicNumbers.getBlock(material).getBlockData().h() > 0) {
+//            return true;
+//        }
+//
+//        BlockData blockData = material.createBlockData();
+//
+//        if (blockData instanceof Powerable || blockData instanceof AnaloguePowerable || blockData instanceof Openable || blockData instanceof Piston) {
+//            return true;
+//        }
+//
+//        if (material == Material.SLIME_BLOCK) {
+//            return true;
+//        }
+//
+//        if (material == Material.BLUE_ICE) {
+//            return false;
+//        }
+//
+//        return !material.isSolid() || !material.isOccluding();
     }
 
     @NotNull

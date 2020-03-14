@@ -22,6 +22,7 @@ public class VarLightConfiguration {
     public static final String CONFIG_KEY_VARLIGHT_RECLAIM = "varlight-reclaim";
     public static final String CONFIG_KEY_LOG_DEBUG = "log-debug";
     public static final String CONFIG_KEY_CHECK_UPDATE = "check-update";
+    public static final String CONFIG_KEY_ENABLE_EXPERIMENTAL_BLOCKS = "experimental-blocks";
 
     private final VarLightPlugin plugin;
 
@@ -40,6 +41,7 @@ public class VarLightConfiguration {
         plugin.getConfig().addDefault(CONFIG_KEY_VARLIGHT_RECLAIM, true);
         plugin.getConfig().addDefault(CONFIG_KEY_LOG_DEBUG, false);
         plugin.getConfig().addDefault(CONFIG_KEY_CHECK_UPDATE, true);
+        plugin.getConfig().addDefault(CONFIG_KEY_ENABLE_EXPERIMENTAL_BLOCKS, false);
 
         plugin.getConfig().options().copyDefaults(true);
     }
@@ -58,7 +60,7 @@ public class VarLightConfiguration {
 
     public Material getLightUpdateItem() {
         @SuppressWarnings("ConstantConditions") // Cannot be null, because getKey() is NotNull and NamespacedKey.toString() is also NotNull
-        String configMaterial = plugin.getConfig().getString(CONFIG_KEY_VARLIGHT_ITEM, Material.GLOWSTONE_DUST.getKey().toString()).toLowerCase();
+                String configMaterial = plugin.getConfig().getString(CONFIG_KEY_VARLIGHT_ITEM, Material.GLOWSTONE_DUST.getKey().toString()).toLowerCase();
 
         Material material = plugin.getNmsAdapter().keyToType(configMaterial, MaterialType.ITEM);
 
@@ -176,6 +178,10 @@ public class VarLightConfiguration {
 
     public boolean isCheckUpdateEnabled() {
         return plugin.getConfig().getBoolean(CONFIG_KEY_CHECK_UPDATE);
+    }
+
+    public boolean isAllowExperimentalBlocks() {
+        return plugin.getConfig().getBoolean(CONFIG_KEY_ENABLE_EXPERIMENTAL_BLOCKS);
     }
 
     public void save() {

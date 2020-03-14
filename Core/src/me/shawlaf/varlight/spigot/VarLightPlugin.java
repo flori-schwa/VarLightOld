@@ -39,6 +39,8 @@ import static me.shawlaf.varlight.spigot.util.LightSourceUtil.placeNewLightSourc
 
 public class VarLightPlugin extends JavaPlugin implements Listener {
 
+    private Tag<Material> allowedBlocks, experimentalBlocks;
+
     public static final long TICK_RATE = 20L;
 
     private final Map<UUID, Integer> stepSizes = new HashMap<>();
@@ -92,6 +94,9 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         lightUpdateScheduler = new LightUpdateScheduler();
 
         this.shouldDeflate = getConfig().getBoolean(VarLightConfiguration.CONFIG_KEY_NLS_DEFLATED, true);
+
+        allowedBlocks = Bukkit.getTag(Tag.REGISTRY_BLOCKS, new NamespacedKey(this, "allowed_blocks"), Material.class);
+        experimentalBlocks = Bukkit.getTag(Tag.REGISTRY_BLOCKS, new NamespacedKey(this, "experimental_blocks"), Material.class);
 
         try {
             nmsAdapter.onLoad();
@@ -199,6 +204,14 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     public LightDatabaseMigratorSpigot getDatabaseMigrator() {
         return databaseMigrator;
+    }
+
+    public Tag<Material> getAllowedBlocks() {
+        return allowedBlocks;
+    }
+
+    public Tag<Material> getExperimentalBlocks() {
+        return experimentalBlocks;
     }
 
     public LightUpdateScheduler getLightUpdateScheduler() {
