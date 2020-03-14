@@ -43,13 +43,13 @@ public class VarLightCommandItem extends VarLightSubCommand {
                             Material item = context.getArgument("item", Material.class);
 
                             if (plugin.getNmsAdapter().isIllegalLightUpdateItem(item)) {
-                                failure(this, context.getSource(), String.format("%s cannot be used as the varlight update item", plugin.getNmsAdapter().materialToKey(item)));
+                                failure(this, context.getSource(), String.format("%s cannot be used as the varlight update item", item.getKey().toString()));
 
                                 return FAILURE;
                             }
 
                             plugin.setUpdateItem(item);
-                            success(this, context.getSource(), String.format("Updated the Light update item to %s", plugin.getNmsAdapter().materialToKey(item)));
+                            success(this, context.getSource(), String.format("Updated the Light update item to %s", item.getKey().toString()));
 
                             return SUCCESS;
                         })

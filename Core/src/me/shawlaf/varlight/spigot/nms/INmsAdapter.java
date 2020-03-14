@@ -25,8 +25,6 @@ public interface INmsAdapter {
 
     @Nullable Material keyToType(String namespacedKey, MaterialType type);
 
-    @NotNull String materialToKey(Material material);
-
     @NotNull String getLocalizedBlockName(Material material);
 
     @NotNull Collection<String> getTypes(MaterialType type);

@@ -7,16 +7,15 @@ import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.nms.INmsAdapter;
 import me.shawlaf.varlight.spigot.persistence.migrate.data.JsonToNLSMigration;
 import me.shawlaf.varlight.util.IntPosition;
-import org.bukkit.Material;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -29,8 +28,7 @@ public class TestJSONToNLS {
     private INmsAdapter nmsAdapter = mock(INmsAdapter.class);
 
     @Test
-    public void testJSONToVLDBMigration(@TempDir File tempDir) throws IOException {
-        when(nmsAdapter.materialToKey(Material.STONE)).thenReturn("minecraft:stone");
+    public void testJSONToVLDBMigration(@TempDir File tempDir) throws Exception {
         when(plugin.getNmsAdapter()).thenReturn(nmsAdapter);
         when(plugin.shouldDeflate()).thenReturn(false);
 
@@ -57,7 +55,7 @@ public class TestJSONToNLS {
             writer.write(gson.toJson(testData));
         }
 
-        assertTrue(new JsonToNLSMigration(plugin).test(jsonFile));
+        assertTrue(new JsonToNLSMigration(plugin).migrate(jsonFile));
 
         NLSFile nlsFile = NLSFile.existingFile(new File(tempDir, String.format(NLSFile.FILE_NAME_FORMAT, regionX, regionZ)));
 

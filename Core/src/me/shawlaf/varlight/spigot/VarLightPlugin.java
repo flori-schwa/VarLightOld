@@ -219,7 +219,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     }
 
     public void setUpdateItem(Material item) {
-        getConfig().set(VarLightConfiguration.CONFIG_KEY_VARLIGHT_ITEM, nmsAdapter.materialToKey(item));
+        getConfig().set(VarLightConfiguration.CONFIG_KEY_VARLIGHT_ITEM, item.getKey().toString());
         saveConfig();
 
         loadLightUpdateItem();
@@ -519,7 +519,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     private void loadLightUpdateItem() {
         this.lightUpdateItem = configuration.getLightUpdateItem();
-        getLogger().info(String.format("Using \"%s\" as the Light update item.", nmsAdapter.materialToKey(lightUpdateItem)));
+        getLogger().info(String.format("Using \"%s\" as the Light update item.", lightUpdateItem.getKey().toString()));
     }
 
     private void loadStepsizeGamemode() {

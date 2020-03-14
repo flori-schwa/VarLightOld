@@ -263,7 +263,7 @@ public class VarLightCommandDebug extends VarLightSubCommand {
                     "%s = %d (%s)",
                     lightSource.toShortString(),
                     manager.getCustomLuminance(lightSource, 0),
-                    plugin.getNmsAdapter().materialToKey(player.getWorld().getBlockAt(lightSource.x, lightSource.y, lightSource.z).getType()))
+                    player.getWorld().getBlockAt(lightSource.x, lightSource.y, lightSource.z).getType().getKey().toString())
             );
 
             textComponent.setColor(ChatColor.GREEN);

@@ -25,11 +25,6 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public @NotNull String materialToKey(Material material) {
-        throw new AbstractMethodError();
-    }
-
-    @Override
     public @NotNull String getLocalizedBlockName(Material material) {
         throw new AbstractMethodError();
     }

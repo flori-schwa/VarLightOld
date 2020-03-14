@@ -92,14 +92,6 @@ public class NmsAdapter implements INmsAdapter {
 
     @NotNull
     @Override
-    public String materialToKey(Material material) {
-        return material.isBlock() ?
-                IRegistry.BLOCK.getKey(CraftMagicNumbers.getBlock(material)).toString() :
-                IRegistry.ITEM.getKey(CraftMagicNumbers.getItem(material)).toString();
-    }
-
-    @NotNull
-    @Override
     public String getLocalizedBlockName(Material material) {
         return LocaleLanguage.a().a(CraftMagicNumbers.getBlock(material).k());
     }
