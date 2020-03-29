@@ -47,6 +47,8 @@ public interface INmsAdapter {
 
     @NotNull File getRegionRoot(World world);
 
+    String getDefaultLevelName();
+
     default void onLoad() {
 
     }

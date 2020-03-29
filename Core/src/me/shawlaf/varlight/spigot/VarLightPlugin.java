@@ -30,6 +30,10 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 
 import static me.shawlaf.command.result.CommandResult.failure;
@@ -65,7 +69,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         try {
             this.nmsAdapter = new NmsAdapter(this);
         } catch (Throwable e) { // Catch anything that goes wrong while initializing
-            unsupportedOperation(String.format("Failed to initialize VarLight for Minecraft Version \"%s\": %s", Bukkit.getVersion(), e.getMessage()));
+            startupError(String.format("Failed to initialize VarLight for Minecraft Version \"%s\": %s", Bukkit.getVersion(), e.getMessage()));
             throw e;
         }
     }
@@ -77,6 +81,22 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         }
 
         getLogger().info(String.format("Loading VarLight for Minecraft version \"%s\"", nmsAdapter.getForMinecraftVersion()));
+
+        File defaultWorldFolder = new File(Bukkit.getWorldContainer(), nmsAdapter.getDefaultLevelName());
+        File dataPackRepository = new File(defaultWorldFolder, "datapacks");
+
+        dataPackRepository.mkdirs();
+
+        File varLightDataPack = new File(dataPackRepository, "VarLight.zip");
+
+        if (varLightDataPack.exists()) {
+            if (!varLightDataPack.delete()) {
+                startupError("Failed to delete existing VarLight Datapack!");
+                return;
+            }
+        }
+
+        exportClassResource("/VarLight.zip", varLightDataPack);
 
         configuration = new VarLightConfiguration(this);
         debugManager = new DebugManager(this);
@@ -522,7 +542,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     // endregion
 
-    private void unsupportedOperation(String message) {
+    private void startupError(String message) {
         getLogger().severe("------------------------------------------------------");
         getLogger().severe(message);
         getLogger().severe("------------------------------------------------------");
@@ -542,5 +562,20 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     private String toShortBlockString(Location location) {
         return String.format("[%d, %d, %d]", location.getBlockX(), location.getBlockY(), location.getBlockZ());
+    }
+
+    private void exportClassResource(String path, File toFile) {
+        byte[] buffer = new byte[8 * 1024];
+        int read;
+
+        try (InputStream in = getClass().getResourceAsStream(path)) {
+            try (FileOutputStream fos = new FileOutputStream(toFile)) {
+                while ((read = in.read(buffer, 0, buffer.length)) > 0) {
+                    fos.write(buffer, 0, read);
+                }
+            }
+        } catch (IOException e) {
+            throw new VarLightInitializationException(e.getMessage(), e);
+        }
     }
 }

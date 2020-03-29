@@ -78,4 +78,9 @@ public class NmsAdapter implements INmsAdapter {
     public @NotNull File getRegionRoot(World world) {
         throw new AbstractMethodError();
     }
+
+    @Override
+    public String getDefaultLevelName() {
+        throw new AbstractMethodError();
+    }
 }

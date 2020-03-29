@@ -297,6 +297,11 @@ public class NmsAdapter implements INmsAdapter {
         return nmsWorld.worldProvider.getDimensionManager().a(world.getWorldFolder());
     }
 
+    @Override
+    public String getDefaultLevelName() {
+        return ((DedicatedServer) MinecraftServer.getServer()).propertyManager.getProperties().levelName;
+    }
+
     private WorldServer getNmsWorld(World world) {
         return ((CraftWorld) world).getHandle();
     }
