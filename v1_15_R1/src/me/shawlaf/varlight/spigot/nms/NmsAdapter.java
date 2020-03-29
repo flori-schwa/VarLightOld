@@ -197,31 +197,6 @@ public class NmsAdapter implements INmsAdapter {
     @Override
     public boolean isIllegalBlock(@NotNull Material material) {
         return !(plugin.getAllowedBlocks().isTagged(material) || (plugin.getConfiguration().isAllowExperimentalBlocks() && plugin.getExperimentalBlocks().isTagged(material)));
-
-//        if (!material.isBlock()) {
-//            return true;
-//        }
-//
-//        // If the Block is a vanilla Light source
-//        if (CraftMagicNumbers.getBlock(material).getBlockData().h() > 0) {
-//            return true;
-//        }
-//
-//        BlockData blockData = material.createBlockData();
-//
-//        if (blockData instanceof Powerable || blockData instanceof AnaloguePowerable || blockData instanceof Openable || blockData instanceof Piston) {
-//            return true;
-//        }
-//
-//        if (material == Material.SLIME_BLOCK) {
-//            return true;
-//        }
-//
-//        if (material == Material.BLUE_ICE) {
-//            return false;
-//        }
-//
-//        return !material.isSolid() || !material.isOccluding();
     }
 
     @NotNull
