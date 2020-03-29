@@ -14,7 +14,7 @@
 # -------------------------------------------------------------------------------------------
 # "blacklist" Controls in which worlds the plugin will not function
 # -------------------------------------------------------------------------------------------
-# "vldb-deflated" Controls, whether the files used to store Light source information should
+# "nls-deflated" Controls, whether the files used to store Light source information should
 # be deflated using GZIP
 # -------------------------------------------------------------------------------------------
 # "stepsize-gamemode" Controls, which Gamemode is required to use /varlight stepsize
@@ -39,11 +39,11 @@
 # -------------------------------------------------------------------------------------------
 
 item: "minecraft:glowstone_dust"
-autosave: 5
+autosave: -1
 requiredPermission: ''
 whitelist: []
 blacklist: []
-vldb-deflated: true
+nls-deflated: true
 stepsize-gamemode: "CREATIVE"
 varlight-reclaim: true
 log-debug: false
