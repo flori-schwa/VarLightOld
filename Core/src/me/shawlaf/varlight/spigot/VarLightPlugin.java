@@ -96,7 +96,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             }
         }
 
-        exportClassResource("/VarLight.zip", varLightDataPack);
+        exportResource("/VarLight.zip", varLightDataPack);
 
         configuration = new VarLightConfiguration(this);
         debugManager = new DebugManager(this);
@@ -564,7 +564,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         return String.format("[%d, %d, %d]", location.getBlockX(), location.getBlockY(), location.getBlockZ());
     }
 
-    private void exportClassResource(String path, File toFile) {
+    private void exportResource(String path, File toFile) {
         byte[] buffer = new byte[8 * 1024];
         int read;
 
