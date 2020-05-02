@@ -15,6 +15,7 @@ import static me.shawlaf.varlight.spigot.command.VarLightCommand.FAILURE;
 import static me.shawlaf.varlight.spigot.command.VarLightCommand.SUCCESS;
 import static me.shawlaf.varlight.spigot.command.commands.arguments.MinecraftTypeArgumentType.minecraftType;
 
+@Deprecated
 public class VarLightCommandItem extends VarLightSubCommand {
     public VarLightCommandItem(VarLightPlugin plugin) {
         super(plugin, "item");

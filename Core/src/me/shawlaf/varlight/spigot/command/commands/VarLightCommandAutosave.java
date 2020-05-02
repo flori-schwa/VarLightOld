@@ -12,6 +12,7 @@ import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
 import static com.mojang.brigadier.builder.RequiredArgumentBuilder.argument;
 import static me.shawlaf.command.result.CommandResult.successBroadcast;
 
+@Deprecated
 public class VarLightCommandAutosave extends VarLightSubCommand {
 
     private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_NEW_INTERVAL = argument("newInterval", integer());

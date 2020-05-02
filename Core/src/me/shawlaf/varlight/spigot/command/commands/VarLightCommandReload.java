@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import static me.shawlaf.command.result.CommandResult.successBroadcast;
 import static me.shawlaf.varlight.spigot.command.VarLightCommand.SUCCESS;
 
+@Deprecated
 public class VarLightCommandReload extends VarLightSubCommand {
     public VarLightCommandReload(VarLightPlugin plugin) {
         super(plugin, "reload");

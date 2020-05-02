@@ -14,6 +14,7 @@ import static me.shawlaf.command.result.CommandResult.info;
 import static me.shawlaf.command.result.CommandResult.successBroadcast;
 import static me.shawlaf.varlight.spigot.command.VarLightCommand.SUCCESS;
 
+@Deprecated
 public class VarLightCommandPermission extends VarLightSubCommand {
 
     private static final RequiredArgumentBuilder<CommandSender, String> ARG_NEW_NODE = argument("node", word());
