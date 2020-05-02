@@ -11,8 +11,7 @@ import me.shawlaf.command.brigadier.BrigadierCommand;
 import me.shawlaf.command.exception.CommandException;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.command.commands.*;
-import me.shawlaf.varlight.spigot.command.commands.world.VarLightCommandBlacklist;
-import me.shawlaf.varlight.spigot.command.commands.world.VarLightCommandWhitelist;
+import me.shawlaf.varlight.spigot.command.commands.config.VarLightCommandConfig;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,26 +20,20 @@ import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 
 @SuppressWarnings("rawtypes")
-public class VarLightCommand extends BrigadierCommand<CommandSender, VarLightPlugin> {
+public final class VarLightCommand extends BrigadierCommand<CommandSender, VarLightPlugin> {
 
     public static final int SUCCESS = 0;
     public static final int FAILURE = 1;
 
     private static final Class[] SUB_COMMANDS = new Class[]{
             // Register sub commands here
-            VarLightCommandAutosave.class,
+            VarLightCommandConfig.class,
             VarLightCommandDebug.class,
             VarLightCommandFill.class,
-            VarLightCommandItem.class,
-            VarLightCommandPermission.class,
-            VarLightCommandReload.class,
             VarLightCommandSave.class,
             VarLightCommandStepSize.class,
             VarLightCommandUpdate.class,
-            VarLightCommandGive.class,
-
-            VarLightCommandWhitelist.class,
-            VarLightCommandBlacklist.class,
+            VarLightCommandGive.class
     };
 
     private VarLightSubCommand[] subCommands; // Will be used by help command

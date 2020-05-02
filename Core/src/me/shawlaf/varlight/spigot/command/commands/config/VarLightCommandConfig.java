@@ -23,6 +23,8 @@ public class VarLightCommandConfig extends VarLightSubCommand {
     @Override
     public @NotNull LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> node) {
 
+        node.then(literalArgument("reload").executes(this::runReload));
+
         node.then(
                 literalArgument("autosave")
                         .then(literalArgument("get").executes(this::runGetAutosaveInterval))
@@ -33,7 +35,6 @@ public class VarLightCommandConfig extends VarLightSubCommand {
                                                         .executes(this::runSetAutosaveInterval)
                                         )
                         )
-                        .then(literalArgument("reload").executes(this::runReloadAutosaveInterval))
         );
 
         node.then(
@@ -46,7 +47,6 @@ public class VarLightCommandConfig extends VarLightSubCommand {
                                                         .executes(this::runSetLUI)
                                         )
                         )
-                        .then(literalArgument("reload").executes(this::runReloadLUI))
         );
 
         node.then(
@@ -57,7 +57,6 @@ public class VarLightCommandConfig extends VarLightSubCommand {
                                         .then(boolArgument("value"))
                                         .executes(this::runSetPermissionCheck)
                         )
-                        .then(literalArgument("reload")).executes(this::runReloadPermissionCheck)
         );
 
         node.then(
@@ -74,7 +73,6 @@ public class VarLightCommandConfig extends VarLightSubCommand {
                                         .then(worldArgument("world").executes(c -> runRemoveFromWorldList(c, WHITELIST)))
                         )
                         .then(literalArgument("clear")).executes(c -> runClearWorldList(c, WHITELIST))
-                        .then(literalArgument("reload").executes(c -> runReloadWorldList(c, WHITELIST)))
         );
 
         node.then(
@@ -91,7 +89,6 @@ public class VarLightCommandConfig extends VarLightSubCommand {
                                         .then(worldArgument("world").executes(c -> runRemoveFromWorldList(c, BLACKLIST)))
                         )
                         .then(literalArgument("clear")).executes(c -> runClearWorldList(c, BLACKLIST))
-                        .then(literalArgument("reload").executes(c -> runReloadWorldList(c, BLACKLIST)))
         );
 
         /* TODO
@@ -110,6 +107,13 @@ public class VarLightCommandConfig extends VarLightSubCommand {
         return "varlight.admin.config";
     }
 
+    private int runReload(CommandContext<CommandSender> context) throws CommandSyntaxException {
+
+        context.getSource().sendMessage("TODO implement runReload");
+
+        return SUCCESS;
+    }
+
     // region Autosave Command Implementations
 
     private int runGetAutosaveInterval(CommandContext<CommandSender> context) throws CommandSyntaxException {
@@ -122,13 +126,6 @@ public class VarLightCommandConfig extends VarLightSubCommand {
     private int runSetAutosaveInterval(CommandContext<CommandSender> context) throws CommandSyntaxException {
 
         context.getSource().sendMessage("TODO implement runSetAutosaveInterval");
-
-        return SUCCESS;
-    }
-
-    private int runReloadAutosaveInterval(CommandContext<CommandSender> context) throws CommandSyntaxException {
-
-        context.getSource().sendMessage("TODO implement runReloadAutosaveInterval");
 
         return SUCCESS;
     }
@@ -151,13 +148,6 @@ public class VarLightCommandConfig extends VarLightSubCommand {
         return SUCCESS;
     }
 
-    private int runReloadLUI(CommandContext<CommandSender> context) throws CommandSyntaxException {
-
-        context.getSource().sendMessage("TODO implement runReloadLUI");
-
-        return SUCCESS;
-    }
-
     // endregion
 
     // region Permission Check Command Implementations
@@ -172,13 +162,6 @@ public class VarLightCommandConfig extends VarLightSubCommand {
     private int runSetPermissionCheck(CommandContext<CommandSender> context) throws CommandSyntaxException {
 
         context.getSource().sendMessage("TODO implement runSetPermissionCheck");
-
-        return SUCCESS;
-    }
-
-    private int runReloadPermissionCheck(CommandContext<CommandSender> context) throws CommandSyntaxException {
-
-        context.getSource().sendMessage("TODO implement runReloadPermissionCheck");
 
         return SUCCESS;
     }
@@ -211,13 +194,6 @@ public class VarLightCommandConfig extends VarLightSubCommand {
     private int runClearWorldList(CommandContext<CommandSender> context, VarLightConfiguration.WorldListType listType) throws CommandSyntaxException {
 
         context.getSource().sendMessage("TODO implement runClearWorldList");
-
-        return SUCCESS;
-    }
-
-    private int runReloadWorldList(CommandContext<CommandSender> context, VarLightConfiguration.WorldListType listType) throws CommandSyntaxException {
-
-        context.getSource().sendMessage("TODO implement runReloadWorldList");
 
         return SUCCESS;
     }

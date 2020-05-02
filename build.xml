@@ -30,7 +30,7 @@
 
     <property name="lib-light-api" value="LightAPI-fork-3.4.2.jar"/>
     <property name="lib-annotations" value="annotations-17.0.01.jar"/>
-    <property name="lib-command-api" value="SpigotCommandApi-1.7.jar"/>
+    <property name="lib-command-api" value="SpigotCommandApi-1.8.jar"/>
     <property name="lib-brigadier" value="brigadier.jar"/>
     <property name="lib-lombok" value="lombok-1.18.10.jar"/>
     <property name="lib-varlight-core" value="VarLightCore.jar"/>

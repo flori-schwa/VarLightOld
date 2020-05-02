@@ -59,7 +59,7 @@ public class TestVLDBToNLS {
 
         regionPersistor.flushAll();
         assertTrue(regionPersistor.save());
-        assertTrue(new VLDBToNLSMigration(plugin).test(new File(tempDir, String.format(VLDBFile.FILE_NAME_FORMAT, regionX, regionZ))));
+        assertTrue(new VLDBToNLSMigration(plugin).migrate(new File(tempDir, String.format(VLDBFile.FILE_NAME_FORMAT, regionX, regionZ))));
 
         NLSFile nlsFile = NLSFile.existingFile(new File(tempDir, String.format(NLSFile.FILE_NAME_FORMAT, regionX, regionZ)), false);
 
