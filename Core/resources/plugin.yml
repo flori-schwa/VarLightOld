@@ -10,6 +10,9 @@ softdepend:
   - "LightAPI"
 
 permissions:
+  varlight.admin.config:
+    description: "Provides access to /varlight config"
+    default: op
   varlight.admin.save:
     description: "Provides access to /varlight save and /varlight autosave"
     default: op
@@ -49,6 +52,7 @@ permissions:
     description: "Provides access to all varlight admin commands"
     default: op
     children:
+      varlight.admin.config: true
       varlight.admin.save: true
       varlight.admin.debug: true
       varlight.admin.migrate: true

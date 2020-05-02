@@ -24,9 +24,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.function.ToIntFunction;
 
-import static com.mojang.brigadier.arguments.BoolArgumentType.bool;
-import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
-import static com.mojang.brigadier.builder.RequiredArgumentBuilder.argument;
 import static me.shawlaf.command.result.CommandResult.*;
 import static me.shawlaf.varlight.spigot.command.VarLightCommand.FAILURE;
 import static me.shawlaf.varlight.spigot.command.VarLightCommand.SUCCESS;
@@ -36,11 +33,11 @@ public class VarLightCommandDebug extends VarLightSubCommand {
 
     private static final int PAGE_SIZE = 10;
 
-    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_REGION_X = argument("regionX", integer());
-    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_REGION_Z = argument("regionZ", integer());
+    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_REGION_X = integerArgument("regionX");
+    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_REGION_Z = integerArgument("regionZ");
 
-    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_CHUNK_X = argument("regionX", integer());
-    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_CHUNK_Z = argument("regionZ", integer());
+    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_CHUNK_X = integerArgument("chunkX");
+    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_CHUNK_Z = integerArgument("chunkZ");
 
     public VarLightCommandDebug(VarLightPlugin plugin) {
         super(plugin, "debug");
@@ -87,14 +84,14 @@ public class VarLightCommandDebug extends VarLightSubCommand {
         suggestCoordinate(ARG_REGION_Z, e -> (e.getLocation().getBlockZ() >> 4) >> 5);
 
         literalArgumentBuilder.then(
-                LiteralArgumentBuilder.<CommandSender>literal("list")
+                literalArgument("list")
                         .then(
-                                LiteralArgumentBuilder.<CommandSender>literal("-r")
+                                literalArgument("region")
                                         .executes(this::regionImplicit)
                                         .then(
                                                 ARG_REGION_X.then(ARG_REGION_Z.executes((c) -> regionExplicit(c, 1))
                                                         .then(
-                                                                RequiredArgumentBuilder.<CommandSender, Integer>argument("rpage", integer(1))
+                                                                integerArgument("rpage", 1)
                                                                         .executes(
                                                                                 c -> regionExplicit(c, c.getArgument("rpage", int.class))
                                                                         )
@@ -102,12 +99,12 @@ public class VarLightCommandDebug extends VarLightSubCommand {
                                                 )
                                         )
                         ).then(
-                        LiteralArgumentBuilder.<CommandSender>literal("-c")
+                        literalArgument("chunk")
                                 .executes(this::chunkImplicit)
                                 .then(
                                         ARG_CHUNK_X.then(ARG_CHUNK_Z.executes(c -> chunkExplicit(c, 1))
                                                 .then(
-                                                        RequiredArgumentBuilder.<CommandSender, Integer>argument("cpage", integer(1))
+                                                        integerArgument("cpage", 1)
                                                                 .executes(
                                                                         c -> chunkExplicit(c, c.getArgument("cpage", int.class))
                                                                 )
@@ -118,7 +115,7 @@ public class VarLightCommandDebug extends VarLightSubCommand {
         );
 
         literalArgumentBuilder.then(
-                LiteralArgumentBuilder.<CommandSender>literal("stick").executes(context -> {
+                literalArgument("stick").executes(context -> {
                     if (!(context.getSource() instanceof Player)) {
                         failure(this, context.getSource(), "You must be a player to use this command!");
                         return FAILURE;
@@ -131,10 +128,10 @@ public class VarLightCommandDebug extends VarLightSubCommand {
         );
 
         literalArgumentBuilder.then(
-                LiteralArgumentBuilder.<CommandSender>literal("logger")
+                literalArgument("logger")
                         .requires(cs -> cs.hasPermission("varlight.admin"))
                         .then(
-                                RequiredArgumentBuilder.<CommandSender, Boolean>argument("value", bool())
+                                boolArgument("value")
                                         .executes(c -> {
                                             boolean newStatus = BoolArgumentType.getBool(c, "value");
                                             plugin.getDebugManager().setDebugEnabled(newStatus);

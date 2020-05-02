@@ -11,11 +11,10 @@ import org.bukkit.util.ChatPaginator;
 import org.jetbrains.annotations.NotNull;
 
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
-import static com.mojang.brigadier.builder.RequiredArgumentBuilder.argument;
 
 public class VarLightCommandHelp extends VarLightSubCommand {
 
-    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_PAGE = argument("page", integer(1));
+    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_PAGE = integerArgument("page", 1);
 
     private VarLightCommand rootCommand;
 
@@ -47,7 +46,7 @@ public class VarLightCommandHelp extends VarLightSubCommand {
             }
 
             literalArgumentBuilder.then(
-                    LiteralArgumentBuilder.<CommandSender>literal(subCommand.getName())
+                    literalArgument(subCommand.getName())
                             .requires(subCommand::meetsRequirement)
                             .executes(context -> {
                                 context.getSource().sendMessage(subCommand.getUsageString());

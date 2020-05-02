@@ -11,15 +11,13 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
-import static com.mojang.brigadier.builder.RequiredArgumentBuilder.argument;
-import static me.shawlaf.command.brigadier.argument.WorldArgumentType.world;
 import static me.shawlaf.command.result.CommandResult.failure;
 import static me.shawlaf.varlight.spigot.command.VarLightCommand.FAILURE;
 import static me.shawlaf.varlight.spigot.command.VarLightCommand.SUCCESS;
 
 public class VarLightCommandSave extends VarLightSubCommand {
 
-    private static final RequiredArgumentBuilder<CommandSender, World> ARG_WORLD = argument("world", world());
+    private static final RequiredArgumentBuilder<CommandSender, World> ARG_WORLD = worldArgument("world");
 
     public VarLightCommandSave(VarLightPlugin plugin) {
         super(plugin, "save");

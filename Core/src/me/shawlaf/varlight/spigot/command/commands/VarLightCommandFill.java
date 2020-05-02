@@ -29,14 +29,10 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
-import static com.mojang.brigadier.builder.RequiredArgumentBuilder.argument;
-import static me.shawlaf.command.brigadier.argument.PositionArgumentType.position;
 import static me.shawlaf.command.result.CommandResult.failure;
 import static me.shawlaf.command.result.CommandResult.successBroadcast;
 import static me.shawlaf.varlight.spigot.command.VarLightCommand.FAILURE;
 import static me.shawlaf.varlight.spigot.command.VarLightCommand.SUCCESS;
-import static me.shawlaf.varlight.spigot.command.commands.arguments.CollectionArgumentType.collection;
 import static me.shawlaf.varlight.spigot.command.commands.arguments.MinecraftTypeArgumentType.minecraftType;
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toBlock;
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
@@ -44,10 +40,10 @@ import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition
 @SuppressWarnings("DuplicatedCode")
 public class VarLightCommandFill extends VarLightSubCommand {
 
-    private static final RequiredArgumentBuilder<CommandSender, ICoordinates> ARG_POS_1 = argument("pos1", position());
-    private static final RequiredArgumentBuilder<CommandSender, ICoordinates> ARG_POS_2 = argument("pos2", position());
+    private static final RequiredArgumentBuilder<CommandSender, ICoordinates> ARG_POS_1 = positionArgument("pos1");
+    private static final RequiredArgumentBuilder<CommandSender, ICoordinates> ARG_POS_2 = positionArgument("pos2");
 
-    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_LIGHT_LEVEL = argument("light level", integer(0, 15));
+    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_LIGHT_LEVEL = integerArgument("light level", 0, 15);
 
     public VarLightCommandFill(VarLightPlugin plugin) {
         super(plugin, "fill");
@@ -81,16 +77,15 @@ public class VarLightCommandFill extends VarLightSubCommand {
                                 ARG_LIGHT_LEVEL
                                         .executes(this::fillNoFilter)
                                         .then(
-                                                LiteralArgumentBuilder.<CommandSender>literal("include")
+                                                literalArgument("include")
                                                         .then(
-                                                                RequiredArgumentBuilder.<CommandSender, Collection<Material>>argument("posFilter", collection(minecraftType(plugin, MaterialType.BLOCK)))
-                                                                        .executes(this::fillPosFilter)
-                                                        )
+                                                                collectionArgument("posFilter", minecraftType(plugin, MaterialType.BLOCK)))
+                                                        .executes(this::fillPosFilter)
                                         )
                                         .then(
-                                                LiteralArgumentBuilder.<CommandSender>literal("exclude")
+                                                literalArgument("exclude")
                                                         .then(
-                                                                RequiredArgumentBuilder.<CommandSender, Collection<Material>>argument("negFilter", collection(minecraftType(plugin, MaterialType.BLOCK)))
+                                                                collectionArgument("negFilter", minecraftType(plugin, MaterialType.BLOCK))
                                                                         .executes(this::fillNegFilter)
                                                         )
                                         )
