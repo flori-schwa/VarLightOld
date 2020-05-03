@@ -7,6 +7,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import me.shawlaf.command.brigadier.datatypes.ICoordinates;
 import me.shawlaf.varlight.spigot.LightUpdateResult;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
+import me.shawlaf.varlight.spigot.command.VarLightCommand;
 import me.shawlaf.varlight.spigot.command.VarLightSubCommand;
 import me.shawlaf.varlight.spigot.nms.MaterialType;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
@@ -45,8 +46,8 @@ public class VarLightCommandFill extends VarLightSubCommand {
 
     private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_LIGHT_LEVEL = integerArgument("light level", 0, 15);
 
-    public VarLightCommandFill(VarLightPlugin plugin) {
-        super(plugin, "fill");
+    public VarLightCommandFill(VarLightCommand command) {
+        super(command, "fill");
     }
 
     @Override
@@ -60,13 +61,8 @@ public class VarLightCommandFill extends VarLightSubCommand {
 //    }
 
     @Override
-    public @NotNull String getSyntax() {
-        return " <pos 1> <pos 2> <light level> [include|exclude] [<filters>...]";
-    }
-
-    @Override
     public @NotNull String getDescription() {
-        return "Fills a larger area with custom light sources";
+        return "Fills a large area with custom light sources.";
     }
 
     @Override

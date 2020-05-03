@@ -4,6 +4,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
+import me.shawlaf.varlight.spigot.command.VarLightCommand;
 import me.shawlaf.varlight.spigot.command.VarLightSubCommand;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
@@ -19,8 +20,8 @@ public class VarLightCommandPermission extends VarLightSubCommand {
 
     private static final RequiredArgumentBuilder<CommandSender, String> ARG_NEW_NODE = argument("node", word());
 
-    public VarLightCommandPermission(VarLightPlugin plugin) {
-        super(plugin, "perm");
+    public VarLightCommandPermission(VarLightCommand command) {
+        super(command, "perm");
     }
 
     @Override

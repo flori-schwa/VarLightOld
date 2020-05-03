@@ -4,6 +4,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
+import me.shawlaf.varlight.spigot.command.VarLightCommand;
 import me.shawlaf.varlight.spigot.command.VarLightSubCommand;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import org.bukkit.World;
@@ -19,20 +20,14 @@ public class VarLightCommandSave extends VarLightSubCommand {
 
     private static final RequiredArgumentBuilder<CommandSender, World> ARG_WORLD = worldArgument("world");
 
-    public VarLightCommandSave(VarLightPlugin plugin) {
-        super(plugin, "save");
-    }
-
-    @NotNull
-    @Override
-    public String getSyntax() {
-        return " [all|<world>]";
+    public VarLightCommandSave(VarLightCommand command) {
+        super(command, "save");
     }
 
     @NotNull
     @Override
     public String getDescription() {
-        return "Save all custom light sources in the current world, the specified world or all worlds";
+        return "Save all custom light sources in the current world, the specified world or all worlds.";
     }
 
     @Override

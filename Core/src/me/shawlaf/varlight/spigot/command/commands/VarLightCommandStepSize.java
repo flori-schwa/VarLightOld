@@ -4,6 +4,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
+import me.shawlaf.varlight.spigot.command.VarLightCommand;
 import me.shawlaf.varlight.spigot.command.VarLightSubCommand;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -19,20 +20,14 @@ public class VarLightCommandStepSize extends VarLightSubCommand {
 
     private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_STEPSIZE = integerArgument("stepsize", 1, 15);
 
-    public VarLightCommandStepSize(VarLightPlugin plugin) {
-        super(plugin, "stepsize");
+    public VarLightCommandStepSize(VarLightCommand command) {
+        super(command, "stepsize");
     }
 
     @NotNull
     @Override
     public String getDescription() {
-        return "Edit the Step size when using " + plugin.getLightUpdateItem().name();
-    }
-
-    @NotNull
-    @Override
-    public String getSyntax() {
-        return " <step size>";
+        return "Edit the Step size when using " + plugin.getLightUpdateItem().getKey().toString() + ".";
     }
 
     @Override

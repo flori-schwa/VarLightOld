@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
+import com.mojang.brigadier.tree.CommandNode;
 import me.shawlaf.command.ICommandAccess;
 import me.shawlaf.command.brigadier.argument.PlayerArgumentType;
 import me.shawlaf.command.brigadier.argument.PositionArgumentType;
@@ -14,7 +15,7 @@ import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.command.commands.arguments.CollectionArgumentType;
 import me.shawlaf.varlight.spigot.command.commands.arguments.MinecraftTypeArgumentType;
 import me.shawlaf.varlight.spigot.nms.MaterialType;
-import org.bukkit.ChatColor;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
@@ -22,14 +23,17 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
+import java.util.Map;
 
 public abstract class VarLightSubCommand implements ICommandAccess<VarLightPlugin> {
 
     protected final VarLightPlugin plugin;
+    protected final VarLightCommand rootCommand;
     private final String name;
 
-    public VarLightSubCommand(VarLightPlugin plugin, String name) {
-        this.plugin = plugin;
+    public VarLightSubCommand(VarLightCommand rootCommand, String name) {
+        this.rootCommand = rootCommand;
+        this.plugin = rootCommand.getPlugin();
         this.name = name;
     }
 
@@ -75,13 +79,18 @@ public abstract class VarLightSubCommand implements ICommandAccess<VarLightPlugi
         return new String[0];
     }
 
+    public CommandNode<CommandSender> getNode() {
+        return rootCommand.getCommandDispatcher().getRoot().getChildren().iterator().next().getChild(getName());
+    }
+
     @Override
     public @NotNull String getUsageString() {
-        if (getSyntax().isEmpty() || getDescription().isEmpty()) {
-            return "";
-        }
+        return getUsageString(Bukkit.getConsoleSender());
+    }
 
-        return ChatColor.GOLD + "/varlight " + getName() + getSyntax() + ": " + ChatColor.RESET + getDescription();
+    @Override
+    public @NotNull String getUsageString(CommandSender commandSender) {
+        return "/varlight " + rootCommand.getCommandDispatcher().getSmartUsage(rootCommand.getCommandDispatcher().getRoot().getChild(rootCommand.getName()), commandSender).get(getNode());
     }
 
     // region Util

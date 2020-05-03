@@ -5,6 +5,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
+import me.shawlaf.varlight.spigot.command.VarLightCommand;
 import me.shawlaf.varlight.spigot.command.VarLightSubCommand;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.util.ChunkCoords;
@@ -39,8 +40,8 @@ public class VarLightCommandDebug extends VarLightSubCommand {
     private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_CHUNK_X = integerArgument("chunkX");
     private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_CHUNK_Z = integerArgument("chunkZ");
 
-    public VarLightCommandDebug(VarLightPlugin plugin) {
-        super(plugin, "debug");
+    public VarLightCommandDebug(VarLightCommand command) {
+        super(command, "debug");
     }
 
     @NotNull
@@ -52,13 +53,7 @@ public class VarLightCommandDebug extends VarLightSubCommand {
     @NotNull
     @Override
     public String getDescription() {
-        return "Lists all custom Light sources in a region or chunk";
-    }
-
-    @NotNull
-    @Override
-    public String getSyntax() {
-        return " -r|-c [regionX|chunkX] [regionZ|chunkZ]";
+        return "List all custom Light sources in a region or chunk. Control the debug logger or get a debug stick.";
     }
 
     private void suggestCoordinate(RequiredArgumentBuilder<CommandSender, Integer> coordinateArgument, ToIntFunction<Entity> coordinateSupplier) {

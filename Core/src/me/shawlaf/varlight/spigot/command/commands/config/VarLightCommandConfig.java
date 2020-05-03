@@ -3,8 +3,8 @@ package me.shawlaf.varlight.spigot.command.commands.config;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import me.shawlaf.varlight.spigot.VarLightConfiguration;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
+import me.shawlaf.varlight.spigot.command.VarLightCommand;
 import me.shawlaf.varlight.spigot.command.VarLightSubCommand;
 import me.shawlaf.varlight.spigot.nms.MaterialType;
 import org.bukkit.command.CommandSender;
@@ -16,8 +16,20 @@ import static me.shawlaf.varlight.spigot.command.VarLightCommand.SUCCESS;
 
 public class VarLightCommandConfig extends VarLightSubCommand {
 
-    public VarLightCommandConfig(VarLightPlugin plugin) {
-        super(plugin, "config");
+    private final AutosaveExecutor autosaveExecutor;
+    private final ItemExecutor itemExecutor;
+    private final PermissionExecutor permissionExecutor;
+    private final WorldListExecutor whitelistExecutor;
+    private final WorldListExecutor blacklistExecutor;
+
+    public VarLightCommandConfig(VarLightCommand command) {
+        super(command, "config");
+
+        this.autosaveExecutor = new AutosaveExecutor(this);
+        this.itemExecutor = new ItemExecutor(this);
+        this.permissionExecutor = new PermissionExecutor(this);
+        this.whitelistExecutor = new WorldListExecutor(this, WHITELIST);
+        this.blacklistExecutor = new WorldListExecutor(this, BLACKLIST);
     }
 
     @Override
@@ -27,68 +39,68 @@ public class VarLightCommandConfig extends VarLightSubCommand {
 
         node.then(
                 literalArgument("autosave")
-                        .then(literalArgument("get").executes(this::runGetAutosaveInterval))
+                        .then(literalArgument("get").executes(autosaveExecutor::executeGet))
                         .then(
                                 literalArgument("set")
                                         .then(
                                                 integerArgument("newInterval")
-                                                        .executes(this::runSetAutosaveInterval)
+                                                        .executes(autosaveExecutor::executeSet)
                                         )
                         )
         );
 
         node.then(
                 literalArgument("item")
-                        .then(literalArgument("get").executes(this::runGetLUI))
+                        .then(literalArgument("get").executes(itemExecutor::executeGet))
                         .then(
                                 literalArgument("set")
                                         .then(
                                                 minecraftTypeArgument("item", MaterialType.ITEM)
-                                                        .executes(this::runSetLUI)
+                                                        .executes(itemExecutor::executeSet)
                                         )
                         )
         );
 
         node.then(
                 literalArgument("permission")
-                        .then(literalArgument("get").executes(this::runGetPermissionCheck))
+                        .then(literalArgument("get").executes(permissionExecutor::executeGet))
                         .then(
                                 literalArgument("set")
                                         .then(boolArgument("value"))
-                                        .executes(this::runSetPermissionCheck)
+                                        .executes(permissionExecutor::executeSet)
                         )
         );
 
         node.then(
                 literalArgument("whitelist")
-                        .then(literalArgument("list").executes(c -> runListWorldList(c, WHITELIST)))
+                        .then(literalArgument("list").executes(whitelistExecutor::executeList))
                         .then(
                                 literalArgument("add")
                                         .then(
-                                                worldArgument("world").executes(c -> runAddToWorldList(c, WHITELIST))
+                                                worldArgument("world").executes(whitelistExecutor::executeAdd)
                                         )
                         )
                         .then(
                                 literalArgument("remove")
-                                        .then(worldArgument("world").executes(c -> runRemoveFromWorldList(c, WHITELIST)))
+                                        .then(worldArgument("world").executes(whitelistExecutor::executeRemove))
                         )
-                        .then(literalArgument("clear")).executes(c -> runClearWorldList(c, WHITELIST))
+                        .then(literalArgument("clear")).executes(whitelistExecutor::executeClear)
         );
 
         node.then(
                 literalArgument("blacklist")
-                        .then(literalArgument("list").executes(c -> runListWorldList(c, BLACKLIST)))
+                        .then(literalArgument("list").executes(blacklistExecutor::executeList))
                         .then(
                                 literalArgument("add")
                                         .then(
-                                                worldArgument("world").executes(c -> runAddToWorldList(c, BLACKLIST))
+                                                worldArgument("world").executes(blacklistExecutor::executeAdd)
                                         )
                         )
                         .then(
                                 literalArgument("remove")
-                                        .then(worldArgument("world").executes(c -> runRemoveFromWorldList(c, BLACKLIST)))
+                                        .then(worldArgument("world").executes(blacklistExecutor::executeRemove))
                         )
-                        .then(literalArgument("clear")).executes(c -> runClearWorldList(c, BLACKLIST))
+                        .then(literalArgument("clear")).executes(blacklistExecutor::executeClear)
         );
 
         /* TODO
@@ -113,91 +125,4 @@ public class VarLightCommandConfig extends VarLightSubCommand {
 
         return SUCCESS;
     }
-
-    // region Autosave Command Implementations
-
-    private int runGetAutosaveInterval(CommandContext<CommandSender> context) throws CommandSyntaxException {
-
-        context.getSource().sendMessage("TODO implement runGetAutosaveInterval");
-
-        return SUCCESS;
-    }
-
-    private int runSetAutosaveInterval(CommandContext<CommandSender> context) throws CommandSyntaxException {
-
-        context.getSource().sendMessage("TODO implement runSetAutosaveInterval");
-
-        return SUCCESS;
-    }
-
-    // endregion
-
-    // region Light update Item Command Implementations
-
-    private int runGetLUI(CommandContext<CommandSender> context) throws CommandSyntaxException {
-
-        context.getSource().sendMessage("TODO implement runGetLUI");
-
-        return SUCCESS;
-    }
-
-    private int runSetLUI(CommandContext<CommandSender> context) throws CommandSyntaxException {
-
-        context.getSource().sendMessage("TODO implement runSetLUI");
-
-        return SUCCESS;
-    }
-
-    // endregion
-
-    // region Permission Check Command Implementations
-
-    private int runGetPermissionCheck(CommandContext<CommandSender> context) throws CommandSyntaxException {
-
-        context.getSource().sendMessage("TODO implement runGetPermissionCheck");
-
-        return SUCCESS;
-    }
-
-    private int runSetPermissionCheck(CommandContext<CommandSender> context) throws CommandSyntaxException {
-
-        context.getSource().sendMessage("TODO implement runSetPermissionCheck");
-
-        return SUCCESS;
-    }
-
-    // endregion
-
-    // region World List Management Command Implementations
-
-    private int runListWorldList(CommandContext<CommandSender> context, VarLightConfiguration.WorldListType listType) throws CommandSyntaxException {
-
-        context.getSource().sendMessage("TODO implement runListWorldList");
-
-        return SUCCESS;
-    }
-
-    private int runAddToWorldList(CommandContext<CommandSender> context, VarLightConfiguration.WorldListType listType) throws CommandSyntaxException {
-
-        context.getSource().sendMessage("TODO implement runAddToWorldList");
-
-        return SUCCESS;
-    }
-
-    private int runRemoveFromWorldList(CommandContext<CommandSender> context, VarLightConfiguration.WorldListType listType) throws CommandSyntaxException {
-
-        context.getSource().sendMessage("TODO implement runRemoveFromWorldList");
-
-        return SUCCESS;
-    }
-
-    private int runClearWorldList(CommandContext<CommandSender> context, VarLightConfiguration.WorldListType listType) throws CommandSyntaxException {
-
-        context.getSource().sendMessage("TODO implement runClearWorldList");
-
-        return SUCCESS;
-    }
-
-    // endregion
-
 }

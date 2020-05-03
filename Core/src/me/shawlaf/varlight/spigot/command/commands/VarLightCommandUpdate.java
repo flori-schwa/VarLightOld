@@ -7,6 +7,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import me.shawlaf.command.brigadier.datatypes.ICoordinates;
 import me.shawlaf.varlight.spigot.LightUpdateResult;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
+import me.shawlaf.varlight.spigot.command.VarLightCommand;
 import me.shawlaf.varlight.spigot.command.VarLightSubCommand;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.spigot.util.LightSourceUtil;
@@ -29,20 +30,14 @@ public class VarLightCommandUpdate extends VarLightSubCommand {
     private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_LIGHT_LEVEL = integerArgument("light level", 0, 15);
     private static final RequiredArgumentBuilder<CommandSender, World> ARG_WORLD = worldArgument("world");
 
-    public VarLightCommandUpdate(VarLightPlugin plugin) {
-        super(plugin, "update");
-    }
-
-    @NotNull
-    @Override
-    public String getSyntax() {
-        return " <position> <light level> [world (only if using console)]";
+    public VarLightCommandUpdate(VarLightCommand command) {
+        super(command, "update");
     }
 
     @NotNull
     @Override
     public String getDescription() {
-        return "Update the light level at the given position";
+        return "Update the light level at a specific position.";
     }
 
     @Override

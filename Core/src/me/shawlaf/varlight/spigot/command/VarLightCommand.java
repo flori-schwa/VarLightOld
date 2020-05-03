@@ -1,5 +1,6 @@
 package me.shawlaf.varlight.spigot.command;
 
+import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.ParseResults;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.suggestion.Suggestion;
@@ -20,7 +21,7 @@ import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 
 @SuppressWarnings("rawtypes")
-public final class VarLightCommand extends BrigadierCommand<CommandSender, VarLightPlugin> {
+public final class VarLightCommand extends BrigadierCommand<VarLightPlugin> {
 
     public static final int SUCCESS = 0;
     public static final int FAILURE = 1;
@@ -40,7 +41,7 @@ public final class VarLightCommand extends BrigadierCommand<CommandSender, VarLi
     private int counter = 0;
 
     public VarLightCommand(VarLightPlugin plugin) {
-        super(plugin, "varlight", CommandSender.class);
+        super(plugin, "varlight");
     }
 
     @Override
@@ -48,11 +49,15 @@ public final class VarLightCommand extends BrigadierCommand<CommandSender, VarLi
         return "The Varlight root command";
     }
 
+    public CommandDispatcher<CommandSender> getCommandDispatcher() {
+        return commandDispatcher;
+    }
+
     private void registerSubCommand(Class subCommandClass, LiteralArgumentBuilder<CommandSender> root) {
         VarLightSubCommand subCommand;
 
         try {
-            subCommand = (VarLightSubCommand) subCommandClass.getConstructor(VarLightPlugin.class).newInstance(plugin);
+            subCommand = (VarLightSubCommand) subCommandClass.getConstructor(VarLightCommand.class).newInstance(this);
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw CommandException.severeException("Failed to register command " + subCommandClass.getSimpleName(), e);
         }
@@ -84,7 +89,7 @@ public final class VarLightCommand extends BrigadierCommand<CommandSender, VarLi
             registerSubCommand(clazz, builder);
         }
 
-        VarLightCommandHelp helpCommand = new VarLightCommandHelp(plugin, this);
+        VarLightCommandHelp helpCommand = new VarLightCommandHelp(this);
         LiteralArgumentBuilder<CommandSender> subCommandRoot = LiteralArgumentBuilder.literal(helpCommand.getName());
         helpCommand.build(subCommandRoot);
 

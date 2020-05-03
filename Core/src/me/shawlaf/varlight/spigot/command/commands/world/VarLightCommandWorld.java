@@ -4,6 +4,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import me.shawlaf.varlight.spigot.VarLightConfiguration;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
+import me.shawlaf.varlight.spigot.command.VarLightCommand;
 import me.shawlaf.varlight.spigot.command.VarLightSubCommand;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
@@ -20,8 +21,8 @@ public class VarLightCommandWorld extends VarLightSubCommand {
 
     private final VarLightConfiguration.WorldListType worldListType;
 
-    public VarLightCommandWorld(VarLightPlugin plugin, VarLightConfiguration.WorldListType listType) {
-        super(plugin, listType.getConfigPath());
+    public VarLightCommandWorld(VarLightCommand command, VarLightConfiguration.WorldListType listType) {
+        super(command, listType.getConfigPath());
 
         this.worldListType = listType;
     }

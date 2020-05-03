@@ -2,6 +2,7 @@ package me.shawlaf.varlight.spigot.command.commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
+import me.shawlaf.varlight.spigot.command.VarLightCommand;
 import me.shawlaf.varlight.spigot.command.VarLightSubCommand;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
@@ -11,8 +12,8 @@ import static me.shawlaf.varlight.spigot.command.VarLightCommand.SUCCESS;
 
 @Deprecated
 public class VarLightCommandReload extends VarLightSubCommand {
-    public VarLightCommandReload(VarLightPlugin plugin) {
-        super(plugin, "reload");
+    public VarLightCommandReload(VarLightCommand command) {
+        super(command, "reload");
     }
 
     @Override

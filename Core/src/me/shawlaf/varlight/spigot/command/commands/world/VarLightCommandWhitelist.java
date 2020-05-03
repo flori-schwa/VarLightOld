@@ -2,12 +2,13 @@ package me.shawlaf.varlight.spigot.command.commands.world;
 
 import me.shawlaf.varlight.spigot.VarLightConfiguration;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
+import me.shawlaf.varlight.spigot.command.VarLightCommand;
 
 @Deprecated
 public class VarLightCommandWhitelist extends VarLightCommandWorld {
 
-    public VarLightCommandWhitelist(VarLightPlugin plugin) {
-        super(plugin, VarLightConfiguration.WorldListType.WHITELIST);
+    public VarLightCommandWhitelist(VarLightCommand command) {
+        super(command, VarLightConfiguration.WorldListType.WHITELIST);
     }
 
 }

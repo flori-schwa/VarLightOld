@@ -4,6 +4,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
+import me.shawlaf.varlight.spigot.command.VarLightCommand;
 import me.shawlaf.varlight.spigot.command.VarLightSubCommand;
 import me.shawlaf.varlight.spigot.nms.MaterialType;
 import org.bukkit.Material;
@@ -15,7 +16,6 @@ import org.jetbrains.annotations.NotNull;
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
 import static me.shawlaf.command.result.CommandResult.successBroadcast;
 import static me.shawlaf.varlight.spigot.command.VarLightCommand.SUCCESS;
-import static me.shawlaf.varlight.spigot.command.commands.arguments.MinecraftTypeArgumentType.minecraftType;
 
 public class VarLightCommandGive extends VarLightSubCommand {
 
@@ -23,18 +23,13 @@ public class VarLightCommandGive extends VarLightSubCommand {
     private static RequiredArgumentBuilder<CommandSender, Integer> ARG_LIGHT_LEVEL = integerArgument("light level", 1, 15);
     private static RequiredArgumentBuilder<CommandSender, Integer> ARG_AMOUNT = integerArgument("amount", 1);
 
-    public VarLightCommandGive(VarLightPlugin plugin) {
-        super(plugin, "give");
-    }
-
-    @Override
-    public @NotNull String getSyntax() {
-        return " <target> <item> <light level> [amount]";
+    public VarLightCommandGive(VarLightCommand command) {
+        super(command, "give");
     }
 
     @Override
     public @NotNull String getDescription() {
-        return "Give yourself or someone else some glowing blocks!";
+        return "Give yourself or someone else some glowing blocks.";
     }
 
     @Override
