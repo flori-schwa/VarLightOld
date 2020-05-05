@@ -130,7 +130,7 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public void updateBlocks(World world, ChunkCoords chunkCoords) {
+    public synchronized void updateBlocks(World world, ChunkCoords chunkCoords) {
         WorldServer nmsWorld = getNmsWorld(world);
 
         WorldLightSourceManager manager = plugin.getManager(world);
@@ -180,7 +180,7 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public void updateBlocksAndChunk(@NotNull Location at) { // TODO remove lightLevel parameter
+    public void updateBlocksAndChunk(@NotNull Location at) {
         Objects.requireNonNull(at);
         Objects.requireNonNull(at.getWorld());
 

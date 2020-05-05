@@ -23,6 +23,7 @@ import java.io.File;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
@@ -130,7 +131,7 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public void updateBlocks(World world, ChunkCoords chunkCoords) {
+    public synchronized void updateBlocks(World world, ChunkCoords chunkCoords) {
         WorldServer nmsWorld = getNmsWorld(world);
 
         WorldLightSourceManager manager = plugin.getManager(world);
@@ -180,7 +181,7 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public void updateBlocksAndChunk(@NotNull Location at) { // TODO remove lightLevel parameter
+    public void updateBlocksAndChunk(@NotNull Location at) {
         Objects.requireNonNull(at);
         Objects.requireNonNull(at.getWorld());
 
