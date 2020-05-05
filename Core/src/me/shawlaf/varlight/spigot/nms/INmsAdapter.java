@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
@@ -35,7 +36,7 @@ public interface INmsAdapter {
 
     void updateChunk(World world, ChunkCoords chunkCoords);
 
-    void updateBlocks(World world, ChunkCoords chunkCoords);
+    CompletableFuture<Void> updateBlocks(World world, ChunkCoords chunkCoords);
 
     boolean isIllegalBlock(@NotNull Material material);
 
