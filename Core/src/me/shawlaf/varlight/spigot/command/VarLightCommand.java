@@ -38,6 +38,7 @@ public class VarLightCommand extends BrigadierCommand<CommandSender, VarLightPlu
             VarLightCommandStepSize.class,
             VarLightCommandUpdate.class,
             VarLightCommandGive.class,
+            VarLightCommandStressTest.class,
 
             VarLightCommandWhitelist.class,
             VarLightCommandBlacklist.class,
