@@ -34,6 +34,7 @@
     <property name="lib-brigadier" value="brigadier.jar"/>
     <property name="lib-lombok" value="lombok-1.18.10.jar"/>
     <property name="lib-varlight-core" value="VarLightCore.jar"/>
+    <property name="lib-worldedit" value="worldedit-bukkit-7.1.0.jar"/>
 
     <target name="clean">
         <delete dir="${build}"/>
@@ -97,6 +98,7 @@
                     <include name="**/${lib-command-api}"/>
                     <include name="**/${lib-lombok}"/>
                     <include name="**/${lib-varlight-core}"/>
+                    <include name="**/${lib-worldedit}"/>
                 </fileset>
             </classpath>
         </javac>

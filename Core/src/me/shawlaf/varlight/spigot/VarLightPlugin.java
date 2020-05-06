@@ -166,11 +166,8 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         nmsAdapter.onDisable();
 
-        // If PersistOnSave is enabled, PersistOnWorldSaveHandler.onWorldSave will automatically save the Light Sources
-        if (configuration.getAutosaveInterval() >= 0) {
-            for (WorldLightSourceManager l : getAllManagers()) {
-                l.save(Bukkit.getConsoleSender(), configuration.isLogDebug());
-            }
+        for (WorldLightSourceManager l : getAllManagers()) {
+            l.save(Bukkit.getConsoleSender(), configuration.isLogDebug());
         }
 
         saveConfig();

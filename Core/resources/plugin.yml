@@ -8,6 +8,7 @@ api-version: "api.version"
 softdepend:
   - "Multiverse-Core"
   - "LightAPI"
+  - "WorldEdit"
 
 permissions:
   varlight.admin.config:
