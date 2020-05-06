@@ -11,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
 
 @ForMinecraft(version = "UNDEFINED")
 public class NmsAdapter implements INmsAdapter {
@@ -50,7 +51,7 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public void updateBlocks(World world, ChunkCoords chunkCoords) {
+    public CompletableFuture<Void> updateBlocks(World world, ChunkCoords chunkCoords) {
         throw new AbstractMethodError();
     }
 

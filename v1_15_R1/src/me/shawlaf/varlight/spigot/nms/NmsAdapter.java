@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.StreamSupport;
 
@@ -130,13 +131,13 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public void updateBlocks(World world, ChunkCoords chunkCoords) {
+    public CompletableFuture<Void> updateBlocks(World world, ChunkCoords chunkCoords) {
         WorldServer nmsWorld = getNmsWorld(world);
 
         WorldLightSourceManager manager = plugin.getManager(world);
 
         if (manager == null) {
-            return;
+            throw new LightUpdateFailedException("VarLight not enabled in world " + world.getName());
         }
 
         IBlockAccess blockAccess = nmsWorld.getChunkProvider().c(chunkCoords.x, chunkCoords.z);
@@ -145,14 +146,16 @@ public class NmsAdapter implements INmsAdapter {
 
         LightEngineBlock leb = ((LightEngineBlock) nmsWorld.e().a(EnumSkyBlock.BLOCK));
 
-        StreamSupport.stream(BlockPosition.b(
-                chunkCoords.getCornerAX(),
-                chunkCoords.getCornerAY(),
-                chunkCoords.getCornerAZ(),
-                chunkCoords.getCornerBX(),
-                chunkCoords.getCornerBY(),
-                chunkCoords.getCornerBZ()
-        ).spliterator(), false).filter(bPos -> h.apply(bPos) > 0).forEach(leb::a);
+        return scheduleToLightMailbox(nmsWorld, () -> {
+            StreamSupport.stream(BlockPosition.b(
+                    chunkCoords.getCornerAX(),
+                    chunkCoords.getCornerAY(),
+                    chunkCoords.getCornerAZ(),
+                    chunkCoords.getCornerBX(),
+                    chunkCoords.getCornerBY(),
+                    chunkCoords.getCornerBZ()
+            ).spliterator(), false).filter(bPos -> h.apply(bPos) > 0).forEach(leb::a);
+        });
     }
 
     private void updateChunk(WorldServer worldServer, ChunkCoords chunkCoords) {
@@ -180,7 +183,7 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public void updateBlocksAndChunk(@NotNull Location at) { // TODO remove lightLevel parameter
+    public void updateBlocksAndChunk(@NotNull Location at) {
         Objects.requireNonNull(at);
         Objects.requireNonNull(at.getWorld());
 
@@ -190,8 +193,13 @@ public class NmsAdapter implements INmsAdapter {
         LightEngineThreaded let = nmsWorld.getChunkProvider().getLightEngine();
         LightEngineBlock leb = ((LightEngineBlock) let.a(EnumSkyBlock.BLOCK));
 
-        leb.a(blockPosition);                       // Check Block
-        updateChunk(nmsWorld, pos.toChunkCoords()); // Update neighbouring Chunks and send updates to players
+        scheduleToLightMailbox(let, () -> {
+            leb.a(blockPosition);                       // Check Block
+        }).thenRun(() -> {
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                updateChunk(nmsWorld, pos.toChunkCoords()); // Update neighbouring Chunks and send updates to players
+            });
+        });
     }
 
     @Override
@@ -279,5 +287,29 @@ public class NmsAdapter implements INmsAdapter {
 
     private WorldServer getNmsWorld(World world) {
         return ((CraftWorld) world).getHandle();
+    }
+
+    private CompletableFuture<Void> scheduleToLightMailbox(WorldServer worldServer, Runnable task) {
+        return scheduleToLightMailbox(((LightEngineThreaded) worldServer.e()), task);
+    }
+
+    private CompletableFuture<Void> scheduleToLightMailbox(LightEngineThreaded lightEngine, Runnable task) {
+        ThreadedMailbox<Runnable> mailbox;
+
+        try {
+            mailbox = ReflectionHelper.Safe.get(lightEngine, "b");
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new LightUpdateFailedException(e);
+        }
+
+        CompletableFuture<Void> future = new CompletableFuture<>();
+
+        mailbox.a(() -> {
+            task.run();
+
+            future.complete(null);
+        });
+
+        return future;
     }
 }

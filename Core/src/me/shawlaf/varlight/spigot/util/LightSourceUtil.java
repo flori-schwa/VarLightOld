@@ -56,8 +56,15 @@ public class LightSourceUtil {
         manager.setCustomLuminance(location, lightTo);
 
         if (doUpdate) {
-            plugin.getLightUpdateScheduler().enqueueChunks(false, true, location.getWorld(), new ChunkCoords(location.getBlockX() >> 4, location.getBlockZ() >> 4));
-            plugin.getLightUpdateScheduler().enqueueChunks(true, false, location.getWorld(), plugin.getNmsAdapter().collectChunkPositionsToUpdate(toIntPosition(location)));
+            plugin.getNmsAdapter().updateBlocks(location.getWorld(), new ChunkCoords(location.getBlockX() >> 4, location.getBlockZ() >> 4)).thenRun(
+                    () -> {
+                        Bukkit.getScheduler().runTask(plugin, () -> {
+                            for (ChunkCoords chunkCoords : plugin.getNmsAdapter().collectChunkPositionsToUpdate(toIntPosition(location))) {
+                                plugin.getNmsAdapter().updateChunk(location.getWorld(), chunkCoords);
+                            }
+                        });
+                    }
+            );
         }
 
         return updated(plugin, fromLight, lightTo);
