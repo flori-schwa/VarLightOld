@@ -28,8 +28,8 @@ public class VarLightCommandStressTest extends VarLightSubCommand {
 
     private BukkitTask currentTask;
 
-    public VarLightCommandStressTest(VarLightPlugin plugin) {
-        super(plugin, "stresstest");
+    public VarLightCommandStressTest(VarLightCommand command) {
+        super(command, "stresstest");
     }
 
     @Override
