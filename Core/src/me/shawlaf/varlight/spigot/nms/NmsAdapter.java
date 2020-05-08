@@ -56,6 +56,11 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
+    public CompletableFuture<Void> updateBlock(Location at) {
+        throw new AbstractMethodError();
+    }
+
+    @Override
     public boolean isIllegalBlock(@NotNull Material material) {
         throw new AbstractMethodError();
     }

@@ -56,7 +56,7 @@ public class LightSourceUtil {
         manager.setCustomLuminance(location, lightTo);
 
         if (doUpdate) {
-            plugin.getNmsAdapter().updateBlocks(location.getWorld(), new ChunkCoords(location.getBlockX() >> 4, location.getBlockZ() >> 4)).thenRun(
+            plugin.getNmsAdapter().updateBlock(location).thenRun(
                     () -> {
                         Bukkit.getScheduler().runTask(plugin, () -> {
                             for (ChunkCoords chunkCoords : plugin.getNmsAdapter().collectChunkPositionsToUpdate(toIntPosition(location))) {
