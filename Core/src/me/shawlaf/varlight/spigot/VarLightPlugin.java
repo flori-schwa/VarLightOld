@@ -149,6 +149,10 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         Bukkit.getPluginManager().registerEvents(this.autosaveManager = new AutosaveManager(this), this);
         Bukkit.getPluginManager().registerEvents(this, this);
 
+        if (Bukkit.getPluginManager().getPlugin("WorldGuard") != null) {
+            Bukkit.getPluginManager().registerEvents(new WorldGuardExtension(), this);
+        }
+
         command = new VarLightCommand(this);
 
         NumericMajorMinorVersion current = NumericMajorMinorVersion.tryParse(getDescription().getVersion());
@@ -364,7 +368,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             }
         }
 
-        LightUpdateResult result = placeNewLightSource(this, clickedBlock.getLocation(),
+        LightUpdateResult result = placeNewLightSource(this, player, clickedBlock.getLocation(),
                 manager.getCustomLuminance(toIntPosition(clickedBlock), 0) + mod);
 
         if (result.successful()) {
@@ -481,7 +485,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
             Bukkit.getScheduler().runTaskLater(this,
                     () -> {
-                        LightUpdateResult lightUpdateResult = placeNewLightSource(this, e.getBlock().getLocation(), emittingLight);
+                        LightUpdateResult lightUpdateResult = placeNewLightSource(this, e.getPlayer(), e.getBlock().getLocation(), emittingLight);
 
                         if (!lightUpdateResult.successful()) {
                             e.getBlock().setType(before);

@@ -108,7 +108,7 @@ public class VarLightCommandUpdate extends VarLightSubCommand {
             return FAILURE;
         }
 
-        LightUpdateResult result = LightSourceUtil.placeNewLightSource(plugin, location, toLight);
+        LightUpdateResult result = LightSourceUtil.placeNewLightSource(plugin, source, location, toLight);
 
         if (!result.successful()) {
             failure(this, source, result.getMessage());

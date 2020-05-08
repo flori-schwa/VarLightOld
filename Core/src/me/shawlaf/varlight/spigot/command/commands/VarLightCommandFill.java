@@ -233,7 +233,7 @@ public class VarLightCommandFill extends VarLightSubCommand {
                     continue;
                 }
 
-                LightUpdateResult result = LightSourceUtil.placeNewLightSource(plugin, block.getLocation(), lightLevel, false);
+                LightUpdateResult result = LightSourceUtil.placeNewLightSource(plugin, source, block.getLocation(), lightLevel, false);
 
                 if (!result.successful()) {
                     ++failed;

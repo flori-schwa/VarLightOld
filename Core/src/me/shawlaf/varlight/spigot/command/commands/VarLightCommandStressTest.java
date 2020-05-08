@@ -108,7 +108,7 @@ public class VarLightCommandStressTest extends VarLightSubCommand {
                     }
 
                     for (IntPosition position : toPlace) {
-                        if (LightSourceUtil.placeNewLightSource(plugin, IntPositionExtension.toLocation(position, world), 15).successful()) {
+                        if (LightSourceUtil.placeNewLightSource(plugin, player, IntPositionExtension.toLocation(position, world), 15).successful()) {
                             player.sendMessage("[Stress Test] Placed LS at " + position.toShortString());
                         }
                     }
