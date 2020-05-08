@@ -3,7 +3,6 @@ package me.shawlaf.varlight.spigot.command.commands.config;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.command.VarLightCommand;
 import me.shawlaf.varlight.spigot.command.VarLightSubCommand;
 import me.shawlaf.varlight.spigot.nms.MaterialType;
@@ -66,8 +65,9 @@ public class VarLightCommandConfig extends VarLightSubCommand {
                         .then(literalArgument("get").executes(permissionExecutor::executeGet))
                         .then(
                                 literalArgument("set")
-                                        .then(boolArgument("value"))
-                                        .executes(permissionExecutor::executeSet)
+                                        .then(boolArgument("value")
+                                                .executes(permissionExecutor::executeSet)
+                                        )
                         )
         );
 

@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 public class VarLightConfiguration {
 
     public static final String CONFIG_KEY_VARLIGHT_ITEM = "item";
-    public static final String CONFIG_KEY_REQUIRED_PERMISSION = "requiredPermission";
+    public static final String CONFIG_KEY_CHECK_PERMISSION = "checkPermission";
     public static final String CONFIG_KEY_AUTOSAVE = "autosave";
     public static final String CONFIG_KEY_NLS_DEFLATED = "nls-deflated";
     public static final String CONFIG_KEY_STEPSIZE_GAMEMODE = "stepsize-gamemode";
@@ -33,7 +33,7 @@ public class VarLightConfiguration {
 
         plugin.getConfig().addDefault(CONFIG_KEY_VARLIGHT_ITEM, Material.GLOWSTONE_DUST.getKey().toString());
         plugin.getConfig().addDefault(CONFIG_KEY_AUTOSAVE, -1); // Persist Light sources on world save
-        plugin.getConfig().addDefault(CONFIG_KEY_REQUIRED_PERMISSION, "");
+        plugin.getConfig().addDefault(CONFIG_KEY_CHECK_PERMISSION, false);
         plugin.getConfig().addDefault(WorldListType.WHITELIST.configPath, new ArrayList<String>());
         plugin.getConfig().addDefault(WorldListType.BLACKLIST.configPath, new ArrayList<String>());
         plugin.getConfig().addDefault(CONFIG_KEY_NLS_DEFLATED, true);
@@ -46,14 +46,12 @@ public class VarLightConfiguration {
         plugin.getConfig().options().copyDefaults(true);
     }
 
-    @NotNull
-    public String getRequiredPermissionNode() {
-        //noinspection ConstantConditions The String literal "" is NOT null
-        return plugin.getConfig().getString(CONFIG_KEY_REQUIRED_PERMISSION, "");
+    public boolean isCheckingPermission() {
+        return plugin.getConfig().getBoolean(CONFIG_KEY_CHECK_PERMISSION);
     }
 
-    public void setRequiredPermissionNode(String permissionNode) {
-        plugin.getConfig().set(CONFIG_KEY_REQUIRED_PERMISSION, permissionNode);
+    public void setCheckPermission(boolean value) {
+        plugin.getConfig().set(CONFIG_KEY_CHECK_PERMISSION, value);
 
         save();
     }
