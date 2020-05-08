@@ -158,6 +158,23 @@ public class NmsAdapter implements INmsAdapter {
         });
     }
 
+    @Override
+    public CompletableFuture<Void> updateBlock(Location at) {
+        WorldServer nmsWorld = getNmsWorld(at.getWorld());
+
+        WorldLightSourceManager manager = plugin.getManager(at.getWorld());
+
+        if (manager == null) {
+            throw new LightUpdateFailedException("VarLight not enabled in world " + at.getWorld().getName());
+        }
+
+        LightEngineBlock leb = ((LightEngineBlock) nmsWorld.getChunkProvider().getLightEngine().a(EnumSkyBlock.BLOCK));
+
+        return scheduleToLightMailbox(nmsWorld, () -> {
+            leb.a(new BlockPosition(at.getBlockX(), at.getBlockY(), at.getBlockZ()));
+        });
+    }
+
     private void updateChunk(WorldServer worldServer, ChunkCoords chunkCoords) {
         LightEngine let = worldServer.getChunkProvider().getLightEngine();
 
