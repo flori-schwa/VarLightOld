@@ -52,7 +52,7 @@ public class VarLightCommandDebug extends VarLightSubCommand {
     @NotNull
     @Override
     public String getDescription() {
-        return "List all custom Light sources in a region or chunk. Control the debug logger or get a debug stick.";
+        return "List all custom Light sources in a region or chunk or get a debug stick.";
     }
 
     private void suggestCoordinate(RequiredArgumentBuilder<CommandSender, Integer> coordinateArgument, ToIntFunction<Entity> coordinateSupplier) {
@@ -120,22 +120,6 @@ public class VarLightCommandDebug extends VarLightSubCommand {
                     return SUCCESS;
                 })
         );
-
-//        literalArgumentBuilder.then(
-//                literalArgument("logger")
-//                        .requires(cs -> cs.hasPermission("varlight.admin"))
-//                        .then(
-//                                boolArgument("value")
-//                                        .executes(c -> {
-//                                            boolean newStatus = BoolArgumentType.getBool(c, "value");
-//                                            plugin.getDebugManager().setDebugEnabled(newStatus);
-//
-//                                            successBroadcast(this, c.getSource(), (newStatus ? "enabled" : "disabled") + " debug logging.", "varlight.admin");
-//
-//                                            return newStatus ? 1 : 0;
-//                                        })
-//                        )
-//        );
 
         return literalArgumentBuilder;
     }
