@@ -8,6 +8,7 @@ import me.shawlaf.varlight.spigot.command.VarLightSubCommand;
 import org.bukkit.command.CommandSender;
 
 import static me.shawlaf.command.result.CommandResult.info;
+import static me.shawlaf.command.result.CommandResult.successBroadcast;
 import static me.shawlaf.varlight.spigot.command.VarLightCommand.SUCCESS;
 
 public class PermissionExecutor extends SubCommandExecutor {
@@ -39,9 +40,9 @@ public class PermissionExecutor extends SubCommandExecutor {
             plugin.getConfiguration().setCheckPermission(newValue);
 
             if (newValue) {
-                info(command, context.getSource(), String.format("Enabled permission checking, only players with the \"varlight.use\" permission node may use %s to update Light sources", plugin.getLightUpdateItem().getKey().getKey()));
+                successBroadcast(command, context.getSource(), String.format("Enabled permission checking, only players with the \"varlight.use\" permission node may use %s to update Light sources", plugin.getLightUpdateItem().getKey().getKey()));
             } else {
-                info(command, context.getSource(), String.format("Disabled permission checking, all players may use %s to update Light sources", plugin.getLightUpdateItem().getKey().getKey()));
+                successBroadcast(command, context.getSource(), String.format("Disabled permission checking, all players may use %s to update Light sources", plugin.getLightUpdateItem().getKey().getKey()));
             }
         }
 

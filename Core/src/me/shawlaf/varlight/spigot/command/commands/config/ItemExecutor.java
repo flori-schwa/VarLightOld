@@ -40,7 +40,7 @@ public class ItemExecutor extends SubCommandExecutor {
         }
 
         plugin.setUpdateItem(item);
-        success(command, context.getSource(), String.format("Updated the Light update item to %s", item.getKey().toString()));
+        successBroadcast(command, context.getSource(), String.format("Updated the Light update item to %s", item.getKey().toString()));
 
         return SUCCESS;
     }
