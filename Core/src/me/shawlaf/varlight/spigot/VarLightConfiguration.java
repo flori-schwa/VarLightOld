@@ -146,6 +146,14 @@ public class VarLightConfiguration {
         return true;
     }
 
+    public void clearWorldList(WorldListType type) {
+        Objects.requireNonNull(type);
+
+        plugin.getConfig().set(type.getConfigPath(), new ArrayList<>());
+
+        save();
+    }
+
     public boolean hasReclaim() {
         return plugin.getConfig().getBoolean(CONFIG_KEY_VARLIGHT_RECLAIM);
     }
