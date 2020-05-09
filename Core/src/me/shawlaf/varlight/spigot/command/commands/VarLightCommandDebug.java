@@ -1,10 +1,8 @@
 package me.shawlaf.varlight.spigot.command.commands;
 
-import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
-import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.command.VarLightCommand;
 import me.shawlaf.varlight.spigot.command.VarLightSubCommand;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
@@ -25,7 +23,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.function.ToIntFunction;
 
-import static me.shawlaf.command.result.CommandResult.*;
+import static me.shawlaf.command.result.CommandResult.failure;
+import static me.shawlaf.command.result.CommandResult.success;
 import static me.shawlaf.varlight.spigot.command.VarLightCommand.FAILURE;
 import static me.shawlaf.varlight.spigot.command.VarLightCommand.SUCCESS;
 
@@ -122,21 +121,21 @@ public class VarLightCommandDebug extends VarLightSubCommand {
                 })
         );
 
-        literalArgumentBuilder.then(
-                literalArgument("logger")
-                        .requires(cs -> cs.hasPermission("varlight.admin"))
-                        .then(
-                                boolArgument("value")
-                                        .executes(c -> {
-                                            boolean newStatus = BoolArgumentType.getBool(c, "value");
-                                            plugin.getDebugManager().setDebugEnabled(newStatus);
-
-                                            successBroadcast(this, c.getSource(), (newStatus ? "enabled" : "disabled") + " debug logging.", "varlight.admin");
-
-                                            return newStatus ? 1 : 0;
-                                        })
-                        )
-        );
+//        literalArgumentBuilder.then(
+//                literalArgument("logger")
+//                        .requires(cs -> cs.hasPermission("varlight.admin"))
+//                        .then(
+//                                boolArgument("value")
+//                                        .executes(c -> {
+//                                            boolean newStatus = BoolArgumentType.getBool(c, "value");
+//                                            plugin.getDebugManager().setDebugEnabled(newStatus);
+//
+//                                            successBroadcast(this, c.getSource(), (newStatus ? "enabled" : "disabled") + " debug logging.", "varlight.admin");
+//
+//                                            return newStatus ? 1 : 0;
+//                                        })
+//                        )
+//        );
 
         return literalArgumentBuilder;
     }

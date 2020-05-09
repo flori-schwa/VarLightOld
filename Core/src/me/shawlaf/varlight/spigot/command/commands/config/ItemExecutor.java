@@ -2,7 +2,6 @@ package me.shawlaf.varlight.spigot.command.commands.config;
 
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import me.shawlaf.command.result.CommandResult;
 import me.shawlaf.varlight.spigot.command.VarLightSubCommand;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;

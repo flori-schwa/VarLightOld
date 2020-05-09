@@ -2,8 +2,6 @@ package me.shawlaf.varlight.spigot.command.commands.config;
 
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import me.shawlaf.command.result.CommandResult;
-import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.command.VarLightSubCommand;
 import org.bukkit.command.CommandSender;
 
@@ -45,7 +43,6 @@ public class PermissionExecutor extends SubCommandExecutor {
                 successBroadcast(command, context.getSource(), String.format("Disabled permission checking, all players may use %s to update Light sources", plugin.getLightUpdateItem().getKey().getKey()));
             }
         }
-
 
 
         return SUCCESS;

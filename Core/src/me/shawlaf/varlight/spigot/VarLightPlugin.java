@@ -43,15 +43,11 @@ import static me.shawlaf.varlight.spigot.util.LightSourceUtil.placeNewLightSourc
 
 public class VarLightPlugin extends JavaPlugin implements Listener {
 
-    private Tag<Material> allowedBlocks, experimentalBlocks;
-
     public static final long TICK_RATE = 20L;
-
     private final Map<UUID, Integer> stepSizes = new HashMap<>();
     private final Map<UUID, WorldLightSourceManager> managers = new HashMap<>();
-
     private final INmsAdapter nmsAdapter;
-
+    private Tag<Material> allowedBlocks, experimentalBlocks;
     private VarLightCommand command;
     private VarLightConfiguration configuration;
     private AutosaveManager autosaveManager;
@@ -169,7 +165,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         nmsAdapter.onDisable();
 
         for (WorldLightSourceManager l : getAllManagers()) {
-            l.save(Bukkit.getConsoleSender(), configuration.isLogDebug());
+            l.save(Bukkit.getConsoleSender(), configuration.isLogVerbose());
         }
 
         saveConfig();
@@ -363,8 +359,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         debugManager.logDebugAction(player,
                 () -> "Edit Lightsource @ " + toShortBlockString(clickedBlock.getLocation()) + " " +
-                        (finalMod < 0 ? "LC" : "RC") + " " + result.getFromLight() + " -> " + result.getToLight() + " ==> " + result.getDebugMessage().toString(),
-                true
+                        (finalMod < 0 ? "LC" : "RC") + " " + result.getFromLight() + " -> " + result.getToLight() + " ==> " + result.getDebugMessage().toString()
         );
 
         result.displayMessage(e.getPlayer());
@@ -372,7 +367,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void playerBreakLightSource(BlockBreakEvent e) {
-        if (!configuration.hasReclaim()) {
+        if (!configuration.isReclaimEnabled()) {
             return;
         }
 
@@ -438,7 +433,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     @SuppressWarnings("ConstantConditions")
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void playerPlaceLightSource(BlockPlaceEvent e) {
-        if (!configuration.hasReclaim()) {
+        if (!configuration.isReclaimEnabled()) {
             return;
         }
 

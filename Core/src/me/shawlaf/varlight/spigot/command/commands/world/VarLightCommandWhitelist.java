@@ -1,7 +1,6 @@
 package me.shawlaf.varlight.spigot.command.commands.world;
 
 import me.shawlaf.varlight.spigot.VarLightConfiguration;
-import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.command.VarLightCommand;
 
 @Deprecated

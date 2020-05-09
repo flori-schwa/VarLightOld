@@ -9,6 +9,7 @@ softdepend:
   - "Multiverse-Core"
   - "LightAPI"
   - "WorldEdit"
+  - "WorldGuard"
 
 permissions:
   varlight.admin.config:
@@ -20,18 +21,6 @@ permissions:
   varlight.admin.debug:
     description: "Provides access to /varlight debug"
     default: op
-  varlight.admin.migrate:
-    description: "Provides access to /varlight migrate"
-    default: op
-  varlight.admin.perm:
-    description: "Provides access to /varlight perm"
-    default: op
-  varlight.admin.reload:
-    description: "Provides access to /varlight reload"
-    default: op
-  varlight.admin.world:
-    description: "Provides access to /varlight blacklist and /varlight whitelist"
-    default: op
   varlight.admin.fill:
     description: "Provides access to /varlight fill and /varlight update"
     default: op
@@ -39,9 +28,6 @@ permissions:
       varlight.admin.update: true
   varlight.admin.update:
     description: "Provides access to /varlight update"
-    default: op
-  varlight.admin.item:
-    description: "Provides access to /varlight item"
     default: op
   varlight.admin.give:
     description: "Provides access to /varlight give"
@@ -56,12 +42,8 @@ permissions:
       varlight.admin.config: true
       varlight.admin.save: true
       varlight.admin.debug: true
-      varlight.admin.migrate: true
-      varlight.admin.perm: true
-      varlight.admin.reload: true
       varlight.admin.world: true
       varlight.admin.update: true
       varlight.admin.fill: true
-      varlight.admin.item: true
       varlight.admin.give: true
       varlight.stepsize: true

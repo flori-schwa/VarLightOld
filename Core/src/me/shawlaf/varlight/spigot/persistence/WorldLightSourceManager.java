@@ -37,10 +37,6 @@ public class WorldLightSourceManager {
 
             plugin.getDatabaseMigrator().runMigrations(world);
         }
-
-        if (plugin.getConfiguration().isLogDebug()) {
-            plugin.getLogger().info(String.format("Created a new Lightsource Persistor for world \"%s\"", world.getName()));
-        }
     }
 
     public VarLightPlugin getPlugin() {

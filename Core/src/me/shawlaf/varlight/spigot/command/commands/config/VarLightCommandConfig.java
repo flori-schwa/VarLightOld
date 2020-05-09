@@ -24,6 +24,9 @@ public class VarLightCommandConfig extends VarLightSubCommand {
     private final WorldListExecutor whitelistExecutor;
     private final WorldListExecutor blacklistExecutor;
     private final StepsizeGamemodeExecutor stepsizeGamemodeExecutor;
+    private final ReclaimExecutor reclaimExecutor;
+    private final LoggerExecutor loggerExecutor;
+    private final UpdateCheckExecutor updateCheckExecutor;
 
     public VarLightCommandConfig(VarLightCommand command) {
         super(command, "config");
@@ -34,6 +37,9 @@ public class VarLightCommandConfig extends VarLightSubCommand {
         this.whitelistExecutor = new WorldListExecutor(this, WHITELIST);
         this.blacklistExecutor = new WorldListExecutor(this, BLACKLIST);
         this.stepsizeGamemodeExecutor = new StepsizeGamemodeExecutor(this);
+        this.reclaimExecutor = new ReclaimExecutor(this);
+        this.loggerExecutor = new LoggerExecutor(this);
+        this.updateCheckExecutor = new UpdateCheckExecutor(this);
     }
 
     @Override
@@ -111,7 +117,7 @@ public class VarLightCommandConfig extends VarLightSubCommand {
         node.then(
                 literalArgument("stepsize")
                         .then(
-                                literalArgument("get-allowed")
+                                literalArgument("get")
                                         .executes(stepsizeGamemodeExecutor::executeGet)
                         )
                         .then(
@@ -130,11 +136,59 @@ public class VarLightCommandConfig extends VarLightSubCommand {
                         )
         );
 
-        /* TODO
-            - reclaim
-            - debug log
-            - update check
-         */
+        node.then(
+                literalArgument("reclaim")
+                        .then(
+                                literalArgument("get").executes(reclaimExecutor::executeGet)
+                        )
+                        .then(
+                                literalArgument("enable").executes(reclaimExecutor::executeEnable)
+                        )
+                        .then(
+                                literalArgument("disable").executes(reclaimExecutor::executeDisable)
+                        )
+        );
+
+        node.then(
+                literalArgument("logger")
+                        .then(
+                                literalArgument("verbose")
+                                        .then(
+                                                literalArgument("get").executes(loggerExecutor::executeVerboseGet)
+                                        )
+                                        .then(
+                                                literalArgument("enable").executes(loggerExecutor::executeVerboseEnable)
+                                        )
+                                        .then(
+                                                literalArgument("disable").executes(loggerExecutor::executeVerboseDisable)
+                                        )
+                        )
+                        .then(
+                                literalArgument("debug")
+                                        .then(
+                                                literalArgument("get").executes(loggerExecutor::executeDebugGet)
+                                        )
+                                        .then(
+                                                literalArgument("enable").executes(loggerExecutor::executeDebugEnable)
+                                        )
+                                        .then(
+                                                literalArgument("disable").executes(loggerExecutor::executeDebugDisable)
+                                        )
+                        )
+        );
+
+        node.then(
+                literalArgument("update-check")
+                        .then(
+                                literalArgument("get").executes(updateCheckExecutor::executeGet)
+                        )
+                        .then(
+                                literalArgument("enable").executes(updateCheckExecutor::executeEnable)
+                        )
+                        .then(
+                                literalArgument("disable").executes(updateCheckExecutor::executeDisable)
+                        )
+        );
 
         return node;
     }
@@ -142,6 +196,11 @@ public class VarLightCommandConfig extends VarLightSubCommand {
     @Override
     public @NotNull String getRequiredPermission() {
         return "varlight.admin.config";
+    }
+
+    @Override
+    public @NotNull String getDescription() {
+        return "Allows modifying most of the configuration for VarLight ingame.";
     }
 
     private int runReload(CommandContext<CommandSender> context) throws CommandSyntaxException {

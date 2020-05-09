@@ -13,15 +13,16 @@ import java.util.stream.Collectors;
 
 public class VarLightConfiguration {
 
-    public static final String CONFIG_KEY_VARLIGHT_ITEM = "item";
-    public static final String CONFIG_KEY_CHECK_PERMISSION = "checkPermission";
+    public static final String CONFIG_KEY_VARLIGHT_ITEM = "lui";
+    public static final String CONFIG_KEY_CHECK_PERMISSION = "check-permission";
     public static final String CONFIG_KEY_AUTOSAVE = "autosave";
     public static final String CONFIG_KEY_NLS_DEFLATED = "nls-deflated";
     public static final String CONFIG_KEY_STEPSIZE_ALLOW_CREATIVE = "stepsize.gamemodes.creative";
     public static final String CONFIG_KEY_STEPSIZE_ALLOW_SURVIVAL = "stepsize.gamemodes.survival";
     public static final String CONFIG_KEY_STEPSIZE_ALLOW_ADVENTURE = "stepsize.gamemodes.adventure";
-    public static final String CONFIG_KEY_VARLIGHT_RECLAIM = "varlight-reclaim";
-    public static final String CONFIG_KEY_LOG_DEBUG = "log-debug";
+    public static final String CONFIG_KEY_RECLAIM = "reclaim";
+    public static final String CONFIG_KEY_LOG_VERBOSE = "logger.verbose";
+    public static final String CONFIG_KEY_LOG_DEBUG = "logger.debug";
     public static final String CONFIG_KEY_CHECK_UPDATE = "check-update";
     public static final String CONFIG_KEY_ENABLE_EXPERIMENTAL_BLOCKS = "experimental-blocks";
 
@@ -41,7 +42,8 @@ public class VarLightConfiguration {
         plugin.getConfig().addDefault(CONFIG_KEY_STEPSIZE_ALLOW_CREATIVE, true);
         plugin.getConfig().addDefault(CONFIG_KEY_STEPSIZE_ALLOW_SURVIVAL, false);
         plugin.getConfig().addDefault(CONFIG_KEY_STEPSIZE_ALLOW_ADVENTURE, false);
-        plugin.getConfig().addDefault(CONFIG_KEY_VARLIGHT_RECLAIM, true);
+        plugin.getConfig().addDefault(CONFIG_KEY_RECLAIM, true);
+        plugin.getConfig().addDefault(CONFIG_KEY_LOG_VERBOSE, false);
         plugin.getConfig().addDefault(CONFIG_KEY_LOG_DEBUG, false);
         plugin.getConfig().addDefault(CONFIG_KEY_CHECK_UPDATE, true);
         plugin.getConfig().addDefault(CONFIG_KEY_ENABLE_EXPERIMENTAL_BLOCKS, false);
@@ -145,8 +147,24 @@ public class VarLightConfiguration {
         save();
     }
 
+    public boolean isLogVerbose() {
+        return plugin.getConfig().getBoolean(CONFIG_KEY_LOG_VERBOSE);
+    }
+
+    public void setLogVerbose(boolean value) {
+        plugin.getConfig().set(CONFIG_KEY_LOG_VERBOSE, value);
+
+        save();
+    }
+
     public boolean isLogDebug() {
-        return plugin.getConfig().getBoolean(CONFIG_KEY_LOG_DEBUG, true);
+        return plugin.getConfig().getBoolean(CONFIG_KEY_LOG_DEBUG);
+    }
+
+    public void setLogDebug(boolean value) {
+        plugin.getConfig().set(CONFIG_KEY_LOG_DEBUG, value);
+
+        save();
     }
 
     public int getAutosaveInterval() {
@@ -203,8 +221,14 @@ public class VarLightConfiguration {
         save();
     }
 
-    public boolean hasReclaim() {
-        return plugin.getConfig().getBoolean(CONFIG_KEY_VARLIGHT_RECLAIM);
+    public boolean isReclaimEnabled() {
+        return plugin.getConfig().getBoolean(CONFIG_KEY_RECLAIM);
+    }
+
+    public void setReclaim(boolean value) {
+        plugin.getConfig().set(CONFIG_KEY_RECLAIM, value);
+
+        save();
     }
 
     public List<String> getWorldNames(WorldListType type) {
@@ -233,6 +257,12 @@ public class VarLightConfiguration {
 
     public boolean isCheckUpdateEnabled() {
         return plugin.getConfig().getBoolean(CONFIG_KEY_CHECK_UPDATE);
+    }
+
+    public void setCheckUpdate(boolean value) {
+        plugin.getConfig().set(CONFIG_KEY_CHECK_UPDATE, value);
+
+        save();
     }
 
     public boolean isAllowExperimentalBlocks() {

@@ -31,7 +31,7 @@ public class AutosaveManager implements Listener {
         WorldLightSourceManager manager = plugin.getManager(e.getWorld());
 
         if (manager != null) {
-            manager.save(Bukkit.getConsoleSender(), plugin.getConfiguration().isLogDebug());
+            manager.save(Bukkit.getConsoleSender(), plugin.getConfiguration().isLogVerbose());
         }
     }
 
@@ -62,7 +62,7 @@ public class AutosaveManager implements Listener {
         autosaveTask = Bukkit.getScheduler().runTaskTimer(plugin,
                 () -> {
                     for (WorldLightSourceManager manager : plugin.getAllManagers()) {
-                        manager.save(Bukkit.getConsoleSender(), plugin.getConfiguration().isLogDebug());
+                        manager.save(Bukkit.getConsoleSender(), plugin.getConfiguration().isLogVerbose());
                     }
                 },
                 ticks, ticks

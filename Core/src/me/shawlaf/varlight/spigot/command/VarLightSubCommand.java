@@ -24,7 +24,6 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
-import java.util.Map;
 
 public abstract class VarLightSubCommand implements ICommandAccess<VarLightPlugin> {
 
@@ -38,6 +37,42 @@ public abstract class VarLightSubCommand implements ICommandAccess<VarLightPlugi
         this.name = name;
     }
 
+    protected static LiteralArgumentBuilder<CommandSender> literalArgument(String literal) {
+        return LiteralArgumentBuilder.literal(literal);
+    }
+
+    protected static RequiredArgumentBuilder<CommandSender, Integer> integerArgument(String name) {
+        return RequiredArgumentBuilder.argument(name, IntegerArgumentType.integer());
+    }
+
+    protected static RequiredArgumentBuilder<CommandSender, Integer> integerArgument(String name, int min) {
+        return RequiredArgumentBuilder.argument(name, IntegerArgumentType.integer(min));
+    }
+
+    protected static RequiredArgumentBuilder<CommandSender, Integer> integerArgument(String name, int min, int max) {
+        return RequiredArgumentBuilder.argument(name, IntegerArgumentType.integer(min, max));
+    }
+
+    protected static RequiredArgumentBuilder<CommandSender, Boolean> boolArgument(String name) {
+        return RequiredArgumentBuilder.argument(name, BoolArgumentType.bool());
+    }
+
+    protected static RequiredArgumentBuilder<CommandSender, ICoordinates> positionArgument(String name) {
+        return RequiredArgumentBuilder.argument(name, PositionArgumentType.position());
+    }
+
+    protected static <T> RequiredArgumentBuilder<CommandSender, Collection<T>> collectionArgument(String name, ArgumentType<T> argument) {
+        return RequiredArgumentBuilder.argument(name, CollectionArgumentType.collection(argument));
+    }
+
+    protected static RequiredArgumentBuilder<CommandSender, World> worldArgument(String name) {
+        return RequiredArgumentBuilder.argument(name, WorldArgumentType.world());
+    }
+
+    protected static RequiredArgumentBuilder<CommandSender, Player> playerArgument(String name) {
+        return RequiredArgumentBuilder.argument(name, PlayerArgumentType.player());
+    }
+
     public abstract @NotNull LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> node);
 
     public boolean meetsRequirement(CommandSender commandSender) {
@@ -49,6 +84,8 @@ public abstract class VarLightSubCommand implements ICommandAccess<VarLightPlugi
 
         return commandSender.hasPermission(required);
     }
+
+    // region Util
 
     @Override
     public final @NotNull VarLightPlugin getPlugin() {
@@ -92,44 +129,6 @@ public abstract class VarLightSubCommand implements ICommandAccess<VarLightPlugi
     @Override
     public @NotNull String getUsageString(CommandSender commandSender) {
         return "/varlight " + rootCommand.getCommandDispatcher().getSmartUsage(rootCommand.getCommandDispatcher().getRoot().getChild(rootCommand.getName()), commandSender).get(getNode());
-    }
-
-    // region Util
-
-    protected static LiteralArgumentBuilder<CommandSender> literalArgument(String literal) {
-        return LiteralArgumentBuilder.literal(literal);
-    }
-
-    protected static RequiredArgumentBuilder<CommandSender, Integer> integerArgument(String name) {
-        return RequiredArgumentBuilder.argument(name, IntegerArgumentType.integer());
-    }
-
-    protected static RequiredArgumentBuilder<CommandSender, Integer> integerArgument(String name, int min) {
-        return RequiredArgumentBuilder.argument(name, IntegerArgumentType.integer(min));
-    }
-
-    protected static RequiredArgumentBuilder<CommandSender, Integer> integerArgument(String name, int min, int max) {
-        return RequiredArgumentBuilder.argument(name, IntegerArgumentType.integer(min, max));
-    }
-
-    protected static RequiredArgumentBuilder<CommandSender, Boolean> boolArgument(String name) {
-        return RequiredArgumentBuilder.argument(name, BoolArgumentType.bool());
-    }
-
-    protected static RequiredArgumentBuilder<CommandSender, ICoordinates> positionArgument(String name) {
-        return RequiredArgumentBuilder.argument(name, PositionArgumentType.position());
-    }
-
-    protected static <T> RequiredArgumentBuilder<CommandSender, Collection<T>> collectionArgument(String name, ArgumentType<T> argument) {
-        return RequiredArgumentBuilder.argument(name, CollectionArgumentType.collection(argument));
-    }
-
-    protected static RequiredArgumentBuilder<CommandSender, World> worldArgument(String name) {
-        return RequiredArgumentBuilder.argument(name, WorldArgumentType.world());
-    }
-
-    protected static RequiredArgumentBuilder<CommandSender, Player> playerArgument(String name) {
-        return RequiredArgumentBuilder.argument(name, PlayerArgumentType.player());
     }
 
     protected RequiredArgumentBuilder<CommandSender, Material> minecraftTypeArgument(String name, MaterialType materialType) {

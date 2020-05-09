@@ -9,29 +9,16 @@ import java.util.function.Supplier;
 public class DebugManager {
 
     private final VarLightPlugin plugin;
-    private boolean debugEnabled;
 
     public DebugManager(VarLightPlugin plugin) {
         this.plugin = plugin;
     }
 
-    public boolean isDebugEnabled() {
-        return debugEnabled;
-    }
-
-    public void setDebugEnabled(boolean debugEnabled) {
-        this.debugEnabled = debugEnabled;
-    }
-
-    public void logDebugAction(CommandSender source, Supplier<String> message, boolean broadcastToOps) {
-        if (!debugEnabled) {
+    public void logDebugAction(CommandSender source, Supplier<String> message) {
+        if (!plugin.getConfiguration().isLogDebug()) {
             return;
         }
 
-        String msg = String.format("[DEBUG] %s: %s", source.getName(), message.get());
-
-        if (broadcastToOps) {
-            Bukkit.broadcast(ChatColor.GRAY + "" + ChatColor.ITALIC + msg, "varlight.admin");
-        }
+        Bukkit.broadcast(ChatColor.GRAY + "" + ChatColor.ITALIC + String.format("[DEBUG] %s: %s", source.getName(), message.get()), "varlight.admin");
     }
 }

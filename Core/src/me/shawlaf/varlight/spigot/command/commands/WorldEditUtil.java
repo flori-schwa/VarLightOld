@@ -46,6 +46,6 @@ public class WorldEditUtil {
         Location a = new Location(player.getWorld(), min.getX(), min.getY(), min.getZ());
         Location b = new Location(player.getWorld(), max.getX(), max.getY(), max.getZ());
 
-        return new Location[] {a, b};
+        return new Location[]{a, b};
     }
 }

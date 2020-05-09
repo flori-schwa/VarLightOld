@@ -2,7 +2,6 @@ package me.shawlaf.varlight.spigot.command.commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
-import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.command.VarLightCommand;
 import me.shawlaf.varlight.spigot.command.VarLightSubCommand;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
@@ -32,6 +31,16 @@ public class VarLightCommandStressTest extends VarLightSubCommand {
         super(command, "stresstest");
     }
 
+    private static <T> boolean containsArray(T[] array, T element) {
+        for (T t : array) {
+            if (Objects.equals(t, element)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     @Override
     public @NotNull LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> node) {
         node.requires(c -> c instanceof Player);
@@ -47,16 +56,6 @@ public class VarLightCommandStressTest extends VarLightSubCommand {
         );
 
         return node;
-    }
-
-    private static <T> boolean containsArray(T[] array, T element) {
-        for (T t : array) {
-            if (Objects.equals(t, element)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private int runStart(CommandContext<CommandSender> context) {
