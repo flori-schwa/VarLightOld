@@ -6,9 +6,12 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import me.shawlaf.varlight.spigot.command.VarLightCommand;
 import me.shawlaf.varlight.spigot.command.VarLightSubCommand;
 import me.shawlaf.varlight.spigot.nms.MaterialType;
+import org.bukkit.GameMode;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 
+import static me.shawlaf.command.result.CommandResult.info;
+import static me.shawlaf.command.result.CommandResult.successBroadcast;
 import static me.shawlaf.varlight.spigot.VarLightConfiguration.WorldListType.BLACKLIST;
 import static me.shawlaf.varlight.spigot.VarLightConfiguration.WorldListType.WHITELIST;
 import static me.shawlaf.varlight.spigot.command.VarLightCommand.SUCCESS;
@@ -20,6 +23,7 @@ public class VarLightCommandConfig extends VarLightSubCommand {
     private final PermissionExecutor permissionExecutor;
     private final WorldListExecutor whitelistExecutor;
     private final WorldListExecutor blacklistExecutor;
+    private final StepsizeGamemodeExecutor stepsizeGamemodeExecutor;
 
     public VarLightCommandConfig(VarLightCommand command) {
         super(command, "config");
@@ -29,6 +33,7 @@ public class VarLightCommandConfig extends VarLightSubCommand {
         this.permissionExecutor = new PermissionExecutor(this);
         this.whitelistExecutor = new WorldListExecutor(this, WHITELIST);
         this.blacklistExecutor = new WorldListExecutor(this, BLACKLIST);
+        this.stepsizeGamemodeExecutor = new StepsizeGamemodeExecutor(this);
     }
 
     @Override
@@ -103,9 +108,29 @@ public class VarLightCommandConfig extends VarLightSubCommand {
                         .then(literalArgument("clear")).executes(blacklistExecutor::executeClear)
         );
 
+        node.then(
+                literalArgument("stepsize")
+                        .then(
+                                literalArgument("get-allowed")
+                                        .executes(stepsizeGamemodeExecutor::executeGet)
+                        )
+                        .then(
+                                literalArgument("allow")
+                                        .then(
+                                                enumArgument("gamemode", GameMode.class)
+                                                        .executes(stepsizeGamemodeExecutor::executeAllow)
+                                        )
+                        )
+                        .then(
+                                literalArgument("disallow")
+                                        .then(
+                                                enumArgument("gamemode", GameMode.class)
+                                                        .executes(stepsizeGamemodeExecutor::executeDisallow)
+                                        )
+                        )
+        );
+
         /* TODO
-            - NLS
-            - stepsize
             - reclaim
             - debug log
             - update check
@@ -121,7 +146,14 @@ public class VarLightCommandConfig extends VarLightSubCommand {
 
     private int runReload(CommandContext<CommandSender> context) throws CommandSyntaxException {
 
-        context.getSource().sendMessage("TODO implement runReload");
+        plugin.reloadConfig();
+        plugin.reload();
+
+        successBroadcast(this, context.getSource(), "Configuration reloaded!");
+        info(this, context.getSource(), "Some configuration changes require a server restart to be applied:");
+        context.getSource().sendMessage(" - whitelist/blacklist");
+        context.getSource().sendMessage(" - nls-deflated");
+        context.getSource().sendMessage(" - check-update");
 
         return SUCCESS;
     }

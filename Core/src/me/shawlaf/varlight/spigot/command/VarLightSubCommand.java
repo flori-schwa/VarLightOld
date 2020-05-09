@@ -7,6 +7,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.tree.CommandNode;
 import me.shawlaf.command.ICommandAccess;
+import me.shawlaf.command.brigadier.argument.EnumArgumentType;
 import me.shawlaf.command.brigadier.argument.PlayerArgumentType;
 import me.shawlaf.command.brigadier.argument.PositionArgumentType;
 import me.shawlaf.command.brigadier.argument.WorldArgumentType;
@@ -133,6 +134,10 @@ public abstract class VarLightSubCommand implements ICommandAccess<VarLightPlugi
 
     protected RequiredArgumentBuilder<CommandSender, Material> minecraftTypeArgument(String name, MaterialType materialType) {
         return RequiredArgumentBuilder.argument(name, MinecraftTypeArgumentType.minecraftType(plugin, materialType));
+    }
+
+    protected <E extends Enum<E>> RequiredArgumentBuilder<CommandSender, E> enumArgument(String name, Class<E> enumType) {
+        return RequiredArgumentBuilder.argument(name, EnumArgumentType.enumArgument(enumType));
     }
 
     // endregion

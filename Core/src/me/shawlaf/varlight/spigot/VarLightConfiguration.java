@@ -5,7 +5,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +17,9 @@ public class VarLightConfiguration {
     public static final String CONFIG_KEY_CHECK_PERMISSION = "checkPermission";
     public static final String CONFIG_KEY_AUTOSAVE = "autosave";
     public static final String CONFIG_KEY_NLS_DEFLATED = "nls-deflated";
-    public static final String CONFIG_KEY_STEPSIZE_GAMEMODE = "stepsize-gamemode";
+    public static final String CONFIG_KEY_STEPSIZE_ALLOW_CREATIVE = "stepsize.gamemodes.creative";
+    public static final String CONFIG_KEY_STEPSIZE_ALLOW_SURVIVAL = "stepsize.gamemodes.survival";
+    public static final String CONFIG_KEY_STEPSIZE_ALLOW_ADVENTURE = "stepsize.gamemodes.adventure";
     public static final String CONFIG_KEY_VARLIGHT_RECLAIM = "varlight-reclaim";
     public static final String CONFIG_KEY_LOG_DEBUG = "log-debug";
     public static final String CONFIG_KEY_CHECK_UPDATE = "check-update";
@@ -37,7 +38,9 @@ public class VarLightConfiguration {
         plugin.getConfig().addDefault(WorldListType.WHITELIST.configPath, new ArrayList<String>());
         plugin.getConfig().addDefault(WorldListType.BLACKLIST.configPath, new ArrayList<String>());
         plugin.getConfig().addDefault(CONFIG_KEY_NLS_DEFLATED, true);
-        plugin.getConfig().addDefault(CONFIG_KEY_STEPSIZE_GAMEMODE, GameMode.CREATIVE.name());
+        plugin.getConfig().addDefault(CONFIG_KEY_STEPSIZE_ALLOW_CREATIVE, true);
+        plugin.getConfig().addDefault(CONFIG_KEY_STEPSIZE_ALLOW_SURVIVAL, false);
+        plugin.getConfig().addDefault(CONFIG_KEY_STEPSIZE_ALLOW_ADVENTURE, false);
         plugin.getConfig().addDefault(CONFIG_KEY_VARLIGHT_RECLAIM, true);
         plugin.getConfig().addDefault(CONFIG_KEY_LOG_DEBUG, false);
         plugin.getConfig().addDefault(CONFIG_KEY_CHECK_UPDATE, true);
@@ -76,24 +79,70 @@ public class VarLightConfiguration {
         return material;
     }
 
-    public GameMode getStepsizeGamemode() {
-        GameMode def = GameMode.CREATIVE;
-        String configGameMode = plugin.getConfig().getString(CONFIG_KEY_STEPSIZE_GAMEMODE, GameMode.CREATIVE.name());
-        GameMode gameMode;
+    public boolean isAllowedStepsizeGamemode(GameMode gameMode) {
+        switch (gameMode) {
+            case SURVIVAL: {
+                return canSurvivalUseStepsize();
+            }
 
-        try {
-            gameMode = GameMode.valueOf(configGameMode);
-        } catch (IllegalArgumentException e) {
-            plugin.getLogger().warning(String.format("Could not find a Gamemode with the given name \"%s\", defaulting to \"%s\"", configGameMode, def.name()));
-            return def;
+            case CREATIVE: {
+                return canCreativeUseStepsize();
+            }
+
+            case ADVENTURE: {
+                return canAdventureUseStepsize();
+            }
+
+            case SPECTATOR:
+            default: {
+                return false;
+            }
         }
+    }
 
-        if (gameMode == GameMode.SPECTATOR) {
-            plugin.getLogger().warning(String.format("Spectators cannot use VarLight, defaulting the Stepsize gamemode to \"%s\"", def.name()));
-            return def;
+    public boolean canSurvivalUseStepsize() {
+        return plugin.getConfig().getBoolean(CONFIG_KEY_STEPSIZE_ALLOW_SURVIVAL);
+    }
+
+    public boolean canCreativeUseStepsize() {
+        return plugin.getConfig().getBoolean(CONFIG_KEY_STEPSIZE_ALLOW_CREATIVE);
+    }
+
+    public boolean canAdventureUseStepsize() {
+        return plugin.getConfig().getBoolean(CONFIG_KEY_STEPSIZE_ALLOW_ADVENTURE);
+    }
+
+    public void setCanUseStepsize(GameMode gameMode, boolean value) {
+        switch (gameMode) {
+            case SURVIVAL: {
+                setCanSurvivalUseStepsize(value);
+                break;
+            }
+
+            case CREATIVE: {
+                setCanCreativeUseStepsize(value);
+                break;
+            }
+
+            case ADVENTURE: {
+                setCanAdventureUseStepsize(value);
+            }
         }
+    }
 
-        return gameMode;
+    public void setCanSurvivalUseStepsize(boolean value) {
+        plugin.getConfig().set(CONFIG_KEY_STEPSIZE_ALLOW_SURVIVAL, value);
+        save();
+    }
+
+    public void setCanCreativeUseStepsize(boolean value) {
+        plugin.getConfig().set(CONFIG_KEY_STEPSIZE_ALLOW_CREATIVE, value);
+        save();
+    }
+
+    public void setCanAdventureUseStepsize(boolean value) {
+        plugin.getConfig().set(CONFIG_KEY_STEPSIZE_ALLOW_ADVENTURE, value);
+        save();
     }
 
     public boolean isLogDebug() {

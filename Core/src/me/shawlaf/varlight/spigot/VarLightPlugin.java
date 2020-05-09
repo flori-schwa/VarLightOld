@@ -59,7 +59,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     private LightDatabaseMigratorSpigot databaseMigrator;
 
     private Material lightUpdateItem;
-    private GameMode stepsizeGamemode;
 
     private boolean shouldDeflate;
     private boolean doLoad = true;
@@ -144,7 +143,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         configuration.getVarLightEnabledWorlds().forEach(this::enableInWorld);
 
         loadLightUpdateItem();
-        loadStepsizeGamemode();
 
         Bukkit.getPluginManager().registerEvents(this.autosaveManager = new AutosaveManager(this), this);
         Bukkit.getPluginManager().registerEvents(this, this);
@@ -232,7 +230,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     public void reload() {
         loadLightUpdateItem();
-        loadStepsizeGamemode();
     }
 
     public AutosaveManager getAutosaveManager() {
@@ -251,24 +248,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     }
 
     public boolean hasValidStepsizeGamemode(Player player) {
-        switch (stepsizeGamemode) {
-            case CREATIVE: {
-                return player.getGameMode() == GameMode.CREATIVE;
-            }
-
-            case SURVIVAL: {
-                return player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SURVIVAL;
-            }
-
-            case ADVENTURE: {
-                return player.getGameMode() != GameMode.SPECTATOR;
-            }
-
-            default:
-            case SPECTATOR: {
-                throw new IllegalStateException();
-            }
-        }
+        return configuration.isAllowedStepsizeGamemode(player.getGameMode());
     }
 
     public void setStepSize(Player player, int stepSize) {
@@ -550,11 +530,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     private void loadLightUpdateItem() {
         this.lightUpdateItem = configuration.getLightUpdateItem();
         getLogger().info(String.format("Using \"%s\" as the Light update item.", lightUpdateItem.getKey().toString()));
-    }
-
-    private void loadStepsizeGamemode() {
-        this.stepsizeGamemode = configuration.getStepsizeGamemode();
-        getLogger().info(String.format("Using, \"%s\" as the Stepsize Gamemode", stepsizeGamemode.name()));
     }
 
     private String toShortBlockString(Location location) {
