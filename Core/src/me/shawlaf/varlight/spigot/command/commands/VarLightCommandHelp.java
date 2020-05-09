@@ -2,7 +2,6 @@ package me.shawlaf.varlight.spigot.command.commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
-import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.command.VarLightCommand;
 import me.shawlaf.varlight.spigot.command.VarLightSubCommand;
 import org.bukkit.ChatColor;
@@ -10,51 +9,44 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.util.ChatPaginator;
 import org.jetbrains.annotations.NotNull;
 
-import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
-import static com.mojang.brigadier.builder.RequiredArgumentBuilder.argument;
+import java.util.Arrays;
+import java.util.stream.Stream;
+
+import static me.shawlaf.command.result.CommandResult.info;
 
 public class VarLightCommandHelp extends VarLightSubCommand {
 
-    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_PAGE = argument("page", integer(1));
+    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_PAGE = integerArgument("page", 1);
 
-    private VarLightCommand rootCommand;
-
-    public VarLightCommandHelp(VarLightPlugin varLightPlugin, VarLightCommand rootCommand) {
-        super(varLightPlugin, "help");
-
-        this.rootCommand = rootCommand;
+    public VarLightCommandHelp(VarLightCommand rootCommand) {
+        super(rootCommand, "help");
     }
 
     @NotNull
     @Override
     public String getDescription() {
-        return "Displays all VarLight sub commands";
-    }
-
-    @NotNull
-    @Override
-    public String getSyntax() {
-        return " [command|page]";
+        return "Displays help on all VarLight Sub commands.";
     }
 
     @NotNull
     @Override
     public LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> literalArgumentBuilder) {
-
-        for (VarLightSubCommand subCommand : rootCommand.getSubCommands()) {
-            if (subCommand.getUsageString().isEmpty()) {
-                continue;
-            }
-
+        Stream.concat(Arrays.stream(rootCommand.getSubCommands()), Stream.of(this)).forEach(subCommand -> {
             literalArgumentBuilder.then(
-                    LiteralArgumentBuilder.<CommandSender>literal(subCommand.getName())
+                    literalArgument(subCommand.getName())
                             .requires(subCommand::meetsRequirement)
                             .executes(context -> {
-                                context.getSource().sendMessage(subCommand.getUsageString());
+                                context.getSource().sendMessage(ChatColor.GRAY + "-----------------------------------");
+                                info(this, context.getSource(), "Usage of /varlight " + subCommand.getName() + ":", ChatColor.GOLD);
+                                context.getSource().sendMessage("");
+                                context.getSource().sendMessage(ChatColor.GOLD + "Syntax: " + subCommand.getUsageString(context.getSource()));
+                                context.getSource().sendMessage("");
+                                context.getSource().sendMessage(ChatColor.GOLD + "Description: " + subCommand.getDescription());
+
                                 return VarLightCommand.SUCCESS;
                             })
             );
-        }
+        });
 
         literalArgumentBuilder.then(
                 ARG_PAGE.executes(context -> {
@@ -79,7 +71,7 @@ public class VarLightCommandHelp extends VarLightSubCommand {
         StringBuilder builder = new StringBuilder();
 
         for (VarLightSubCommand subCommand : rootCommand.getSubCommands()) {
-            String help = subCommand.getUsageString();
+            String help = subCommand.getUsageString(commandSender);
 
             if (!help.isEmpty() && subCommand.meetsRequirement(commandSender)) {
                 builder.append(help).append('\n');
@@ -94,7 +86,7 @@ public class VarLightCommandHelp extends VarLightSubCommand {
     }
 
     public void showHelp(CommandSender sender, int page) {
-        ChatPaginator.ChatPage chatPage = ChatPaginator.paginate(getFullHelpRaw(sender), page);
+        ChatPaginator.ChatPage chatPage = ChatPaginator.paginate(getFullHelpRaw(sender), page, 100, 10);
 
         sender.sendMessage(ChatColor.GRAY + "-----------------------------------");
         sender.sendMessage(String.format("%sVarLight command help: %s[Page %d / %d]", ChatColor.GOLD, ChatColor.RESET, chatPage.getPageNumber(), chatPage.getTotalPages()));
@@ -102,5 +94,8 @@ public class VarLightCommandHelp extends VarLightSubCommand {
         for (String line : chatPage.getLines()) {
             sender.sendMessage(line);
         }
+
+        sender.sendMessage("");
+        sender.sendMessage(String.format("%sRun /varlight help <sub command> to get more info about a specific command.", ChatColor.GOLD));
     }
 }

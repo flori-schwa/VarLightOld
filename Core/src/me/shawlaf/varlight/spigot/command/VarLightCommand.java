@@ -1,5 +1,6 @@
 package me.shawlaf.varlight.spigot.command;
 
+import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.ParseResults;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.suggestion.Suggestion;
@@ -11,8 +12,7 @@ import me.shawlaf.command.brigadier.BrigadierCommand;
 import me.shawlaf.command.exception.CommandException;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.command.commands.*;
-import me.shawlaf.varlight.spigot.command.commands.world.VarLightCommandBlacklist;
-import me.shawlaf.varlight.spigot.command.commands.world.VarLightCommandWhitelist;
+import me.shawlaf.varlight.spigot.command.commands.config.VarLightCommandConfig;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,33 +21,28 @@ import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 
 @SuppressWarnings("rawtypes")
-public class VarLightCommand extends BrigadierCommand<CommandSender, VarLightPlugin> {
+public final class VarLightCommand extends BrigadierCommand<VarLightPlugin> {
 
     public static final int SUCCESS = 0;
     public static final int FAILURE = 1;
 
     private static final Class[] SUB_COMMANDS = new Class[]{
             // Register sub commands here
-            VarLightCommandAutosave.class,
+            VarLightCommandConfig.class,
             VarLightCommandDebug.class,
             VarLightCommandFill.class,
-            VarLightCommandItem.class,
-            VarLightCommandPermission.class,
-            VarLightCommandReload.class,
+            VarLightCommandSave.class,
+            VarLightCommandGive.class,
             VarLightCommandSave.class,
             VarLightCommandStepSize.class,
-            VarLightCommandUpdate.class,
-            VarLightCommandGive.class,
-
-            VarLightCommandWhitelist.class,
-            VarLightCommandBlacklist.class,
+            VarLightCommandUpdate.class
     };
 
     private VarLightSubCommand[] subCommands; // Will be used by help command
     private int counter = 0;
 
     public VarLightCommand(VarLightPlugin plugin) {
-        super(plugin, "varlight", CommandSender.class);
+        super(plugin, "varlight");
     }
 
     @Override
@@ -55,11 +50,15 @@ public class VarLightCommand extends BrigadierCommand<CommandSender, VarLightPlu
         return "The Varlight root command";
     }
 
+    public CommandDispatcher<CommandSender> getCommandDispatcher() {
+        return commandDispatcher;
+    }
+
     private void registerSubCommand(Class subCommandClass, LiteralArgumentBuilder<CommandSender> root) {
         VarLightSubCommand subCommand;
 
         try {
-            subCommand = (VarLightSubCommand) subCommandClass.getConstructor(VarLightPlugin.class).newInstance(plugin);
+            subCommand = (VarLightSubCommand) subCommandClass.getConstructor(VarLightCommand.class).newInstance(this);
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw CommandException.severeException("Failed to register command " + subCommandClass.getSimpleName(), e);
         }
@@ -91,7 +90,7 @@ public class VarLightCommand extends BrigadierCommand<CommandSender, VarLightPlu
             registerSubCommand(clazz, builder);
         }
 
-        VarLightCommandHelp helpCommand = new VarLightCommandHelp(plugin, this);
+        VarLightCommandHelp helpCommand = new VarLightCommandHelp(this);
         LiteralArgumentBuilder<CommandSender> subCommandRoot = LiteralArgumentBuilder.literal(helpCommand.getName());
         helpCommand.build(subCommandRoot);
 

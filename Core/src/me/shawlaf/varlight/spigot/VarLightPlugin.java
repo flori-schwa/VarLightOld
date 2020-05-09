@@ -43,15 +43,11 @@ import static me.shawlaf.varlight.spigot.util.LightSourceUtil.placeNewLightSourc
 
 public class VarLightPlugin extends JavaPlugin implements Listener {
 
-    private Tag<Material> allowedBlocks, experimentalBlocks;
-
     public static final long TICK_RATE = 20L;
-
     private final Map<UUID, Integer> stepSizes = new HashMap<>();
     private final Map<UUID, WorldLightSourceManager> managers = new HashMap<>();
-
     private final INmsAdapter nmsAdapter;
-
+    private Tag<Material> allowedBlocks, experimentalBlocks;
     private VarLightCommand command;
     private VarLightConfiguration configuration;
     private AutosaveManager autosaveManager;
@@ -59,7 +55,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     private LightDatabaseMigratorSpigot databaseMigrator;
 
     private Material lightUpdateItem;
-    private GameMode stepsizeGamemode;
 
     private boolean shouldDeflate;
     private boolean doLoad = true;
@@ -144,10 +139,13 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         configuration.getVarLightEnabledWorlds().forEach(this::enableInWorld);
 
         loadLightUpdateItem();
-        loadStepsizeGamemode();
 
         Bukkit.getPluginManager().registerEvents(this.autosaveManager = new AutosaveManager(this), this);
         Bukkit.getPluginManager().registerEvents(this, this);
+
+        if (Bukkit.getPluginManager().getPlugin("WorldGuard") != null) {
+            Bukkit.getPluginManager().registerEvents(new WorldGuardExtension(), this);
+        }
 
         command = new VarLightCommand(this);
 
@@ -166,11 +164,8 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         nmsAdapter.onDisable();
 
-        // If PersistOnSave is enabled, PersistOnWorldSaveHandler.onWorldSave will automatically save the Light Sources
-        if (configuration.getAutosaveInterval() >= 0) {
-            for (WorldLightSourceManager l : getAllManagers()) {
-                l.save(Bukkit.getConsoleSender(), configuration.isLogDebug());
-            }
+        for (WorldLightSourceManager l : getAllManagers()) {
+            l.save(Bukkit.getConsoleSender(), configuration.isLogVerbose());
         }
 
         saveConfig();
@@ -231,7 +226,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     public void reload() {
         loadLightUpdateItem();
-        loadStepsizeGamemode();
     }
 
     public AutosaveManager getAutosaveManager() {
@@ -250,24 +244,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     }
 
     public boolean hasValidStepsizeGamemode(Player player) {
-        switch (stepsizeGamemode) {
-            case CREATIVE: {
-                return player.getGameMode() == GameMode.CREATIVE;
-            }
-
-            case SURVIVAL: {
-                return player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SURVIVAL;
-            }
-
-            case ADVENTURE: {
-                return player.getGameMode() != GameMode.SPECTATOR;
-            }
-
-            default:
-            case SPECTATOR: {
-                throw new IllegalStateException();
-            }
-        }
+        return configuration.isAllowedStepsizeGamemode(player.getGameMode());
     }
 
     public void setStepSize(Player player, int stepSize) {
@@ -331,9 +308,8 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-        String requiredPermission = configuration.getRequiredPermissionNode();
 
-        if (!requiredPermission.isEmpty() && !e.getPlayer().hasPermission(requiredPermission)) {
+        if (configuration.isCheckingPermission() && !e.getPlayer().hasPermission("varlight.use")) {
             return;
         }
 
@@ -368,7 +344,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             }
         }
 
-        LightUpdateResult result = placeNewLightSource(this, clickedBlock.getLocation(),
+        LightUpdateResult result = placeNewLightSource(this, player, clickedBlock.getLocation(),
                 manager.getCustomLuminance(toIntPosition(clickedBlock), 0) + mod);
 
         if (result.successful()) {
@@ -383,8 +359,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         debugManager.logDebugAction(player,
                 () -> "Edit Lightsource @ " + toShortBlockString(clickedBlock.getLocation()) + " " +
-                        (finalMod < 0 ? "LC" : "RC") + " " + result.getFromLight() + " -> " + result.getToLight() + " ==> " + result.getDebugMessage().toString(),
-                true
+                        (finalMod < 0 ? "LC" : "RC") + " " + result.getFromLight() + " -> " + result.getToLight() + " ==> " + result.getDebugMessage().toString()
         );
 
         result.displayMessage(e.getPlayer());
@@ -392,7 +367,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void playerBreakLightSource(BlockBreakEvent e) {
-        if (!configuration.hasReclaim()) {
+        if (!configuration.isReclaimEnabled()) {
             return;
         }
 
@@ -458,7 +433,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     @SuppressWarnings("ConstantConditions")
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void playerPlaceLightSource(BlockPlaceEvent e) {
-        if (!configuration.hasReclaim()) {
+        if (!configuration.isReclaimEnabled()) {
             return;
         }
 
@@ -485,7 +460,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
             Bukkit.getScheduler().runTaskLater(this,
                     () -> {
-                        LightUpdateResult lightUpdateResult = placeNewLightSource(this, e.getBlock().getLocation(), emittingLight);
+                        LightUpdateResult lightUpdateResult = placeNewLightSource(this, e.getPlayer(), e.getBlock().getLocation(), emittingLight);
 
                         if (!lightUpdateResult.successful()) {
                             e.getBlock().setType(before);
@@ -550,11 +525,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     private void loadLightUpdateItem() {
         this.lightUpdateItem = configuration.getLightUpdateItem();
         getLogger().info(String.format("Using \"%s\" as the Light update item.", lightUpdateItem.getKey().toString()));
-    }
-
-    private void loadStepsizeGamemode() {
-        this.stepsizeGamemode = configuration.getStepsizeGamemode();
-        getLogger().info(String.format("Using, \"%s\" as the Stepsize Gamemode", stepsizeGamemode.name()));
     }
 
     private String toShortBlockString(Location location) {

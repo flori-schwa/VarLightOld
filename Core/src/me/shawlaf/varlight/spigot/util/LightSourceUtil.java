@@ -8,6 +8,7 @@ import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.util.ChunkCoords;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.command.CommandSender;
 
 import java.util.Objects;
 
@@ -17,11 +18,11 @@ import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition
 @UtilityClass
 public class LightSourceUtil {
 
-    public static LightUpdateResult placeNewLightSource(VarLightPlugin plugin, Location location, int lightLevel) {
-        return placeNewLightSource(plugin, location, lightLevel, true);
+    public static LightUpdateResult placeNewLightSource(VarLightPlugin plugin, CommandSender source, Location location, int lightLevel) {
+        return placeNewLightSource(plugin, source, location, lightLevel, true);
     }
 
-    public static LightUpdateResult placeNewLightSource(VarLightPlugin plugin, Location location, int lightLevel, boolean doUpdate) {
+    public static LightUpdateResult placeNewLightSource(VarLightPlugin plugin, CommandSender source, Location location, int lightLevel, boolean doUpdate) {
         int fromLight = location.getBlock().getLightFromBlocks();
 
         WorldLightSourceManager manager = plugin.getManager(Objects.requireNonNull(location.getWorld()));
@@ -44,7 +45,7 @@ public class LightSourceUtil {
             return invalidBlock(plugin, fromLight, lightLevel);
         }
 
-        LightUpdateEvent lightUpdateEvent = new LightUpdateEvent(location.getBlock(), fromLight, lightLevel, !Bukkit.getServer().isPrimaryThread());
+        LightUpdateEvent lightUpdateEvent = new LightUpdateEvent(source, location.getBlock(), fromLight, lightLevel, !Bukkit.getServer().isPrimaryThread());
         Bukkit.getPluginManager().callEvent(lightUpdateEvent);
 
         if (lightUpdateEvent.isCancelled()) {

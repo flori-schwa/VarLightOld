@@ -3,14 +3,12 @@ package me.shawlaf.varlight.spigot.command.commands;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
-import me.shawlaf.varlight.spigot.VarLightPlugin;
+import me.shawlaf.varlight.spigot.command.VarLightCommand;
 import me.shawlaf.varlight.spigot.command.VarLightSubCommand;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
-import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
-import static com.mojang.brigadier.builder.RequiredArgumentBuilder.argument;
 import static me.shawlaf.command.result.CommandResult.failure;
 import static me.shawlaf.command.result.CommandResult.success;
 import static me.shawlaf.varlight.spigot.command.VarLightCommand.FAILURE;
@@ -18,22 +16,16 @@ import static me.shawlaf.varlight.spigot.command.VarLightCommand.SUCCESS;
 
 public class VarLightCommandStepSize extends VarLightSubCommand {
 
-    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_STEPSIZE = argument("stepsize", integer(1, 15));
+    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_STEPSIZE = integerArgument("stepsize", 1, 15);
 
-    public VarLightCommandStepSize(VarLightPlugin plugin) {
-        super(plugin, "stepsize");
+    public VarLightCommandStepSize(VarLightCommand command) {
+        super(command, "stepsize");
     }
 
     @NotNull
     @Override
     public String getDescription() {
-        return "Edit the Step size when using " + plugin.getLightUpdateItem().name();
-    }
-
-    @NotNull
-    @Override
-    public String getSyntax() {
-        return " <step size>";
+        return "Edit the Step size when using " + plugin.getLightUpdateItem().getKey().toString() + ".";
     }
 
     @Override
@@ -44,12 +36,12 @@ public class VarLightCommandStepSize extends VarLightSubCommand {
     @NotNull
     @Override
     public LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> node) {
-        node.then(ARG_STEPSIZE.executes(this::update));
+        node.then(ARG_STEPSIZE.executes(this::run));
 
         return node;
     }
 
-    private int update(CommandContext<CommandSender> context) {
+    private int run(CommandContext<CommandSender> context) {
         if (!(context.getSource() instanceof Player)) {
             failure(this, context.getSource(), "Only players may use this command!");
 

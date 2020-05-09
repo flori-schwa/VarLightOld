@@ -5,7 +5,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,13 +13,16 @@ import java.util.stream.Collectors;
 
 public class VarLightConfiguration {
 
-    public static final String CONFIG_KEY_VARLIGHT_ITEM = "item";
-    public static final String CONFIG_KEY_REQUIRED_PERMISSION = "requiredPermission";
+    public static final String CONFIG_KEY_VARLIGHT_ITEM = "lui";
+    public static final String CONFIG_KEY_CHECK_PERMISSION = "check-permission";
     public static final String CONFIG_KEY_AUTOSAVE = "autosave";
     public static final String CONFIG_KEY_NLS_DEFLATED = "nls-deflated";
-    public static final String CONFIG_KEY_STEPSIZE_GAMEMODE = "stepsize-gamemode";
-    public static final String CONFIG_KEY_VARLIGHT_RECLAIM = "varlight-reclaim";
-    public static final String CONFIG_KEY_LOG_DEBUG = "log-debug";
+    public static final String CONFIG_KEY_STEPSIZE_ALLOW_CREATIVE = "stepsize.gamemodes.creative";
+    public static final String CONFIG_KEY_STEPSIZE_ALLOW_SURVIVAL = "stepsize.gamemodes.survival";
+    public static final String CONFIG_KEY_STEPSIZE_ALLOW_ADVENTURE = "stepsize.gamemodes.adventure";
+    public static final String CONFIG_KEY_RECLAIM = "reclaim";
+    public static final String CONFIG_KEY_LOG_VERBOSE = "logger.verbose";
+    public static final String CONFIG_KEY_LOG_DEBUG = "logger.debug";
     public static final String CONFIG_KEY_CHECK_UPDATE = "check-update";
     public static final String CONFIG_KEY_ENABLE_EXPERIMENTAL_BLOCKS = "experimental-blocks";
 
@@ -33,12 +35,15 @@ public class VarLightConfiguration {
 
         plugin.getConfig().addDefault(CONFIG_KEY_VARLIGHT_ITEM, Material.GLOWSTONE_DUST.getKey().toString());
         plugin.getConfig().addDefault(CONFIG_KEY_AUTOSAVE, -1); // Persist Light sources on world save
-        plugin.getConfig().addDefault(CONFIG_KEY_REQUIRED_PERMISSION, "");
+        plugin.getConfig().addDefault(CONFIG_KEY_CHECK_PERMISSION, false);
         plugin.getConfig().addDefault(WorldListType.WHITELIST.configPath, new ArrayList<String>());
         plugin.getConfig().addDefault(WorldListType.BLACKLIST.configPath, new ArrayList<String>());
         plugin.getConfig().addDefault(CONFIG_KEY_NLS_DEFLATED, true);
-        plugin.getConfig().addDefault(CONFIG_KEY_STEPSIZE_GAMEMODE, GameMode.CREATIVE.name());
-        plugin.getConfig().addDefault(CONFIG_KEY_VARLIGHT_RECLAIM, true);
+        plugin.getConfig().addDefault(CONFIG_KEY_STEPSIZE_ALLOW_CREATIVE, true);
+        plugin.getConfig().addDefault(CONFIG_KEY_STEPSIZE_ALLOW_SURVIVAL, false);
+        plugin.getConfig().addDefault(CONFIG_KEY_STEPSIZE_ALLOW_ADVENTURE, false);
+        plugin.getConfig().addDefault(CONFIG_KEY_RECLAIM, true);
+        plugin.getConfig().addDefault(CONFIG_KEY_LOG_VERBOSE, false);
         plugin.getConfig().addDefault(CONFIG_KEY_LOG_DEBUG, false);
         plugin.getConfig().addDefault(CONFIG_KEY_CHECK_UPDATE, true);
         plugin.getConfig().addDefault(CONFIG_KEY_ENABLE_EXPERIMENTAL_BLOCKS, false);
@@ -46,14 +51,12 @@ public class VarLightConfiguration {
         plugin.getConfig().options().copyDefaults(true);
     }
 
-    @NotNull
-    public String getRequiredPermissionNode() {
-        //noinspection ConstantConditions The String literal "" is NOT null
-        return plugin.getConfig().getString(CONFIG_KEY_REQUIRED_PERMISSION, "");
+    public boolean isCheckingPermission() {
+        return plugin.getConfig().getBoolean(CONFIG_KEY_CHECK_PERMISSION);
     }
 
-    public void setRequiredPermissionNode(String permissionNode) {
-        plugin.getConfig().set(CONFIG_KEY_REQUIRED_PERMISSION, permissionNode);
+    public void setCheckPermission(boolean value) {
+        plugin.getConfig().set(CONFIG_KEY_CHECK_PERMISSION, value);
 
         save();
     }
@@ -78,28 +81,90 @@ public class VarLightConfiguration {
         return material;
     }
 
-    public GameMode getStepsizeGamemode() {
-        GameMode def = GameMode.CREATIVE;
-        String configGameMode = plugin.getConfig().getString(CONFIG_KEY_STEPSIZE_GAMEMODE, GameMode.CREATIVE.name());
-        GameMode gameMode;
+    public boolean isAllowedStepsizeGamemode(GameMode gameMode) {
+        switch (gameMode) {
+            case SURVIVAL: {
+                return canSurvivalUseStepsize();
+            }
 
-        try {
-            gameMode = GameMode.valueOf(configGameMode);
-        } catch (IllegalArgumentException e) {
-            plugin.getLogger().warning(String.format("Could not find a Gamemode with the given name \"%s\", defaulting to \"%s\"", configGameMode, def.name()));
-            return def;
+            case CREATIVE: {
+                return canCreativeUseStepsize();
+            }
+
+            case ADVENTURE: {
+                return canAdventureUseStepsize();
+            }
+
+            case SPECTATOR:
+            default: {
+                return false;
+            }
         }
+    }
 
-        if (gameMode == GameMode.SPECTATOR) {
-            plugin.getLogger().warning(String.format("Spectators cannot use VarLight, defaulting the Stepsize gamemode to \"%s\"", def.name()));
-            return def;
+    public boolean canSurvivalUseStepsize() {
+        return plugin.getConfig().getBoolean(CONFIG_KEY_STEPSIZE_ALLOW_SURVIVAL);
+    }
+
+    public boolean canCreativeUseStepsize() {
+        return plugin.getConfig().getBoolean(CONFIG_KEY_STEPSIZE_ALLOW_CREATIVE);
+    }
+
+    public boolean canAdventureUseStepsize() {
+        return plugin.getConfig().getBoolean(CONFIG_KEY_STEPSIZE_ALLOW_ADVENTURE);
+    }
+
+    public void setCanUseStepsize(GameMode gameMode, boolean value) {
+        switch (gameMode) {
+            case SURVIVAL: {
+                setCanSurvivalUseStepsize(value);
+                break;
+            }
+
+            case CREATIVE: {
+                setCanCreativeUseStepsize(value);
+                break;
+            }
+
+            case ADVENTURE: {
+                setCanAdventureUseStepsize(value);
+            }
         }
+    }
 
-        return gameMode;
+    public void setCanSurvivalUseStepsize(boolean value) {
+        plugin.getConfig().set(CONFIG_KEY_STEPSIZE_ALLOW_SURVIVAL, value);
+        save();
+    }
+
+    public void setCanCreativeUseStepsize(boolean value) {
+        plugin.getConfig().set(CONFIG_KEY_STEPSIZE_ALLOW_CREATIVE, value);
+        save();
+    }
+
+    public void setCanAdventureUseStepsize(boolean value) {
+        plugin.getConfig().set(CONFIG_KEY_STEPSIZE_ALLOW_ADVENTURE, value);
+        save();
+    }
+
+    public boolean isLogVerbose() {
+        return plugin.getConfig().getBoolean(CONFIG_KEY_LOG_VERBOSE);
+    }
+
+    public void setLogVerbose(boolean value) {
+        plugin.getConfig().set(CONFIG_KEY_LOG_VERBOSE, value);
+
+        save();
     }
 
     public boolean isLogDebug() {
-        return plugin.getConfig().getBoolean(CONFIG_KEY_LOG_DEBUG, true);
+        return plugin.getConfig().getBoolean(CONFIG_KEY_LOG_DEBUG);
+    }
+
+    public void setLogDebug(boolean value) {
+        plugin.getConfig().set(CONFIG_KEY_LOG_DEBUG, value);
+
+        save();
     }
 
     public int getAutosaveInterval() {
@@ -148,8 +213,22 @@ public class VarLightConfiguration {
         return true;
     }
 
-    public boolean hasReclaim() {
-        return plugin.getConfig().getBoolean(CONFIG_KEY_VARLIGHT_RECLAIM);
+    public void clearWorldList(WorldListType type) {
+        Objects.requireNonNull(type);
+
+        plugin.getConfig().set(type.getConfigPath(), new ArrayList<>());
+
+        save();
+    }
+
+    public boolean isReclaimEnabled() {
+        return plugin.getConfig().getBoolean(CONFIG_KEY_RECLAIM);
+    }
+
+    public void setReclaim(boolean value) {
+        plugin.getConfig().set(CONFIG_KEY_RECLAIM, value);
+
+        save();
     }
 
     public List<String> getWorldNames(WorldListType type) {
@@ -178,6 +257,12 @@ public class VarLightConfiguration {
 
     public boolean isCheckUpdateEnabled() {
         return plugin.getConfig().getBoolean(CONFIG_KEY_CHECK_UPDATE);
+    }
+
+    public void setCheckUpdate(boolean value) {
+        plugin.getConfig().set(CONFIG_KEY_CHECK_UPDATE, value);
+
+        save();
     }
 
     public boolean isAllowExperimentalBlocks() {

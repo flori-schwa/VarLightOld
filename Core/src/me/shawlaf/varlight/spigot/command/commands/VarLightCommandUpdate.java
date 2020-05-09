@@ -6,7 +6,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import me.shawlaf.command.brigadier.datatypes.ICoordinates;
 import me.shawlaf.varlight.spigot.LightUpdateResult;
-import me.shawlaf.varlight.spigot.VarLightPlugin;
+import me.shawlaf.varlight.spigot.command.VarLightCommand;
 import me.shawlaf.varlight.spigot.command.VarLightSubCommand;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.spigot.util.LightSourceUtil;
@@ -16,10 +16,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
-import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
-import static com.mojang.brigadier.builder.RequiredArgumentBuilder.argument;
-import static me.shawlaf.command.brigadier.argument.PositionArgumentType.position;
-import static me.shawlaf.command.brigadier.argument.WorldArgumentType.world;
 import static me.shawlaf.command.result.CommandResult.failure;
 import static me.shawlaf.command.result.CommandResult.successBroadcast;
 import static me.shawlaf.varlight.spigot.command.VarLightCommand.FAILURE;
@@ -28,24 +24,18 @@ import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition
 
 public class VarLightCommandUpdate extends VarLightSubCommand {
 
-    private static final RequiredArgumentBuilder<CommandSender, ICoordinates> ARG_POSITION = argument("position", position());
-    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_LIGHT_LEVEL = argument("light level", integer(0, 15));
-    private static final RequiredArgumentBuilder<CommandSender, World> ARG_WORLD = argument("world", world());
+    private static final RequiredArgumentBuilder<CommandSender, ICoordinates> ARG_POSITION = positionArgument("position");
+    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_LIGHT_LEVEL = integerArgument("light level", 0, 15);
+    private static final RequiredArgumentBuilder<CommandSender, World> ARG_WORLD = worldArgument("world");
 
-    public VarLightCommandUpdate(VarLightPlugin plugin) {
-        super(plugin, "update");
-    }
-
-    @NotNull
-    @Override
-    public String getSyntax() {
-        return " <position> <light level> [world (only if using console)]";
+    public VarLightCommandUpdate(VarLightCommand command) {
+        super(command, "update");
     }
 
     @NotNull
     @Override
     public String getDescription() {
-        return "Update the light level at the given position";
+        return "Update the light level at a specific position.";
     }
 
     @Override
@@ -116,7 +106,7 @@ public class VarLightCommandUpdate extends VarLightSubCommand {
             return FAILURE;
         }
 
-        LightUpdateResult result = LightSourceUtil.placeNewLightSource(plugin, location, toLight);
+        LightUpdateResult result = LightSourceUtil.placeNewLightSource(plugin, source, location, toLight);
 
         if (!result.successful()) {
             failure(this, source, result.getMessage());

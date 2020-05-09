@@ -1,28 +1,27 @@
 package me.shawlaf.varlight.spigot.command.commands.world;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import me.shawlaf.varlight.spigot.VarLightConfiguration;
-import me.shawlaf.varlight.spigot.VarLightPlugin;
+import me.shawlaf.varlight.spigot.command.VarLightCommand;
 import me.shawlaf.varlight.spigot.command.VarLightSubCommand;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 
-import static me.shawlaf.command.brigadier.argument.WorldArgumentType.world;
 import static me.shawlaf.command.result.CommandResult.*;
 import static me.shawlaf.varlight.spigot.command.VarLightCommand.FAILURE;
 import static me.shawlaf.varlight.spigot.command.VarLightCommand.SUCCESS;
 
+@Deprecated
 public class VarLightCommandWorld extends VarLightSubCommand {
 
     private static final String PARAM_WORLD = "world";
 
     private final VarLightConfiguration.WorldListType worldListType;
 
-    public VarLightCommandWorld(VarLightPlugin plugin, VarLightConfiguration.WorldListType listType) {
-        super(plugin, listType.getConfigPath());
+    public VarLightCommandWorld(VarLightCommand command, VarLightConfiguration.WorldListType listType) {
+        super(command, listType.getConfigPath());
 
         this.worldListType = listType;
     }
@@ -50,14 +49,18 @@ public class VarLightCommandWorld extends VarLightSubCommand {
 
         node.then(
                 LiteralArgumentBuilder.<CommandSender>literal("add")
-                        .then(RequiredArgumentBuilder.<CommandSender, World>argument(PARAM_WORLD, world())
-                                .executes(this::add))
+                        .then(
+                                worldArgument(PARAM_WORLD)
+                                        .executes(this::add)
+                        )
         );
 
         node.then(
                 LiteralArgumentBuilder.<CommandSender>literal("remove")
-                        .then(RequiredArgumentBuilder.<CommandSender, World>argument(PARAM_WORLD, world())
-                                .executes(this::remove))
+                        .then(
+                                worldArgument(PARAM_WORLD)
+                                        .executes(this::remove)
+                        )
         );
 
         node.then(

@@ -6,7 +6,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import me.shawlaf.command.brigadier.datatypes.ICoordinates;
 import me.shawlaf.varlight.spigot.LightUpdateResult;
-import me.shawlaf.varlight.spigot.VarLightPlugin;
+import me.shawlaf.varlight.spigot.command.VarLightCommand;
 import me.shawlaf.varlight.spigot.command.VarLightSubCommand;
 import me.shawlaf.varlight.spigot.nms.MaterialType;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
@@ -29,14 +29,10 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
-import static com.mojang.brigadier.builder.RequiredArgumentBuilder.argument;
-import static me.shawlaf.command.brigadier.argument.PositionArgumentType.position;
 import static me.shawlaf.command.result.CommandResult.failure;
 import static me.shawlaf.command.result.CommandResult.successBroadcast;
 import static me.shawlaf.varlight.spigot.command.VarLightCommand.FAILURE;
 import static me.shawlaf.varlight.spigot.command.VarLightCommand.SUCCESS;
-import static me.shawlaf.varlight.spigot.command.commands.arguments.CollectionArgumentType.collection;
 import static me.shawlaf.varlight.spigot.command.commands.arguments.MinecraftTypeArgumentType.minecraftType;
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toBlock;
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
@@ -44,13 +40,19 @@ import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition
 @SuppressWarnings("DuplicatedCode")
 public class VarLightCommandFill extends VarLightSubCommand {
 
-    private static final RequiredArgumentBuilder<CommandSender, ICoordinates> ARG_POS_1 = argument("pos1", position());
-    private static final RequiredArgumentBuilder<CommandSender, ICoordinates> ARG_POS_2 = argument("pos2", position());
+    public static final String ARG_NAME_POS1 = "position 1";
+    public static final String ARG_NAME_POS2 = "position 2";
+    public static final String ARG_NAME_LIGHT_LEVEL = "light level";
+    public static final String ARG_NAME_POSITIVE_FILTER = "posFilter";
+    public static final String ARG_NAME_NEGATIVE_FILTER = "negFilter";
 
-    private static final RequiredArgumentBuilder<CommandSender, Integer> ARG_LIGHT_LEVEL = argument("light level", integer(0, 15));
+    private static final RequiredArgumentBuilder<CommandSender, ICoordinates> ARG_POS_1 = positionArgument(ARG_NAME_POS1);
+    private static final RequiredArgumentBuilder<CommandSender, ICoordinates> ARG_POS_2 = positionArgument(ARG_NAME_POS2);
 
-    public VarLightCommandFill(VarLightPlugin plugin) {
-        super(plugin, "fill");
+    private WorldEditUtil worldEditUtil;
+
+    public VarLightCommandFill(VarLightCommand command) {
+        super(command, "fill");
     }
 
     @Override
@@ -58,19 +60,9 @@ public class VarLightCommandFill extends VarLightSubCommand {
         return "varlight.admin.fill";
     }
 
-//    @Override
-//    public boolean meetsRequirement(CommandSender commandSender) {
-//        return commandSender.hasPermission(getRequiredPermission()) && commandSender.hasPermission("varlight.admin.update");
-//    }
-
-    @Override
-    public @NotNull String getSyntax() {
-        return " <pos 1> <pos 2> <light level> [include|exclude] [<filters>...]";
-    }
-
     @Override
     public @NotNull String getDescription() {
-        return "Fills a larger area with custom light sources";
+        return "Fills a large area with custom light sources.";
     }
 
     @Override
@@ -78,70 +70,120 @@ public class VarLightCommandFill extends VarLightSubCommand {
         node.then(
                 ARG_POS_1.then(
                         ARG_POS_2.then(
-                                ARG_LIGHT_LEVEL
-                                        .executes(this::fillNoFilter)
+                                integerArgument(ARG_NAME_LIGHT_LEVEL, 0, 15)
+                                        .executes(c -> fillNoFilter(c, false))
                                         .then(
-                                                LiteralArgumentBuilder.<CommandSender>literal("include")
+                                                literalArgument("include")
                                                         .then(
-                                                                RequiredArgumentBuilder.<CommandSender, Collection<Material>>argument("posFilter", collection(minecraftType(plugin, MaterialType.BLOCK)))
-                                                                        .executes(this::fillPosFilter)
+                                                                collectionArgument(ARG_NAME_POSITIVE_FILTER, minecraftType(plugin, MaterialType.BLOCK))
+                                                                        .executes(c -> fillPosFilter(c, false))
                                                         )
                                         )
                                         .then(
-                                                LiteralArgumentBuilder.<CommandSender>literal("exclude")
+                                                literalArgument("exclude")
                                                         .then(
-                                                                RequiredArgumentBuilder.<CommandSender, Collection<Material>>argument("negFilter", collection(minecraftType(plugin, MaterialType.BLOCK)))
-                                                                        .executes(this::fillNegFilter)
+                                                                collectionArgument(ARG_NAME_NEGATIVE_FILTER, minecraftType(plugin, MaterialType.BLOCK))
+                                                                        .executes(c -> fillNegFilter(c, false))
                                                         )
                                         )
                         )
                 )
         );
 
+        if (Bukkit.getPluginManager().getPlugin("WorldEdit") != null) {
+            this.worldEditUtil = new WorldEditUtil(plugin);
+
+            node.then(
+                    integerArgument(ARG_NAME_LIGHT_LEVEL, 0, 15)
+                            .executes(c -> fillNoFilter(c, true))
+                            .then(
+                                    literalArgument("include")
+                                            .then(
+                                                    collectionArgument(ARG_NAME_POSITIVE_FILTER, minecraftType(plugin, MaterialType.BLOCK))
+                                                            .executes(c -> fillPosFilter(c, true))
+                                            )
+                            )
+                            .then(
+                                    literalArgument("exclude")
+                                            .then(
+                                                    collectionArgument(ARG_NAME_NEGATIVE_FILTER, minecraftType(plugin, MaterialType.BLOCK))
+                                                            .executes(c -> fillNegFilter(c, true))
+                                            )
+                            )
+            );
+        }
+
         return node;
     }
 
-    private int fillNoFilter(CommandContext<CommandSender> context) throws CommandSyntaxException {
-        if (!(context.getSource() instanceof Player)) {
-            failure(this, context.getSource(), "You must be a player to use this command");
+    private Location[] getSelection(CommandContext<CommandSender> context, boolean worldEdit) throws CommandSyntaxException {
+        Player player = (Player) context.getSource();
+
+        if (worldEdit) {
+            return worldEditUtil.getSelection(player, player.getWorld());
         }
 
-        Location a = context.getArgument(ARG_POS_1.getName(), ICoordinates.class).toLocation(context.getSource());
-        Location b = context.getArgument(ARG_POS_2.getName(), ICoordinates.class).toLocation(context.getSource());
+        Location a, b;
 
-        int lightLevel = context.getArgument(ARG_LIGHT_LEVEL.getName(), int.class);
+        a = context.getArgument(ARG_POS_1.getName(), ICoordinates.class).toLocation(context.getSource());
+        b = context.getArgument(ARG_POS_2.getName(), ICoordinates.class).toLocation(context.getSource());
 
-        return fill((Player) context.getSource(), a, b, lightLevel, x -> true);
+        return new Location[]{a, b};
     }
 
-    private int fillPosFilter(CommandContext<CommandSender> context) throws CommandSyntaxException {
+    private int fillNoFilter(CommandContext<CommandSender> context, boolean worldedit) throws CommandSyntaxException {
         if (!(context.getSource() instanceof Player)) {
             failure(this, context.getSource(), "You must be a player to use this command");
         }
 
-        Location a = context.getArgument(ARG_POS_1.getName(), ICoordinates.class).toLocation(context.getSource());
-        Location b = context.getArgument(ARG_POS_2.getName(), ICoordinates.class).toLocation(context.getSource());
+        Location[] selection = getSelection(context, worldedit);
 
-        int lightLevel = context.getArgument(ARG_LIGHT_LEVEL.getName(), int.class);
+        if (selection == null) {
+            failure(this, context.getSource(), "You do not have a WorldEdit selection in that world");
+            return FAILURE;
+        }
 
-        Collection<Material> positiveFilter = context.getArgument("posFilter", Collection.class);
+        int lightLevel = context.getArgument(ARG_NAME_LIGHT_LEVEL, int.class);
 
-        return fill((Player) context.getSource(), a, b, lightLevel, positiveFilter::contains);
+        return fill((Player) context.getSource(), selection[0], selection[1], lightLevel, x -> true);
     }
 
-    private int fillNegFilter(CommandContext<CommandSender> context) throws CommandSyntaxException {
+    private int fillPosFilter(CommandContext<CommandSender> context, boolean worldedit) throws CommandSyntaxException {
         if (!(context.getSource() instanceof Player)) {
             failure(this, context.getSource(), "You must be a player to use this command");
         }
 
-        Location a = context.getArgument(ARG_POS_1.getName(), ICoordinates.class).toLocation(context.getSource());
-        Location b = context.getArgument(ARG_POS_2.getName(), ICoordinates.class).toLocation(context.getSource());
+        Location[] selection = getSelection(context, worldedit);
 
-        int lightLevel = context.getArgument(ARG_LIGHT_LEVEL.getName(), int.class);
+        if (selection == null) {
+            failure(this, context.getSource(), "You do not have a WorldEdit selection in that world");
+            return FAILURE;
+        }
 
-        Collection<Material> negativeFilter = context.getArgument("negFilter", Collection.class);
+        int lightLevel = context.getArgument(ARG_NAME_LIGHT_LEVEL, int.class);
 
-        return fill((Player) context.getSource(), a, b, lightLevel, o -> !negativeFilter.contains(o));
+        Collection<Material> positiveFilter = context.getArgument(ARG_NAME_POSITIVE_FILTER, Collection.class);
+
+        return fill((Player) context.getSource(), selection[0], selection[1], lightLevel, positiveFilter::contains);
+    }
+
+    private int fillNegFilter(CommandContext<CommandSender> context, boolean worldedit) throws CommandSyntaxException {
+        if (!(context.getSource() instanceof Player)) {
+            failure(this, context.getSource(), "You must be a player to use this command");
+        }
+
+        Location[] selection = getSelection(context, worldedit);
+
+        if (selection == null) {
+            failure(this, context.getSource(), "You do not have a WorldEdit selection in that world");
+            return FAILURE;
+        }
+
+        int lightLevel = context.getArgument(ARG_NAME_LIGHT_LEVEL, int.class);
+
+        Collection<Material> negativeFilter = context.getArgument(ARG_NAME_NEGATIVE_FILTER, Collection.class);
+
+        return fill((Player) context.getSource(), selection[0], selection[1], lightLevel, o -> !negativeFilter.contains(o));
     }
 
     private int fill(Player source, Location pos1, Location pos2, int lightLevel, Predicate<Material> filter) {
@@ -191,7 +233,7 @@ public class VarLightCommandFill extends VarLightSubCommand {
                     continue;
                 }
 
-                LightUpdateResult result = LightSourceUtil.placeNewLightSource(plugin, block.getLocation(), lightLevel, false);
+                LightUpdateResult result = LightSourceUtil.placeNewLightSource(plugin, source, block.getLocation(), lightLevel, false);
 
                 if (!result.successful()) {
                     ++failed;
