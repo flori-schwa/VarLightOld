@@ -216,6 +216,7 @@ public class VarLightCommandFill extends VarLightSubCommand {
 
             IntPosition next;
 
+            Set<IntPosition> blockUpdates = new HashSet<>();
             Set<ChunkCoords> chunksToUpdate = new HashSet<>();
 
             while (regionIterator.hasNext()) {
@@ -237,22 +238,22 @@ public class VarLightCommandFill extends VarLightSubCommand {
 
                 if (!result.successful()) {
                     ++failed;
+                    continue;
                 } else {
                     ++updated;
                 }
 
+                blockUpdates.add(next);
                 chunksToUpdate.addAll(plugin.getNmsAdapter().collectChunkPositionsToUpdate(new ChunkCoords(block.getX() >> 4, block.getZ() >> 4)));
             }
 
-            for (ChunkCoords chunkCoords : chunksToUpdate) {
-                plugin.getNmsAdapter().updateBlocks(world, chunkCoords).thenRun(
-                        () -> {
-                            Bukkit.getScheduler().runTask(plugin, () -> {
-                                plugin.getNmsAdapter().updateChunk(world, chunkCoords);
-                            });
-                        }
-                );
-            }
+            plugin.getNmsAdapter().updateBlocks(world, blockUpdates).join(); // Wait for all block updates to finish
+
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                for (ChunkCoords chunkCoords : chunksToUpdate) {
+                    plugin.getNmsAdapter().updateChunk(world, chunkCoords);
+                }
+            });
 
             progressReport.finish();
 

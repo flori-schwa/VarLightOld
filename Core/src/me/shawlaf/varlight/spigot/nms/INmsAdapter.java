@@ -38,6 +38,8 @@ public interface INmsAdapter {
 
     CompletableFuture<Void> updateBlocks(World world, ChunkCoords chunkCoords);
 
+    CompletableFuture<Void> updateBlocks(World world, Collection<IntPosition> positions);
+
     CompletableFuture<Void> updateBlock(Location at);
 
     boolean isIllegalBlock(@NotNull Material material);

@@ -2,6 +2,7 @@ package me.shawlaf.varlight.spigot.nms;
 
 import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.util.ChunkCoords;
+import me.shawlaf.varlight.util.IntPosition;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -52,6 +53,11 @@ public class NmsAdapter implements INmsAdapter {
 
     @Override
     public CompletableFuture<Void> updateBlocks(World world, ChunkCoords chunkCoords) {
+        throw new AbstractMethodError();
+    }
+
+    @Override
+    public CompletableFuture<Void> updateBlocks(World world, Collection<IntPosition> positions) {
         throw new AbstractMethodError();
     }
 

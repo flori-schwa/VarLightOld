@@ -159,6 +159,25 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
+    public CompletableFuture<Void> updateBlocks(World world, Collection<IntPosition> positions) {
+        WorldServer nmsWorld = getNmsWorld(world);
+
+        WorldLightSourceManager manager = plugin.getManager(world);
+
+        if (manager == null) {
+            throw new LightUpdateFailedException("VarLight not enabled in world " + world.getName());
+        }
+
+        LightEngineBlock leb = ((LightEngineBlock) nmsWorld.e().a(EnumSkyBlock.BLOCK));
+
+        return scheduleToLightMailbox(nmsWorld, () -> {
+            for (IntPosition position : positions) {
+                leb.a(new BlockPosition(position.x, position.y, position.z));
+            }
+        });
+    }
+
+    @Override
     public CompletableFuture<Void> updateBlock(Location at) {
         WorldServer nmsWorld = getNmsWorld(at.getWorld());
 
