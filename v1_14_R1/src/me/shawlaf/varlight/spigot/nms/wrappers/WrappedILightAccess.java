@@ -22,7 +22,7 @@ import java.util.Map;
 
 public class WrappedILightAccess implements ILightAccess, Listener {
 
-    private final Map<ChunkCoords, IBlockAccess> proxies = Collections.synchronizedMap(new HashMap<>());
+    private final Map<ChunkCoords, IChunkAccess> proxies = Collections.synchronizedMap(new HashMap<>());
 
     private final VarLightPlugin plugin;
     private final WorldServer world;
@@ -34,7 +34,7 @@ public class WrappedILightAccess implements ILightAccess, Listener {
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
-    private int getCustomLuminance(IBlockAccess blockAccess, BlockPosition bPos) {
+    private int getCustomLuminance(IChunkAccess blockAccess, BlockPosition bPos) {
         int vanilla = blockAccess.getType(bPos).h();
 
         WorldLightSourceManager manager = plugin.getManager(world.getWorld());
@@ -46,16 +46,16 @@ public class WrappedILightAccess implements ILightAccess, Listener {
         return manager.getCustomLuminance(new IntPosition(bPos.getX(), bPos.getY(), bPos.getZ()), vanilla);
     }
 
-    private IBlockAccess createProxy(ChunkCoords chunkCoords) {
-        IBlockAccess toWrap = getWrapped().c(chunkCoords.x, chunkCoords.z);
+    private IChunkAccess createProxy(ChunkCoords chunkCoords) {
+        IChunkAccess toWrap = (IChunkAccess) getWrapped().c(chunkCoords.x, chunkCoords.z);
 
         if (toWrap == null) {
             return null;
         }
 
-        return (IBlockAccess) Proxy.newProxyInstance(
-                IBlockAccess.class.getClassLoader(),
-                new Class[]{IBlockAccess.class},
+        return (IChunkAccess) Proxy.newProxyInstance(
+                IChunkAccess.class.getClassLoader(),
+                new Class[]{IChunkAccess.class},
 
                 (proxy, method, args) -> {
                     if (method.getName().equals("h")) {
@@ -73,7 +73,7 @@ public class WrappedILightAccess implements ILightAccess, Listener {
         ChunkCoords chunkCoords = new ChunkCoords(i, i1);
 
         synchronized (proxies) {
-            IBlockAccess res = createProxy(chunkCoords);
+            IChunkAccess res = createProxy(chunkCoords);
 
             if (res != null && !proxies.containsKey(chunkCoords)) {
                 proxies.put(chunkCoords, createProxy(chunkCoords));
