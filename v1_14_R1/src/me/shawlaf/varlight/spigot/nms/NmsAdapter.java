@@ -140,9 +140,9 @@ public class NmsAdapter implements INmsAdapter {
             throw new LightUpdateFailedException("VarLight not enabled in world " + world.getName());
         }
 
-        IBlockAccess blockAccess = nmsWorld.getChunkProvider().c(chunkCoords.x, chunkCoords.z);
+        IChunkAccess chunkAccess = (IChunkAccess) nmsWorld.getChunkProvider().c(chunkCoords.x, chunkCoords.z);
 
-        Function<BlockPosition, Integer> h = bPos -> manager.getCustomLuminance(new IntPosition(bPos.getX(), bPos.getY(), bPos.getZ()), () -> blockAccess.h(bPos));
+        Function<BlockPosition, Integer> h = bPos -> manager.getCustomLuminance(new IntPosition(bPos.getX(), bPos.getY(), bPos.getZ()), () -> chunkAccess.h(bPos));
 
         LightEngineBlock leb = ((LightEngineBlock) nmsWorld.getChunkProvider().getLightEngine().a(EnumSkyBlock.BLOCK));
 
