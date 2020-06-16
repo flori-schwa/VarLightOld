@@ -36,6 +36,7 @@
     <property name="lib-varlight-core" value="VarLightCore.jar"/>
     <property name="lib-worldedit" value="worldedit-bukkit-7.1.0.jar"/>
     <property name="lib-worldguard" value="worldguard-bukkit-7.0.2.jar"/>
+    <property name="lib-joor" value="joor-java-8-0.9.13.jar"/>
 
     <target name="clean">
         <delete dir="${build}"/>
@@ -101,6 +102,7 @@
                     <include name="**/${lib-varlight-core}"/>
                     <include name="**/${lib-worldedit}"/>
                     <include name="**/${lib-worldguard}"/>
+                    <include name="**/${lib-joor}"/>
                 </fileset>
             </classpath>
         </javac>
@@ -149,6 +151,7 @@
                             <include name="**/${lib-annotations}"/>
                             <include name="**/${lib-lombok}"/>
                             <include name="**/${lib-varlight-core}"/>
+                            <include name="**/${lib-joor}" />
                             <libraries/>
                         </fileset>
                     </classpath>
@@ -156,11 +159,11 @@
 
                 <jar destfile="${dist}/VarLight-${plugin.version}-@{version}.jar" basedir="@{out-dir}">
                     <zipgroupfileset dir="${lib-dir}">
-                        <include name="${lib-annotations}"/>
-                        <include name="${lib-command-api}"/>
+                        <include name="**/${lib-annotations}"/>
+                        <include name="**/${lib-command-api}"/>
                         <include name="**/${lib-varlight-core}"/>
+                        <include name="**/${lib-joor}"/>
                     </zipgroupfileset>
-
                     <shaded/>
                 </jar>
             </sequential>

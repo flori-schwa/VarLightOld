@@ -29,5 +29,6 @@
     </orderEntry>
     <orderEntry type="library" name="LightAPI-fork-3.4.2" level="project" />
     <orderEntry type="library" name="VarLightCore" level="project" />
+    <orderEntry type="library" name="org.jooq:joor-java-8:0.9.13" level="project" />
   </component>
 </module>

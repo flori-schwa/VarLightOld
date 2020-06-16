@@ -3,7 +3,6 @@ package me.shawlaf.varlight.spigot.nms;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.nms.wrappers.WrappedILightAccess;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
-import me.shawlaf.varlight.spigot.util.ReflectionHelper;
 import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
 import net.minecraft.server.v1_14_R1.*;
@@ -18,9 +17,9 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.joor.Reflect;
 
 import java.io.File;
-import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -59,13 +58,7 @@ public class NmsAdapter implements INmsAdapter {
 
         LightEngineBlock leb = ((LightEngineBlock) let.a(EnumSkyBlock.BLOCK));
 
-        try {
-            Field lightAccessField = LightEngineLayer.class.getDeclaredField("a");
-
-            ReflectionHelper.Safe.set(leb, lightAccessField, wrappedILightAccess);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new VarLightInitializationException("Failed to inject custom ILightAccess into \"" + world.getName() + "\"'s Light Engine: " + e.getMessage(), e);
-        }
+        Reflect.on(leb).set("a", wrappedILightAccess);
     }
 
     @Override
@@ -330,14 +323,7 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     private CompletableFuture<Void> scheduleToLightMailbox(LightEngineThreaded lightEngine, Runnable task) {
-        ThreadedMailbox<Runnable> mailbox;
-
-        try {
-            mailbox = ReflectionHelper.Safe.get(lightEngine, "b");
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new LightUpdateFailedException(e);
-        }
-
+        ThreadedMailbox<Runnable> mailbox = Reflect.on(lightEngine).get("b");
         CompletableFuture<Void> future = new CompletableFuture<>();
 
         mailbox.a(() -> {
