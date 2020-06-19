@@ -9,6 +9,7 @@ import me.shawlaf.varlight.spigot.persistence.migrate.LightDatabaseMigratorSpigo
 import me.shawlaf.varlight.spigot.persistence.migrate.data.JsonToNLSMigration;
 import me.shawlaf.varlight.spigot.persistence.migrate.data.VLDBToNLSMigration;
 import me.shawlaf.varlight.spigot.persistence.migrate.structure.MoveVarlightRootFolder;
+import me.shawlaf.varlight.spigot.prompt.ChatPromptManager;
 import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.NumericMajorMinorVersion;
 import org.bukkit.*;
@@ -53,6 +54,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     private AutosaveManager autosaveManager;
     private DebugManager debugManager;
     private LightDatabaseMigratorSpigot databaseMigrator;
+    private ChatPromptManager chatPromptManager;
 
     private Material lightUpdateItem;
 
@@ -95,6 +97,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         configuration = new VarLightConfiguration(this);
         debugManager = new DebugManager(this);
         databaseMigrator = new LightDatabaseMigratorSpigot(this);
+        chatPromptManager = new ChatPromptManager(this);
 
         databaseMigrator.addDataMigrations(
                 new JsonToNLSMigration(this),
@@ -214,6 +217,10 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     public LightDatabaseMigratorSpigot getDatabaseMigrator() {
         return databaseMigrator;
+    }
+
+    public ChatPromptManager getChatPromptManager() {
+        return chatPromptManager;
     }
 
     public Tag<Material> getAllowedBlocks() {

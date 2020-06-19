@@ -20,10 +20,12 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
+import java.util.function.ToIntFunction;
 
 public abstract class VarLightSubCommand implements ICommandAccess<VarLightPlugin> {
 
@@ -71,6 +73,18 @@ public abstract class VarLightSubCommand implements ICommandAccess<VarLightPlugi
 
     protected static RequiredArgumentBuilder<CommandSender, Player> playerArgument(String name) {
         return RequiredArgumentBuilder.argument(name, PlayerArgumentType.player());
+    }
+
+    protected static void suggestCoordinate(RequiredArgumentBuilder<CommandSender, Integer> coordinateArgument, ToIntFunction<Entity> coordinateSupplier) {
+        coordinateArgument.suggests(((context, builder) -> {
+            if (!(context.getSource() instanceof Entity)) {
+                return builder.buildFuture();
+            }
+
+            builder.suggest(coordinateSupplier.applyAsInt((Entity) context.getSource()));
+
+            return builder.buildFuture();
+        }));
     }
 
     public abstract @NotNull LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> node);
