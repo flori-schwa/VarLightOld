@@ -20,5 +20,6 @@
     <orderEntry type="library" name="org.jooq:joor-java-8:0.9.13" level="project" />
     <orderEntry type="library" name="VarLightCore" level="project" />
     <orderEntry type="library" name="spigot-1.16.1" level="project" />
+    <orderEntry type="module" module-name="Core" />
   </component>
 </module>

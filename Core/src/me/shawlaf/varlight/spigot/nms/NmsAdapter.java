@@ -5,14 +5,17 @@ import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.net.URL;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 @ForMinecraft(version = "UNDEFINED")
 public class NmsAdapter implements INmsAdapter {
@@ -93,6 +96,21 @@ public class NmsAdapter implements INmsAdapter {
 
     @Override
     public String getDefaultLevelName() {
+        throw new AbstractMethodError();
+    }
+
+    @Override
+    public CompletableFuture<Void> disableDatapack(Server server, String name) {
+        throw new AbstractMethodError();
+    }
+
+    @Override
+    public CompletableFuture<Void> enableDatapack(Server server, String name) {
+        throw new AbstractMethodError();
+    }
+
+    @Override
+    public void addVarLightDatapackSource(Server bukkitServer, Supplier<URL> urlSupplier) {
         throw new AbstractMethodError();
     }
 }

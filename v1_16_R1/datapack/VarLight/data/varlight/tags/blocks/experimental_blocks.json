@@ -1,0 +1,22 @@
+{
+  "replace": true,
+  "values": [
+    "minecraft:barrel",
+    "minecraft:blast_furnace",
+    "minecraft:brewing_stand",
+    "minecraft:cartography_table",
+    "minecraft:crafting_table",
+    "minecraft:dispenser",
+    "minecraft:dropper",
+    "minecraft:enchanting_table",
+    "minecraft:fletching_table",
+    "minecraft:furnace",
+    "minecraft:ice",
+    "minecraft:loom",
+    "minecraft:note_block",
+    "minecraft:piston",
+    "minecraft:smoker",
+    "minecraft:sticky_piston",
+    "minecraft:stonecutter"
+  ]
+}

@@ -10,13 +10,13 @@
     <property name="core-build" location="${build}/Core"/>
     <property name="core-res" location="Core/resources"/>
 
-    <property name="v1_14_R1-src" location="v1_14_R1/src"/>
-    <property name="v1_14_R1-datapack" location="v1_14_R1/datapack/Varlight"/>
-    <property name="v1_14_R1-build" location="${build}/v1_14_R1"/>
-
     <property name="v1_15_R1-src" location="v1_15_R1/src"/>
     <property name="v1_15_R1-datapack" location="v1_15_R1/datapack/VarLight"/>
     <property name="v1_15_R1-build" location="${build}/v1_15_R1"/>
+
+    <property name="v1_16_R1-src" location="v1_16_R1/src"/>
+    <property name="v1_16_R1-datapack" location="v1_16_R1/datapack/Varlight"/>
+    <property name="v1_16_R1-build" location="${build}/v1_16_R1"/>
 
     <!--    <property name="paper-version" value="226"/>-->
     <property name="use-compiler" value="modern"/>
@@ -46,7 +46,7 @@
     <target name="init" depends="clean">
         <mkdir dir="${build}"/>
         <mkdir dir="${core-build}"/>
-        <mkdir dir="${v1_14_R1-build}"/>
+        <mkdir dir="${v1_16_R1-build}"/>
         <mkdir dir="${v1_15_R1-build}"/>
         <mkdir dir="${dist}"/>
     </target>
@@ -128,9 +128,9 @@
 
                 <zip basedir="@{datapack-src}" destfile="@{out-dir}/VarLight.zip"/>
 
-<!--                <copy todir="@{out-dir}">-->
-<!--                    <fileset dir="@{res-dir}"/>-->
-<!--                </copy>-->
+                <!--                <copy todir="@{out-dir}">-->
+                <!--                    <fileset dir="@{res-dir}"/>-->
+                <!--                </copy>-->
 
                 <replace file="@{out-dir}/plugin.yml" token="api.version" value="@{api-version}"/>
 
@@ -151,7 +151,7 @@
                             <include name="**/${lib-annotations}"/>
                             <include name="**/${lib-lombok}"/>
                             <include name="**/${lib-varlight-core}"/>
-                            <include name="**/${lib-joor}" />
+                            <include name="**/${lib-joor}"/>
                             <libraries/>
                         </fileset>
                     </classpath>
@@ -169,19 +169,19 @@
             </sequential>
         </macrodef>
 
-<!--        <build version="MC-1.14.x" src-dir="${v1_14_R1-src}" datapack-src="${v1_14_R1-datapack}" out-dir="${v1_14_R1-build}"-->
-<!--               api-version="1.14">-->
-<!--            <libraries>-->
-<!--                <include name="**/spigot-1.14.4.jar"/>-->
-<!--                &lt;!&ndash;                <include name="**/${lib-light-api}"/>&ndash;&gt;-->
-<!--            </libraries>-->
-<!--        </build>-->
-
-        <build version="MC-1.15.x" src-dir="${v1_15_R1-src}" datapack-src="${v1_15_R1-datapack}" out-dir="${v1_15_R1-build}"
-               api-version="1.14">
+        <build version="MC-1.15.x" src-dir="${v1_15_R1-src}" datapack-src="${v1_15_R1-datapack}"
+               out-dir="${v1_15_R1-build}"
+               api-version="1.15">
             <libraries>
                 <include name="**/spigot-1.15.2.jar"/>
-                <!--                <include name="**/${lib-light-api}"/>-->
+            </libraries>
+        </build>
+
+        <build version="MC-1.16.x" src-dir="${v1_16_R1-src}" datapack-src="${v1_16_R1-datapack}"
+               out-dir="${v1_16_R1-build}"
+               api-version="1.15">
+            <libraries>
+                <include name="**/spigot-1.16.1.jar"/>
             </libraries>
         </build>
     </target>
