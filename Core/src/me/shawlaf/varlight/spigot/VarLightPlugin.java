@@ -31,10 +31,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.*;
 
 import static me.shawlaf.command.result.CommandResult.failure;
@@ -68,6 +64,19 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             startupError(String.format("Failed to initialize VarLight for Minecraft Version \"%s\": %s", Bukkit.getVersion(), e.getMessage()));
             throw e;
         }
+
+//        File defaultWorldFolder = new File(Bukkit.getWorldContainer(), nmsAdapter.getDefaultLevelName());
+//        File dataPackRepository = new File(defaultWorldFolder, "datapacks");
+//
+//        dataPackRepository.mkdirs();
+//
+//        File varLightDataPack = new File(dataPackRepository, "VarLight.zip");
+//
+//        if (varLightDataPack.exists()) {
+//            if (!varLightDataPack.delete()) {
+//                startupError("Failed to delete existing VarLight Datapack!");
+//            }
+//        }
     }
 
     @Override
@@ -78,26 +87,27 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         getLogger().info(String.format("Loading VarLight for Minecraft version \"%s\"", nmsAdapter.getForMinecraftVersion()));
 
-        File defaultWorldFolder = new File(Bukkit.getWorldContainer(), nmsAdapter.getDefaultLevelName());
-        File dataPackRepository = new File(defaultWorldFolder, "datapacks");
-
-        dataPackRepository.mkdirs();
-
-        File varLightDataPack = new File(dataPackRepository, "VarLight.zip");
-
-        if (varLightDataPack.exists()) {
-            if (!varLightDataPack.delete()) {
-                startupError("Failed to delete existing VarLight Datapack!");
-                return;
-            }
-        }
-
-        exportResource("/VarLight.zip", varLightDataPack);
-
         configuration = new VarLightConfiguration(this);
         debugManager = new DebugManager(this);
         databaseMigrator = new LightDatabaseMigratorSpigot(this);
         chatPromptManager = new ChatPromptManager(this);
+
+        nmsAdapter.addVarLightDatapackSource(Bukkit.getServer(), () -> getClass().getResource("/VarLight.zip"));
+
+//        debugManager.logDebugAction(Bukkit.getConsoleSender(), () -> "Unloading VarLight Datapack");
+//        nmsAdapter.disableDatapack(Bukkit.getServer(), "file/VarLight.zip").thenRun(() -> {
+//            debugManager.logDebugAction(Bukkit.getConsoleSender(), () -> "Deleting old VarLight Datapack");
+//
+//
+//
+//            debugManager.logDebugAction(Bukkit.getConsoleSender(), () -> "Exporting VarLight Datapack");
+//            exportResource("/VarLight.zip", varLightDataPack);
+//
+//            debugManager.logDebugAction(Bukkit.getConsoleSender(), () -> "Enabling VarLight Datapack");
+//            nmsAdapter.enableDatapack(Bukkit.getServer(), "file/VarLight.zip").thenRun(() -> {
+//                debugManager.logDebugAction(Bukkit.getConsoleSender(), () -> "Enabled VarLight Datapack");
+//            });
+//        });
 
         databaseMigrator.addDataMigrations(
                 new JsonToNLSMigration(this),
@@ -139,6 +149,8 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             throw e;
         }
 
+        nmsAdapter.enableDatapack(Bukkit.getServer(), INmsAdapter.DATAPACK_IDENT);
+
         configuration.getVarLightEnabledWorlds().forEach(this::enableInWorld);
 
         loadLightUpdateItem();
@@ -164,6 +176,8 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         if (!doLoad) {
             return;
         }
+
+        nmsAdapter.disableDatapack(Bukkit.getServer(), INmsAdapter.DATAPACK_IDENT); // Suppress the "Missing Datapack" message on next startup
 
         nmsAdapter.onDisable();
 
@@ -538,18 +552,18 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         return String.format("[%d, %d, %d]", location.getBlockX(), location.getBlockY(), location.getBlockZ());
     }
 
-    private void exportResource(String path, File toFile) {
-        byte[] buffer = new byte[8 * 1024];
-        int read;
-
-        try (InputStream in = getClass().getResourceAsStream(path)) {
-            try (FileOutputStream fos = new FileOutputStream(toFile)) {
-                while ((read = in.read(buffer, 0, buffer.length)) > 0) {
-                    fos.write(buffer, 0, read);
-                }
-            }
-        } catch (IOException e) {
-            throw new VarLightInitializationException(e.getMessage(), e);
-        }
-    }
+//    private void exportResource(String path, File toFile) {
+//        byte[] buffer = new byte[8 * 1024];
+//        int read;
+//
+//        try (InputStream in = getClass().getResourceAsStream(path)) {
+//            try (FileOutputStream fos = new FileOutputStream(toFile)) {
+//                while ((read = in.read(buffer, 0, buffer.length)) > 0) {
+//                    fos.write(buffer, 0, read);
+//                }
+//            }
+//        } catch (IOException e) {
+//            throw new VarLightInitializationException(e.getMessage(), e);
+//        }
+//    }
 }

@@ -1,17 +1,20 @@
 package me.shawlaf.varlight.spigot.nms;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.nms.wrappers.WrappedILightAccess;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
-import net.minecraft.server.v1_14_R1.*;
+import net.minecraft.server.v1_16_R1.*;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.*;
-import org.bukkit.craftbukkit.v1_14_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_14_R1.inventory.CraftItemStack;
-import org.bukkit.craftbukkit.v1_14_R1.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.v1_16_R1.CraftServer;
+import org.bukkit.craftbukkit.v1_16_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_16_R1.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.v1_16_R1.util.CraftMagicNumbers;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -20,14 +23,22 @@ import org.jetbrains.annotations.Nullable;
 import org.joor.Reflect;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Proxy;
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
 
-@ForMinecraft(version = "1.14.x")
+@ForMinecraft(version = "1.16.x")
 public class NmsAdapter implements INmsAdapter {
 
     private final VarLightPlugin plugin;
@@ -36,10 +47,10 @@ public class NmsAdapter implements INmsAdapter {
     public NmsAdapter(VarLightPlugin plugin) {
         this.plugin = plugin;
 
-        net.minecraft.server.v1_14_R1.ItemStack nmsStack = new net.minecraft.server.v1_14_R1.ItemStack(Items.STICK);
+        net.minecraft.server.v1_16_R1.ItemStack nmsStack = new net.minecraft.server.v1_16_R1.ItemStack(Items.STICK);
 
         nmsStack.addEnchantment(Enchantments.DURABILITY, 1);
-        nmsStack.a("CustomType", new NBTTagString("varlight:debug_stick"));
+        nmsStack.a("CustomType", NBTTagString.a("varlight:debug_stick"));
 
         this.varlightDebugStick = CraftItemStack.asBukkitCopy(nmsStack);
         ItemMeta meta = varlightDebugStick.getItemMeta();
@@ -82,7 +93,7 @@ public class NmsAdapter implements INmsAdapter {
     @NotNull
     @Override
     public String getLocalizedBlockName(Material material) {
-        return LocaleLanguage.a().a(CraftMagicNumbers.getBlock(material).l());
+        return LocaleLanguage.a().a(CraftMagicNumbers.getBlock(material).i());
     }
 
     @NotNull
@@ -137,7 +148,7 @@ public class NmsAdapter implements INmsAdapter {
 
         Function<BlockPosition, Integer> h = bPos -> manager.getCustomLuminance(new IntPosition(bPos.getX(), bPos.getY(), bPos.getZ()), () -> chunkAccess.h(bPos));
 
-        LightEngineBlock leb = ((LightEngineBlock) nmsWorld.getChunkProvider().getLightEngine().a(EnumSkyBlock.BLOCK));
+        LightEngineBlock leb = ((LightEngineBlock) nmsWorld.e().a(EnumSkyBlock.BLOCK));
 
         return scheduleToLightMailbox(nmsWorld, () -> {
             StreamSupport.stream(BlockPosition.b(
@@ -161,7 +172,7 @@ public class NmsAdapter implements INmsAdapter {
             throw new LightUpdateFailedException("VarLight not enabled in world " + world.getName());
         }
 
-        LightEngineBlock leb = ((LightEngineBlock) nmsWorld.getChunkProvider().getLightEngine().a(EnumSkyBlock.BLOCK));
+        LightEngineBlock leb = ((LightEngineBlock) nmsWorld.e().a(EnumSkyBlock.BLOCK));
 
         return scheduleToLightMailbox(nmsWorld, () -> {
             for (IntPosition position : positions) {
@@ -180,7 +191,7 @@ public class NmsAdapter implements INmsAdapter {
             throw new LightUpdateFailedException("VarLight not enabled in world " + at.getWorld().getName());
         }
 
-        LightEngineBlock leb = ((LightEngineBlock) nmsWorld.getChunkProvider().getLightEngine().a(EnumSkyBlock.BLOCK));
+        LightEngineBlock leb = ((LightEngineBlock) nmsWorld.e().a(EnumSkyBlock.BLOCK));
 
         return scheduleToLightMailbox(nmsWorld, () -> {
             leb.a(new BlockPosition(at.getBlockX(), at.getBlockY(), at.getBlockZ()));
@@ -188,7 +199,7 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     private void updateChunk(WorldServer worldServer, ChunkCoords chunkCoords) {
-        LightEngine let = worldServer.getChunkProvider().getLightEngine();
+        LightEngine let = worldServer.e();
 
         WorldLightSourceManager manager = plugin.getManager(worldServer.getWorld());
 
@@ -202,7 +213,7 @@ public class NmsAdapter implements INmsAdapter {
             Bukkit.getScheduler().runTask(plugin, () -> {
                 for (ChunkCoords toSendClientUpdate : collectChunkPositionsToUpdate(chunkCoords)) {
                     ChunkCoordIntPair chunkCoordIntPair = new ChunkCoordIntPair(toSendClientUpdate.x, toSendClientUpdate.z);
-                    PacketPlayOutLightUpdate ppolu = new PacketPlayOutLightUpdate(chunkCoordIntPair, let);
+                    PacketPlayOutLightUpdate ppolu = new PacketPlayOutLightUpdate(chunkCoordIntPair, let, true);
 
                     worldServer.getChunkProvider().playerChunkMap.a(chunkCoordIntPair, false)
                             .forEach(e -> e.playerConnection.sendPacket(ppolu));
@@ -239,26 +250,26 @@ public class NmsAdapter implements INmsAdapter {
     @NotNull
     @Override
     public ItemStack getVarLightDebugStick() {
-        net.minecraft.server.v1_14_R1.ItemStack nmsStack = CraftItemStack.asNMSCopy(varlightDebugStick);
+        net.minecraft.server.v1_16_R1.ItemStack nmsStack = CraftItemStack.asNMSCopy(varlightDebugStick);
 
         UUID id = UUID.randomUUID();
 
-        nmsStack.a("idLeast", new NBTTagLong(id.getLeastSignificantBits()));
-        nmsStack.a("idMost", new NBTTagLong(id.getMostSignificantBits()));
+        nmsStack.a("idLeast", NBTTagLong.a(id.getLeastSignificantBits()));
+        nmsStack.a("idMost", NBTTagLong.a(id.getMostSignificantBits()));
 
         return CraftItemStack.asBukkitCopy(nmsStack);
     }
 
     @Override
     public ItemStack makeGlowingStack(ItemStack base, int lightLevel) {
-        net.minecraft.server.v1_14_R1.ItemStack nmsStack = new net.minecraft.server.v1_14_R1.ItemStack(
+        net.minecraft.server.v1_16_R1.ItemStack nmsStack = new net.minecraft.server.v1_16_R1.ItemStack(
                 CraftMagicNumbers.getItem(base.getType()),
                 base.getAmount()
         );
 
         lightLevel &= 0xF;
 
-        nmsStack.a("varlight:glowing", new NBTTagInt(lightLevel));
+        nmsStack.a("varlight:glowing", NBTTagInt.a(lightLevel));
 
         ItemStack stack = CraftItemStack.asBukkitCopy(nmsStack);
 
@@ -274,7 +285,7 @@ public class NmsAdapter implements INmsAdapter {
 
     @Override
     public int getGlowingValue(ItemStack glowingStack) {
-        net.minecraft.server.v1_14_R1.ItemStack nmsStack = CraftItemStack.asNMSCopy(glowingStack);
+        net.minecraft.server.v1_16_R1.ItemStack nmsStack = CraftItemStack.asNMSCopy(glowingStack);
 
         NBTTagCompound tag = nmsStack.getTag();
 
@@ -291,7 +302,7 @@ public class NmsAdapter implements INmsAdapter {
             return false;
         }
 
-        net.minecraft.server.v1_14_R1.ItemStack nmsStack = CraftItemStack.asNMSCopy(itemStack);
+        net.minecraft.server.v1_16_R1.ItemStack nmsStack = CraftItemStack.asNMSCopy(itemStack);
 
         NBTTagCompound tag = nmsStack.getTag();
 
@@ -305,8 +316,7 @@ public class NmsAdapter implements INmsAdapter {
     @Override
     public @NotNull File getRegionRoot(World world) {
         WorldServer nmsWorld = ((CraftWorld) world).getHandle();
-
-        return nmsWorld.worldProvider.getDimensionManager().a(world.getWorldFolder());
+        return Reflect.on(nmsWorld.getChunkProvider().playerChunkMap).get("w");
     }
 
     @Override
@@ -314,12 +324,117 @@ public class NmsAdapter implements INmsAdapter {
         return ((DedicatedServer) MinecraftServer.getServer()).propertyManager.getProperties().levelName;
     }
 
+    @Override
+    public CompletableFuture<Void> disableDatapack(Server bukkitServer, String name) {
+        final MinecraftServer server = ((CraftServer) bukkitServer).getHandle().getServer();
+
+        ResourcePackRepository<ResourcePackLoader> repo = server.getResourcePackRepository();
+        ResourcePackLoader loader = repo.a(name);
+
+        if (loader == null) {
+            return CompletableFuture.completedFuture(null); // Unknown Datapack
+        }
+
+        List<ResourcePackLoader> activePacksCopy = Lists.newArrayList(repo.e()); // Create a copy of all active Resource Packs
+        activePacksCopy.remove(loader); // Remove the target Resource Pack
+
+        return server.a(activePacksCopy.stream().map(ResourcePackLoader::e).collect(Collectors.toList()));
+    }
+
+    @Override
+    public CompletableFuture<Void> enableDatapack(Server bukkitServer, String name) {
+        final MinecraftServer server = ((CraftServer) bukkitServer).getHandle().getServer();
+
+        ResourcePackRepository<ResourcePackLoader> repo = server.getResourcePackRepository();
+        ResourcePackLoader loader = repo.a(name);
+
+        if (loader == null) {
+            plugin.getDebugManager().logDebugAction(Bukkit.getConsoleSender(), () -> "Unknown Datapack: " + name);
+            return CompletableFuture.completedFuture(null); // Unknown Datapack
+        }
+
+        List<ResourcePackLoader> activePacksCopy = Lists.newArrayList(repo.e()); // Create a copy of all active Resource Packs
+        activePacksCopy.add(loader); // Add the target Resource Pack
+
+        return server.a(activePacksCopy.stream().map(ResourcePackLoader::e).collect(Collectors.toList()));
+    }
+
+    @Override
+    public void addVarLightDatapackSource(Server bukkitServer, Supplier<URL> urlSupplier) {
+        final MinecraftServer server = ((CraftServer) bukkitServer).getHandle().getServer();
+
+        ResourcePackRepository<ResourcePackLoader> repo = server.getResourcePackRepository();
+
+        Reflect repoReflect = Reflect.on(repo);
+
+        List<ResourcePackSource> sourcesSet = new ArrayList<>(repoReflect.get("a"));
+
+        PackSource packSource = (PackSource) Proxy.newProxyInstance(
+                PackSource.class.getClassLoader(),
+                new Class[]{PackSource.class},
+                (proxy, method, args) -> {
+                    if (!method.getName().equals("decorate")) {
+                        return null;
+                    }
+
+                    return new ChatMessage("pack.nameAndSource", "VarLight.zip", "VarLight.jar");
+                }
+        );
+
+        File tmpFile;
+
+        try {
+            tmpFile = File.createTempFile("VarLight", "zip");
+            tmpFile.deleteOnExit();
+
+            byte[] buffer = new byte[8 * 1024];
+
+            try (InputStream is = urlSupplier.get().openStream()) {
+                try (FileOutputStream fos = new FileOutputStream(tmpFile)) {
+                    int read;
+
+                    while ((read = is.read(buffer)) > 0) {
+                        fos.write(buffer, 0, read);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new VarLightInitializationException(e);
+        }
+
+        plugin.getDebugManager().logDebugAction(Bukkit.getConsoleSender(), () -> "Adding Custom Datapack source");
+
+        sourcesSet.add(new ResourcePackSource() {
+            @Override
+            public <T extends ResourcePackLoader> void a(Consumer<T> consumer, ResourcePackLoader.a<T> a) {
+                plugin.getDebugManager().logDebugAction(Bukkit.getConsoleSender(), () -> "Adding VarLight Datapack");
+
+                T loader = ResourcePackLoader.a(
+                        DATAPACK_IDENT,
+                        false,
+                        () -> new ResourcePackFile(tmpFile),
+                        a,
+                        ResourcePackLoader.Position.TOP,
+                        packSource
+                );
+
+                if (loader != null) {
+                    consumer.accept(loader);
+                }
+            }
+        });
+
+        repoReflect.set("a", ImmutableSet.copyOf(sourcesSet));
+
+        repo.a();
+    }
+
     private WorldServer getNmsWorld(World world) {
         return ((CraftWorld) world).getHandle();
     }
 
     private CompletableFuture<Void> scheduleToLightMailbox(WorldServer worldServer, Runnable task) {
-        return scheduleToLightMailbox(worldServer.getChunkProvider().getLightEngine(), task);
+        return scheduleToLightMailbox(((LightEngineThreaded) worldServer.e()), task);
     }
 
     private CompletableFuture<Void> scheduleToLightMailbox(LightEngineThreaded lightEngine, Runnable task) {

@@ -16,19 +16,10 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="spigot-1.14.4" level="project" />
-    <orderEntry type="module" module-name="Core" />
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../lib/annotations-17.0.0.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="library" name="LightAPI-fork-3.4.2" level="project" />
-    <orderEntry type="library" name="VarLightCore" level="project" />
+    <orderEntry type="library" name="annotations-17.0.0" level="project" />
     <orderEntry type="library" name="org.jooq:joor-java-8:0.9.13" level="project" />
+    <orderEntry type="library" name="VarLightCore" level="project" />
+    <orderEntry type="library" name="spigot-1.16.1" level="project" />
+    <orderEntry type="module" module-name="Core" />
   </component>
 </module>

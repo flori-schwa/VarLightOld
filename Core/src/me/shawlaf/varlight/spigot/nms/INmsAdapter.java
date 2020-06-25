@@ -3,26 +3,28 @@ package me.shawlaf.varlight.spigot.nms;
 import me.shawlaf.varlight.persistence.LightPersistFailedException;
 import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
-import org.bukkit.Chunk;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
 
 public interface INmsAdapter {
+    
+    String DATAPACK_IDENT = "VarLight/VarLight.zip";
 
     @Nullable Material keyToType(String namespacedKey, MaterialType type);
 
@@ -53,6 +55,12 @@ public interface INmsAdapter {
     @NotNull File getRegionRoot(World world);
 
     String getDefaultLevelName();
+
+    CompletableFuture<Void> disableDatapack(Server server, String name);
+
+    CompletableFuture<Void> enableDatapack(Server server, String name);
+
+    void addVarLightDatapackSource(Server bukkitServer, Supplier<URL> urlSupplier);
 
     default void onLoad() {
 
