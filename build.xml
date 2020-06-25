@@ -169,13 +169,13 @@
             </sequential>
         </macrodef>
 
-        <build version="MC-1.14.x" src-dir="${v1_14_R1-src}" datapack-src="${v1_14_R1-datapack}" out-dir="${v1_14_R1-build}"
-               api-version="1.14">
-            <libraries>
-                <include name="**/spigot-1.14.4.jar"/>
-                <!--                <include name="**/${lib-light-api}"/>-->
-            </libraries>
-        </build>
+<!--        <build version="MC-1.14.x" src-dir="${v1_14_R1-src}" datapack-src="${v1_14_R1-datapack}" out-dir="${v1_14_R1-build}"-->
+<!--               api-version="1.14">-->
+<!--            <libraries>-->
+<!--                <include name="**/spigot-1.14.4.jar"/>-->
+<!--                &lt;!&ndash;                <include name="**/${lib-light-api}"/>&ndash;&gt;-->
+<!--            </libraries>-->
+<!--        </build>-->
 
         <build version="MC-1.15.x" src-dir="${v1_15_R1-src}" datapack-src="${v1_15_R1-datapack}" out-dir="${v1_15_R1-build}"
                api-version="1.14">
