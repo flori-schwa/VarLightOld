@@ -3,6 +3,7 @@ package me.shawlaf.varlight.spigot;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 import java.util.function.Supplier;
 
@@ -19,6 +20,15 @@ public class DebugManager {
             return;
         }
 
-        Bukkit.broadcast(ChatColor.GRAY + "" + ChatColor.ITALIC + String.format("[DEBUG] %s: %s", source.getName(), message.get()), "varlight.admin");
+        String messageFormatted = ChatColor.GRAY + "" + ChatColor.ITALIC + String.format("[DEBUG] %s: %s", source.getName(), message.get());
+        String messagePlain = ChatColor.stripColor(messageFormatted);
+
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (player.hasPermission("varlight.admin")) {
+                player.sendMessage(messageFormatted);
+            }
+        }
+
+        plugin.getLogger().info(messagePlain);
     }
 }

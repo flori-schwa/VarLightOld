@@ -4,7 +4,7 @@ import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
-import net.minecraft.server.v1_14_R1.*;
+import net.minecraft.server.v1_16_R1.*;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.World;
@@ -35,7 +35,7 @@ public class WrappedILightAccess implements ILightAccess, Listener {
     }
 
     private int getCustomLuminance(IChunkAccess blockAccess, BlockPosition bPos) {
-        int vanilla = blockAccess.getType(bPos).h();
+        int vanilla = blockAccess.getType(bPos).f();
 
         WorldLightSourceManager manager = plugin.getManager(world.getWorld());
 

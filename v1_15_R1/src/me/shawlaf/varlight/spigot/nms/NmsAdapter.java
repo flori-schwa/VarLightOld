@@ -1,5 +1,6 @@
 package me.shawlaf.varlight.spigot.nms;
 
+import com.google.common.collect.Lists;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.nms.wrappers.WrappedILightAccess;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
@@ -9,6 +10,7 @@ import net.minecraft.server.v1_15_R1.*;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.*;
+import org.bukkit.craftbukkit.v1_15_R1.CraftServer;
 import org.bukkit.craftbukkit.v1_15_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_15_R1.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_15_R1.util.CraftMagicNumbers;
@@ -20,9 +22,14 @@ import org.jetbrains.annotations.Nullable;
 import org.joor.Reflect;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.StreamSupport;
 
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
@@ -312,6 +319,113 @@ public class NmsAdapter implements INmsAdapter {
     @Override
     public String getDefaultLevelName() {
         return ((DedicatedServer) MinecraftServer.getServer()).propertyManager.getProperties().levelName;
+    }
+
+    @Override
+    public CompletableFuture<Void> disableDatapack(Server bukkitServer, String name) {
+        final MinecraftServer server = ((CraftServer) bukkitServer).getHandle().getServer();
+
+        return CompletableFuture.runAsync(() -> {
+
+            ResourcePackRepository<ResourcePackLoader> repo = server.getResourcePackRepository();
+            ResourcePackLoader loader = repo.a(name);
+
+            if (loader == null) {
+                return; // Unknown Datapack
+            }
+
+            if (!repo.d().contains(loader)) {
+                return; // Resource pack not enabled
+            }
+
+            List<ResourcePackLoader> activePacksCopy = Lists.newArrayList(repo.d()); // Create a copy of all active Resource Packs
+            activePacksCopy.remove(loader); // Remove the target Resource Pack
+            reloadServer(server, repo, loader, activePacksCopy);
+        }, server.executorService);
+    }
+
+    @Override
+    public CompletableFuture<Void> enableDatapack(Server bukkitServer, String name) {
+        final MinecraftServer server = ((CraftServer) bukkitServer).getHandle().getServer();
+
+        return CompletableFuture.runAsync(() -> {
+            ResourcePackRepository<ResourcePackLoader> repo = server.getResourcePackRepository();
+            ResourcePackLoader loader = repo.a(name);
+
+            if (loader == null) {
+                return; // Unknown Datapack
+            }
+
+            if (repo.d().contains(loader)) {
+                return; // Resource pack already enabled
+            }
+
+            List<ResourcePackLoader> activePacksCopy = Lists.newArrayList(repo.d()); // Create a copy of all active Resource Packs
+            activePacksCopy.add(loader); // Add the target Resource Pack
+            reloadServer(server, repo, loader, activePacksCopy);
+        }, server.executorService);
+    }
+
+    @Override
+    public void addVarLightDatapackSource(Server bukkitServer, Supplier<URL> urlSupplier) {
+        final MinecraftServer server = ((CraftServer) bukkitServer).getHandle().getServer();
+
+        ResourcePackRepository<ResourcePackLoader> repo = server.getResourcePackRepository();
+
+        File tmpFile;
+
+        try {
+            tmpFile = File.createTempFile("VarLight", "zip");
+            tmpFile.deleteOnExit();
+
+            byte[] buffer = new byte[8 * 1024];
+
+            try (InputStream is = urlSupplier.get().openStream()) {
+                try (FileOutputStream fos = new FileOutputStream(tmpFile)) {
+                    int read;
+
+                    while ((read = is.read(buffer)) > 0) {
+                        fos.write(buffer, 0, read);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new VarLightInitializationException(e);
+        }
+
+        repo.a(new ResourcePackSource() {
+            @Override
+            public <T extends ResourcePackLoader> void a(Map<String, T> map, ResourcePackLoader.b<T> b) {
+
+                T loader = ResourcePackLoader.a(
+                        DATAPACK_IDENT,
+                        false,
+                        () -> new ResourcePackFile(tmpFile),
+                        b,
+                        ResourcePackLoader.Position.TOP
+                );
+
+                if (loader != null) {
+                    map.put(DATAPACK_IDENT, loader);
+                }
+            }
+        });
+
+        repo.a();
+    }
+
+    private void reloadServer(MinecraftServer server, ResourcePackRepository<ResourcePackLoader> repo, ResourcePackLoader loader, List<ResourcePackLoader> resourcePacks) {
+        repo.a(resourcePacks); // Update the active Resource Pack List
+
+        WorldData worldData = server.getWorldServer(DimensionManager.OVERWORLD).getWorldData();
+
+        worldData.O().clear(); // Clear enabled Data packs
+        repo.d().forEach(rpToEnable -> {
+            worldData.O().add(rpToEnable.e()); // Enable all Resource packs
+        });
+
+        worldData.N().add(loader.e()); // Add the RP to the list of disabled RPs
+        server.reload(); // Reload the server
     }
 
     private WorldServer getNmsWorld(World world) {
