@@ -64,19 +64,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             startupError(String.format("Failed to initialize VarLight for Minecraft Version \"%s\": %s", Bukkit.getVersion(), e.getMessage()));
             throw e;
         }
-
-//        File defaultWorldFolder = new File(Bukkit.getWorldContainer(), nmsAdapter.getDefaultLevelName());
-//        File dataPackRepository = new File(defaultWorldFolder, "datapacks");
-//
-//        dataPackRepository.mkdirs();
-//
-//        File varLightDataPack = new File(dataPackRepository, "VarLight.zip");
-//
-//        if (varLightDataPack.exists()) {
-//            if (!varLightDataPack.delete()) {
-//                startupError("Failed to delete existing VarLight Datapack!");
-//            }
-//        }
     }
 
     @Override
@@ -93,21 +80,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         chatPromptManager = new ChatPromptManager(this);
 
         nmsAdapter.addVarLightDatapackSource(Bukkit.getServer(), () -> getClass().getResource("/VarLight.zip"));
-
-//        debugManager.logDebugAction(Bukkit.getConsoleSender(), () -> "Unloading VarLight Datapack");
-//        nmsAdapter.disableDatapack(Bukkit.getServer(), "file/VarLight.zip").thenRun(() -> {
-//            debugManager.logDebugAction(Bukkit.getConsoleSender(), () -> "Deleting old VarLight Datapack");
-//
-//
-//
-//            debugManager.logDebugAction(Bukkit.getConsoleSender(), () -> "Exporting VarLight Datapack");
-//            exportResource("/VarLight.zip", varLightDataPack);
-//
-//            debugManager.logDebugAction(Bukkit.getConsoleSender(), () -> "Enabling VarLight Datapack");
-//            nmsAdapter.enableDatapack(Bukkit.getServer(), "file/VarLight.zip").thenRun(() -> {
-//                debugManager.logDebugAction(Bukkit.getConsoleSender(), () -> "Enabled VarLight Datapack");
-//            });
-//        });
 
         databaseMigrator.addDataMigrations(
                 new JsonToNLSMigration(this),
