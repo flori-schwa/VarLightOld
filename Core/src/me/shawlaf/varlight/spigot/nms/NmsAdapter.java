@@ -12,10 +12,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
-import java.net.URL;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Supplier;
 
 @ForMinecraft(version = "UNDEFINED")
 public class NmsAdapter implements INmsAdapter {
@@ -100,17 +98,12 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public CompletableFuture<Void> disableDatapack(Server server, String name) {
-        throw new AbstractMethodError();
-    }
-
-    @Override
     public CompletableFuture<Void> enableDatapack(Server server, String name) {
         throw new AbstractMethodError();
     }
 
     @Override
-    public void addVarLightDatapackSource(Server bukkitServer, Supplier<URL> urlSupplier) {
+    public void addVarLightDatapackSource(Server bukkitServer, VarLightPlugin plugin) {
         throw new AbstractMethodError();
     }
 }

@@ -1,6 +1,7 @@
 package me.shawlaf.varlight.spigot.nms;
 
 import me.shawlaf.varlight.persistence.LightPersistFailedException;
+import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
 import org.bukkit.*;
@@ -24,7 +25,7 @@ import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition
 
 public interface INmsAdapter {
     
-    String DATAPACK_IDENT = "VarLight/VarLight.zip";
+    String DATAPACK_IDENT = "VarLight/VarLight.jar";
 
     @Nullable Material keyToType(String namespacedKey, MaterialType type);
 
@@ -56,11 +57,9 @@ public interface INmsAdapter {
 
     String getDefaultLevelName();
 
-    CompletableFuture<Void> disableDatapack(Server server, String name);
-
     CompletableFuture<Void> enableDatapack(Server server, String name);
 
-    void addVarLightDatapackSource(Server bukkitServer, Supplier<URL> urlSupplier);
+    void addVarLightDatapackSource(Server bukkitServer, VarLightPlugin plugin);
 
     default void onLoad() {
 

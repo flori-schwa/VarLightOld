@@ -2,6 +2,7 @@ package me.shawlaf.varlight.spigot.nms;
 
 import com.google.common.collect.Lists;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
+import me.shawlaf.varlight.spigot.nms.datapack.ResourcePackVarLight;
 import me.shawlaf.varlight.spigot.nms.wrappers.WrappedILightAccess;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.util.ChunkCoords;
@@ -22,14 +23,9 @@ import org.jetbrains.annotations.Nullable;
 import org.joor.Reflect;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.StreamSupport;
 
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
@@ -322,29 +318,6 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public CompletableFuture<Void> disableDatapack(Server bukkitServer, String name) {
-        final MinecraftServer server = ((CraftServer) bukkitServer).getHandle().getServer();
-
-        return CompletableFuture.runAsync(() -> {
-
-            ResourcePackRepository<ResourcePackLoader> repo = server.getResourcePackRepository();
-            ResourcePackLoader loader = repo.a(name);
-
-            if (loader == null) {
-                return; // Unknown Datapack
-            }
-
-            if (!repo.d().contains(loader)) {
-                return; // Resource pack not enabled
-            }
-
-            List<ResourcePackLoader> activePacksCopy = Lists.newArrayList(repo.d()); // Create a copy of all active Resource Packs
-            activePacksCopy.remove(loader); // Remove the target Resource Pack
-            reloadServer(server, repo, loader, activePacksCopy);
-        }, server.executorService);
-    }
-
-    @Override
     public CompletableFuture<Void> enableDatapack(Server bukkitServer, String name) {
         final MinecraftServer server = ((CraftServer) bukkitServer).getHandle().getServer();
 
@@ -367,40 +340,18 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public void addVarLightDatapackSource(Server bukkitServer, Supplier<URL> urlSupplier) {
+    public void addVarLightDatapackSource(Server bukkitServer, VarLightPlugin plugin) {
         final MinecraftServer server = ((CraftServer) bukkitServer).getHandle().getServer();
 
         ResourcePackRepository<ResourcePackLoader> repo = server.getResourcePackRepository();
 
-        File tmpFile;
-
-        try {
-            tmpFile = File.createTempFile("VarLight", "zip");
-            tmpFile.deleteOnExit();
-
-            byte[] buffer = new byte[8 * 1024];
-
-            try (InputStream is = urlSupplier.get().openStream()) {
-                try (FileOutputStream fos = new FileOutputStream(tmpFile)) {
-                    int read;
-
-                    while ((read = is.read(buffer)) > 0) {
-                        fos.write(buffer, 0, read);
-                    }
-                }
-            }
-        } catch (IOException e) {
-            throw new VarLightInitializationException(e);
-        }
-
         repo.a(new ResourcePackSource() {
             @Override
             public <T extends ResourcePackLoader> void a(Map<String, T> map, ResourcePackLoader.b<T> b) {
-
                 T loader = ResourcePackLoader.a(
                         DATAPACK_IDENT,
                         false,
-                        () -> new ResourcePackFile(tmpFile),
+                        () -> new ResourcePackVarLight(plugin),
                         b,
                         ResourcePackLoader.Position.TOP
                 );

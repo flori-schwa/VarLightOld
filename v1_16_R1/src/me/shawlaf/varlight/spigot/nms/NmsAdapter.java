@@ -3,6 +3,7 @@ package me.shawlaf.varlight.spigot.nms;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
+import me.shawlaf.varlight.spigot.nms.datapack.ResourcePackVarLight;
 import me.shawlaf.varlight.spigot.nms.wrappers.WrappedILightAccess;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.util.ChunkCoords;
@@ -23,16 +24,11 @@ import org.jetbrains.annotations.Nullable;
 import org.joor.Reflect;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Proxy;
-import java.net.URL;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -325,23 +321,6 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public CompletableFuture<Void> disableDatapack(Server bukkitServer, String name) {
-        final MinecraftServer server = ((CraftServer) bukkitServer).getHandle().getServer();
-
-        ResourcePackRepository<ResourcePackLoader> repo = server.getResourcePackRepository();
-        ResourcePackLoader loader = repo.a(name);
-
-        if (loader == null) {
-            return CompletableFuture.completedFuture(null); // Unknown Datapack
-        }
-
-        List<ResourcePackLoader> activePacksCopy = Lists.newArrayList(repo.e()); // Create a copy of all active Resource Packs
-        activePacksCopy.remove(loader); // Remove the target Resource Pack
-
-        return server.a(activePacksCopy.stream().map(ResourcePackLoader::e).collect(Collectors.toList()));
-    }
-
-    @Override
     public CompletableFuture<Void> enableDatapack(Server bukkitServer, String name) {
         final MinecraftServer server = ((CraftServer) bukkitServer).getHandle().getServer();
 
@@ -360,7 +339,7 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public void addVarLightDatapackSource(Server bukkitServer, Supplier<URL> urlSupplier) {
+    public void addVarLightDatapackSource(Server bukkitServer, VarLightPlugin plugin) {
         final MinecraftServer server = ((CraftServer) bukkitServer).getHandle().getServer();
 
         ResourcePackRepository<ResourcePackLoader> repo = server.getResourcePackRepository();
@@ -377,42 +356,17 @@ public class NmsAdapter implements INmsAdapter {
                         return null;
                     }
 
-                    return new ChatMessage("pack.nameAndSource", "VarLight.zip", "VarLight.jar");
+                    return new ChatMessage("pack.nameAndSource", "VarLight", "VarLight.jar");
                 }
         );
-
-        File tmpFile;
-
-        try {
-            tmpFile = File.createTempFile("VarLight", "zip");
-            tmpFile.deleteOnExit();
-
-            byte[] buffer = new byte[8 * 1024];
-
-            try (InputStream is = urlSupplier.get().openStream()) {
-                try (FileOutputStream fos = new FileOutputStream(tmpFile)) {
-                    int read;
-
-                    while ((read = is.read(buffer)) > 0) {
-                        fos.write(buffer, 0, read);
-                    }
-                }
-            }
-        } catch (IOException e) {
-            throw new VarLightInitializationException(e);
-        }
-
-        plugin.getDebugManager().logDebugAction(Bukkit.getConsoleSender(), () -> "Adding Custom Datapack source");
 
         sourcesSet.add(new ResourcePackSource() {
             @Override
             public <T extends ResourcePackLoader> void a(Consumer<T> consumer, ResourcePackLoader.a<T> a) {
-                plugin.getDebugManager().logDebugAction(Bukkit.getConsoleSender(), () -> "Adding VarLight Datapack");
-
                 T loader = ResourcePackLoader.a(
                         DATAPACK_IDENT,
                         false,
-                        () -> new ResourcePackFile(tmpFile),
+                        () -> new ResourcePackVarLight(plugin),
                         a,
                         ResourcePackLoader.Position.TOP,
                         packSource
