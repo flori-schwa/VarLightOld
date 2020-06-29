@@ -11,11 +11,11 @@
     <property name="core-res" location="Core/resources"/>
 
     <property name="v1_15_R1-src" location="v1_15_R1/src"/>
-    <property name="v1_15_R1-datapack" location="v1_15_R1/datapack/VarLight"/>
+    <property name="v1_15_R1-datapack" location="v1_15_R1"/>
     <property name="v1_15_R1-build" location="${build}/v1_15_R1"/>
 
     <property name="v1_16_R1-src" location="v1_16_R1/src"/>
-    <property name="v1_16_R1-datapack" location="v1_16_R1/datapack/Varlight"/>
+    <property name="v1_16_R1-datapack" location="v1_16_R1"/>
     <property name="v1_16_R1-build" location="${build}/v1_16_R1"/>
 
     <!--    <property name="paper-version" value="226"/>-->
@@ -126,7 +126,7 @@
                     <fileset dir="${core-build}"/>
                 </copy>
 
-                <zip basedir="@{datapack-src}" destfile="@{out-dir}/VarLight.zip"/>
+<!--                <zip basedir="@{datapack-src}" destfile="@{out-dir}/VarLight.zip"/>-->
 
                 <!--                <copy todir="@{out-dir}">-->
                 <!--                    <fileset dir="@{res-dir}"/>-->
@@ -164,6 +164,8 @@
                         <include name="**/${lib-varlight-core}"/>
                         <include name="**/${lib-joor}"/>
                     </zipgroupfileset>
+
+                    <fileset dir="@{datapack-src}" includes="datapack/**"/>
                     <shaded/>
                 </jar>
             </sequential>
