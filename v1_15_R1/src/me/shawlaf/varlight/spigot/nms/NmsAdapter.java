@@ -122,8 +122,8 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public void updateChunk(World world, ChunkCoords chunkCoords) {
-        updateChunk(getNmsWorld(world), chunkCoords);
+    public CompletableFuture<Void> updateChunk(World world, ChunkCoords chunkCoords) {
+        return updateChunk(getNmsWorld(world), chunkCoords);
     }
 
     @Override
@@ -138,6 +138,10 @@ public class NmsAdapter implements INmsAdapter {
 
         IChunkAccess chunkAccess = (IChunkAccess) nmsWorld.getChunkProvider().c(chunkCoords.x, chunkCoords.z);
 
+        if (chunkAccess == null) {
+            throw new LightUpdateFailedException("Could not fetch IChunkAccess at coords " + chunkCoords.toShortString());
+        }
+
         Function<BlockPosition, Integer> h = bPos -> manager.getCustomLuminance(new IntPosition(bPos.getX(), bPos.getY(), bPos.getZ()), () -> chunkAccess.h(bPos));
 
         LightEngineBlock leb = ((LightEngineBlock) nmsWorld.e().a(EnumSkyBlock.BLOCK));
@@ -151,6 +155,30 @@ public class NmsAdapter implements INmsAdapter {
                     chunkCoords.getCornerBY(),
                     chunkCoords.getCornerBZ()
             ).spliterator(), false).filter(bPos -> h.apply(bPos) > 0).forEach(leb::a);
+        });
+    }
+
+    @Override
+    public CompletableFuture<Void> resetBlocks(World world, ChunkCoords chunkCoords) {
+        WorldServer nmsWorld = getNmsWorld(world);
+
+        WorldLightSourceManager manager = plugin.getManager(world);
+
+        if (manager == null) {
+            throw new LightUpdateFailedException("VarLight not enabled in world " + world.getName());
+        }
+
+        LightEngineBlock leb = ((LightEngineBlock) nmsWorld.e().a(EnumSkyBlock.BLOCK));
+
+        return scheduleToLightMailbox(nmsWorld, () -> {
+            StreamSupport.stream(BlockPosition.b(
+                    chunkCoords.getCornerAX(),
+                    chunkCoords.getCornerAY(),
+                    chunkCoords.getCornerAZ(),
+                    chunkCoords.getCornerBX(),
+                    chunkCoords.getCornerBY(),
+                    chunkCoords.getCornerBZ()
+            ).spliterator(), false).forEach(leb::a);
         });
     }
 
@@ -190,16 +218,22 @@ public class NmsAdapter implements INmsAdapter {
         });
     }
 
-    private void updateChunk(WorldServer worldServer, ChunkCoords chunkCoords) {
+    private CompletableFuture<Void> updateChunk(WorldServer worldServer, ChunkCoords chunkCoords) {
         LightEngine let = worldServer.e();
 
         WorldLightSourceManager manager = plugin.getManager(worldServer.getWorld());
 
         if (manager == null) {
-            return;
+            return CompletableFuture.completedFuture(null);
         }
 
         IChunkAccess iChunkAccess = worldServer.getChunkProvider().a(chunkCoords.x, chunkCoords.z);
+
+        if (iChunkAccess == null) {
+            throw new LightUpdateFailedException("Could not fetch IChunkAccess at coords " + chunkCoords.toShortString());
+        }
+
+        CompletableFuture<Void> future = new CompletableFuture<>();
 
         ((LightEngineThreaded) let).a(iChunkAccess, false).thenRun(() -> {
             Bukkit.getScheduler().runTask(plugin, () -> {
@@ -210,8 +244,12 @@ public class NmsAdapter implements INmsAdapter {
                     worldServer.getChunkProvider().playerChunkMap.a(chunkCoordIntPair, false)
                             .forEach(e -> e.playerConnection.sendPacket(ppolu));
                 }
+
+                future.complete(null);
             });
         });
+
+        return future;
     }
 
     @Override

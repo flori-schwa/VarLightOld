@@ -60,6 +60,7 @@ public class ChatPromptManager {
 
         chatPrompt.start(source, timeout, timeUnit);
         source.sendMessage(ChatColor.RED + "Type /varlight prompt confirm/cancel to confirm/cancel.");
+        source.sendMessage(ChatColor.RED + "This prompt will timeout in " + timeout + " " + timeUnit.name().toLowerCase());
 
         if (source instanceof Entity) {
             activePrompts.put(((Entity) source).getUniqueId(), chatPrompt);

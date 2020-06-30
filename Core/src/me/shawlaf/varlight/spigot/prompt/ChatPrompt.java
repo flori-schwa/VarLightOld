@@ -3,6 +3,7 @@ package me.shawlaf.varlight.spigot.prompt;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
 import net.md_5.bungee.api.chat.BaseComponent;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
@@ -51,6 +52,7 @@ public class ChatPrompt {
                 synchronized (ChatPrompt.this) {
                     if (!completed && !cancelled) {
                         this.timeout = true;
+                        source.sendMessage(ChatColor.RED + "Your Chat prompt has timed out.");
                     }
                 }
             }, timeUnit.toSeconds(timeout) * 20L);

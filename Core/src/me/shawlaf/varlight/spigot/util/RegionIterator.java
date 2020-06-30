@@ -74,24 +74,106 @@ public class RegionIterator implements Iterator<IntPosition> {
     }
 
     public boolean isRegionLoaded(World world) {
-        RegionIterator clone = new RegionIterator(pos1, pos2);
+        Iterator<ChunkCoords> chunkIterator = iterateChunks();
 
-        Set<ChunkCoords> testedChunks = new HashSet<>();
-        ChunkCoords coords;
+        while (chunkIterator.hasNext()) {
+            ChunkCoords coords = chunkIterator.next();
 
-        while (clone.hasNext()) {
-            coords = clone.next().toChunkCoords();
-
-            if (!testedChunks.contains(coords)) {
-                if (!world.isChunkLoaded(coords.x, coords.z)) {
-                    return false;
-                }
-
-                testedChunks.add(coords);
+            if (!world.isChunkLoaded(coords.x, coords.z)) {
+                return false;
             }
         }
 
         return true;
+    }
+
+    public Iterator<ChunkCoords> iterateChunks() {
+        final int startChunkX = pos1.getChunkX();
+        final int startChunkZ = pos1.getChunkZ();
+        final int endChunkX = pos2.getChunkX();
+        final int endChunkZ = pos2.getChunkZ();
+
+        final int modX = binaryStep(endChunkX - startChunkX);
+        final int modZ = binaryStep(endChunkZ - startChunkZ);
+
+        return new Iterator<ChunkCoords>() {
+            int x = startChunkX;
+            int z = startChunkZ;
+
+            boolean done = false;
+
+            @Override
+            public boolean hasNext() {
+                return !done;
+            }
+
+            private boolean zInRange(int z) {
+                if (startChunkZ < endChunkZ) {
+                    return z >= startChunkZ && z <= endChunkZ;
+                } else {
+                    return z >= endChunkZ && z <= startChunkZ;
+                }
+            }
+
+            private boolean xInRange(int x) {
+                if (startChunkX < endChunkX) {
+                    return x >= startChunkX && x <= endChunkX;
+                } else {
+                    return x >= endChunkX && x <= startChunkX;
+                }
+            }
+
+            private boolean incrZ() {
+                z += modZ;
+                return zInRange(z);
+            }
+
+            private boolean incrX() {
+                x += modX;
+                return xInRange(x);
+            }
+
+            private void incrNext() {
+                if (modZ != 0) {
+                    if (!incrZ()) {
+                        nextZ = pos1.z;
+                    } else {
+                        return;
+                    }
+                }
+
+                if (modX != 0) {
+                    if (incrX()) {
+                        return;
+                    }
+                }
+
+                done = true;
+            }
+
+            @Override
+            public ChunkCoords next() {
+                if (done) {
+                    throw new IndexOutOfBoundsException("Already iterated over chunks");
+                }
+
+                ChunkCoords next = new ChunkCoords(x, z);
+                incrNext();
+
+                return next;
+            }
+        };
+    }
+
+    public Set<ChunkCoords> collectChunks() {
+        Set<ChunkCoords> chunks = new HashSet<>();
+        Iterator<ChunkCoords> chunkIterator = iterateChunks();
+
+        while (chunkIterator.hasNext()) {
+            chunks.add(chunkIterator.next());
+        }
+
+        return chunks;
     }
 
     public void reset() {

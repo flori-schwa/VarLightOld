@@ -26,6 +26,7 @@ import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
@@ -120,7 +121,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
         nmsAdapter.enableDatapack(Bukkit.getServer(), INmsAdapter.DATAPACK_IDENT);
 
-        configuration.getVarLightEnabledWorlds().forEach(this::enableInWorld);
+//        configuration.getVarLightEnabledWorlds().forEach(this::enableInWorld);
 
         loadLightUpdateItem();
 
@@ -145,8 +146,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         if (!doLoad) {
             return;
         }
-
-//        nmsAdapter.disableDatapack(Bukkit.getServer(), INmsAdapter.DATAPACK_IDENT); // Suppress the "Missing Datapack" message on next startup
 
         nmsAdapter.onDisable();
 
@@ -258,6 +257,13 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     }
 
     // region Events
+
+    @EventHandler
+    public void worldLoad(WorldLoadEvent e) {
+        if (configuration.getVarLightEnabledWorldNames().contains(e.getWorld().getName())) {
+            enableInWorld(e.getWorld());
+        }
+    }
 
     @EventHandler
     public void playerModifyLightSource(PlayerInteractEvent e) {

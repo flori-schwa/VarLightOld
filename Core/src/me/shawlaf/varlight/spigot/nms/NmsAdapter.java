@@ -48,12 +48,17 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public void updateChunk(World world, ChunkCoords chunkCoords) {
+    public CompletableFuture<Void> updateChunk(World world, ChunkCoords chunkCoords) {
         throw new AbstractMethodError();
     }
 
     @Override
     public CompletableFuture<Void> updateBlocks(World world, ChunkCoords chunkCoords) {
+        throw new AbstractMethodError();
+    }
+
+    @Override
+    public CompletableFuture<Void> resetBlocks(World world, ChunkCoords chunkCoords) {
         throw new AbstractMethodError();
     }
 
