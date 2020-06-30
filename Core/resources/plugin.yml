@@ -4,6 +4,7 @@ author: shawlaf
 main: me.shawlaf.varlight.spigot.VarLightPlugin
 description: Turn Normal Blocks into Light Sources!
 api-version: "api.version"
+load: STARTUP
 
 softdepend:
   - "Multiverse-Core"
