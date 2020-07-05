@@ -96,14 +96,4 @@ public class NmsAdapter implements INmsAdapter {
     public String getDefaultLevelName() {
         throw new AbstractMethodError();
     }
-
-    @Override
-    public CompletableFuture<Void> enableDatapack(Server server, String name) {
-        throw new AbstractMethodError();
-    }
-
-    @Override
-    public void addVarLightDatapackSource(Server bukkitServer, VarLightPlugin plugin) {
-        throw new AbstractMethodError();
-    }
 }

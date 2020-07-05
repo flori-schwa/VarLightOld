@@ -1,9 +1,6 @@
 package me.shawlaf.varlight.spigot.nms;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
-import me.shawlaf.varlight.spigot.nms.datapack.ResourcePackVarLight;
 import me.shawlaf.varlight.spigot.nms.wrappers.WrappedILightAccess;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.util.ChunkCoords;
@@ -12,7 +9,6 @@ import net.minecraft.server.v1_16_R1.*;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.*;
-import org.bukkit.craftbukkit.v1_16_R1.CraftServer;
 import org.bukkit.craftbukkit.v1_16_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_16_R1.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_16_R1.util.CraftMagicNumbers;
@@ -24,12 +20,9 @@ import org.jetbrains.annotations.Nullable;
 import org.joor.Reflect;
 
 import java.io.File;
-import java.lang.reflect.Proxy;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
@@ -240,7 +233,15 @@ public class NmsAdapter implements INmsAdapter {
 
     @Override
     public boolean isIllegalBlock(@NotNull Material material) {
-        return !(plugin.getAllowedBlocks().isTagged(material) || (plugin.getConfiguration().isAllowExperimentalBlocks() && plugin.getExperimentalBlocks().isTagged(material)));
+        if (HardcodedBlockList.ALLOWED_BLOCKS.contains(material)) {
+            return false;
+        }
+
+        if (plugin.getConfiguration().isAllowExperimentalBlocks()) {
+            return !HardcodedBlockList.EXPERIMENTAL_BLOCKS.contains(material);
+        }
+
+        return true;
     }
 
     @NotNull
@@ -318,69 +319,6 @@ public class NmsAdapter implements INmsAdapter {
     @Override
     public String getDefaultLevelName() {
         return ((DedicatedServer) MinecraftServer.getServer()).propertyManager.getProperties().levelName;
-    }
-
-    @Override
-    public CompletableFuture<Void> enableDatapack(Server bukkitServer, String name) {
-        final MinecraftServer server = ((CraftServer) bukkitServer).getHandle().getServer();
-
-        ResourcePackRepository<ResourcePackLoader> repo = server.getResourcePackRepository();
-        ResourcePackLoader loader = repo.a(name);
-
-        if (loader == null) {
-            plugin.getDebugManager().logDebugAction(Bukkit.getConsoleSender(), () -> "Unknown Datapack: " + name);
-            return CompletableFuture.completedFuture(null); // Unknown Datapack
-        }
-
-        List<ResourcePackLoader> activePacksCopy = Lists.newArrayList(repo.e()); // Create a copy of all active Resource Packs
-        activePacksCopy.add(loader); // Add the target Resource Pack
-
-        return server.a(activePacksCopy.stream().map(ResourcePackLoader::e).collect(Collectors.toList()));
-    }
-
-    @Override
-    public void addVarLightDatapackSource(Server bukkitServer, VarLightPlugin plugin) {
-        final MinecraftServer server = ((CraftServer) bukkitServer).getHandle().getServer();
-
-        ResourcePackRepository<ResourcePackLoader> repo = server.getResourcePackRepository();
-
-        Reflect repoReflect = Reflect.on(repo);
-
-        List<ResourcePackSource> sourcesSet = new ArrayList<>(repoReflect.get("a"));
-
-        PackSource packSource = (PackSource) Proxy.newProxyInstance(
-                PackSource.class.getClassLoader(),
-                new Class[]{PackSource.class},
-                (proxy, method, args) -> {
-                    if (!method.getName().equals("decorate")) {
-                        return null;
-                    }
-
-                    return new ChatMessage("pack.nameAndSource", "VarLight", "VarLight.jar");
-                }
-        );
-
-        sourcesSet.add(new ResourcePackSource() {
-            @Override
-            public <T extends ResourcePackLoader> void a(Consumer<T> consumer, ResourcePackLoader.a<T> a) {
-                T loader = ResourcePackLoader.a(
-                        DATAPACK_IDENT,
-                        false,
-                        () -> new ResourcePackVarLight(plugin),
-                        a,
-                        ResourcePackLoader.Position.TOP,
-                        packSource
-                );
-
-                if (loader != null) {
-                    consumer.accept(loader);
-                }
-            }
-        });
-
-        repoReflect.set("a", ImmutableSet.copyOf(sourcesSet));
-
-        repo.a();
     }
 
     private WorldServer getNmsWorld(World world) {

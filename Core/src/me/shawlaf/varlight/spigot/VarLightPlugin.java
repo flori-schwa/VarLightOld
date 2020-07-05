@@ -76,7 +76,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         configuration = new VarLightConfiguration(this);
         databaseMigrator = new LightDatabaseMigratorSpigot(this);
 
-        nmsAdapter.addVarLightDatapackSource(Bukkit.getServer(), this);
+//        nmsAdapter.addVarLightDatapackSource(Bukkit.getServer(), this);
 
         databaseMigrator.addDataMigrations(
                 new JsonToNLSMigration(this),
@@ -115,7 +115,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             throw e;
         }
 
-        nmsAdapter.enableDatapack(Bukkit.getServer(), INmsAdapter.DATAPACK_IDENT);
+//        nmsAdapter.enableDatapack(Bukkit.getServer(), INmsAdapter.DATAPACK_IDENT);
 
         configuration.getVarLightEnabledWorlds().forEach(this::enableInWorld);
 

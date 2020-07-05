@@ -1,8 +1,6 @@
 package me.shawlaf.varlight.spigot.nms;
 
-import com.google.common.collect.Lists;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
-import me.shawlaf.varlight.spigot.nms.datapack.ResourcePackVarLight;
 import me.shawlaf.varlight.spigot.nms.wrappers.WrappedILightAccess;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.util.ChunkCoords;
@@ -11,7 +9,6 @@ import net.minecraft.server.v1_15_R1.*;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.*;
-import org.bukkit.craftbukkit.v1_15_R1.CraftServer;
 import org.bukkit.craftbukkit.v1_15_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_15_R1.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_15_R1.util.CraftMagicNumbers;
@@ -315,54 +312,6 @@ public class NmsAdapter implements INmsAdapter {
     @Override
     public String getDefaultLevelName() {
         return ((DedicatedServer) MinecraftServer.getServer()).propertyManager.getProperties().levelName;
-    }
-
-    @Override
-    public CompletableFuture<Void> enableDatapack(Server bukkitServer, String name) {
-        final MinecraftServer server = ((CraftServer) bukkitServer).getHandle().getServer();
-
-        return CompletableFuture.runAsync(() -> {
-            ResourcePackRepository<ResourcePackLoader> repo = server.getResourcePackRepository();
-            ResourcePackLoader loader = repo.a(name);
-
-            if (loader == null) {
-                return; // Unknown Datapack
-            }
-
-            if (repo.d().contains(loader)) {
-                return; // Resource pack already enabled
-            }
-
-            List<ResourcePackLoader> activePacksCopy = Lists.newArrayList(repo.d()); // Create a copy of all active Resource Packs
-            activePacksCopy.add(loader); // Add the target Resource Pack
-            reloadServer(server, repo, loader, activePacksCopy);
-        }, server.executorService);
-    }
-
-    @Override
-    public void addVarLightDatapackSource(Server bukkitServer, VarLightPlugin plugin) {
-        final MinecraftServer server = ((CraftServer) bukkitServer).getHandle().getServer();
-
-        ResourcePackRepository<ResourcePackLoader> repo = server.getResourcePackRepository();
-
-        repo.a(new ResourcePackSource() {
-            @Override
-            public <T extends ResourcePackLoader> void a(Map<String, T> map, ResourcePackLoader.b<T> b) {
-                T loader = ResourcePackLoader.a(
-                        DATAPACK_IDENT,
-                        false,
-                        () -> new ResourcePackVarLight(plugin),
-                        b,
-                        ResourcePackLoader.Position.TOP
-                );
-
-                if (loader != null) {
-                    map.put(DATAPACK_IDENT, loader);
-                }
-            }
-        });
-
-        repo.a();
     }
 
     private void reloadServer(MinecraftServer server, ResourcePackRepository<ResourcePackLoader> repo, ResourcePackLoader loader, List<ResourcePackLoader> resourcePacks) {
