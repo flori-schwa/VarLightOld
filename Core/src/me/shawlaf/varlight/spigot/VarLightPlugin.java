@@ -9,6 +9,7 @@ import me.shawlaf.varlight.spigot.persistence.migrate.LightDatabaseMigratorSpigo
 import me.shawlaf.varlight.spigot.persistence.migrate.data.JsonToNLSMigration;
 import me.shawlaf.varlight.spigot.persistence.migrate.data.VLDBToNLSMigration;
 import me.shawlaf.varlight.spigot.persistence.migrate.structure.MoveVarlightRootFolder;
+import me.shawlaf.varlight.spigot.util.IntPositionExtension;
 import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.NumericMajorMinorVersion;
 import org.bukkit.*;
@@ -452,6 +453,9 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             Bukkit.getScheduler().runTaskLater(this,
                     () -> {
                         LightUpdateResult lightUpdateResult = placeNewLightSource(this, e.getPlayer(), e.getBlock().getLocation(), emittingLight);
+
+                        debugManager.logDebugAction(e.getPlayer(), () ->
+                                "Place Lightsource @ " + IntPositionExtension.toIntPosition(e.getBlock()).toShortString() + " (" + emittingLight + "): " + lightUpdateResult.getDebugMessage().toString());
 
                         if (!lightUpdateResult.successful()) {
                             e.getBlock().setType(before);
