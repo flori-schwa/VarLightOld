@@ -363,7 +363,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         int finalMod = mod;
 
         debugManager.logDebugAction(player,
-                () -> "Edit Lightsource @ " + toShortBlockString(clickedBlock.getLocation()) + " " +
+                () -> "Edit Lightsource @ " + IntPositionExtension.toIntPosition(clickedBlock).toShortString() + " " +
                         (finalMod < 0 ? "LC" : "RC") + " " + result.getFromLight() + " -> " + result.getToLight() + " ==> " + result.getDebugMessage().toString()
         );
 
@@ -533,10 +533,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     private void loadLightUpdateItem() {
         this.lightUpdateItem = configuration.getLightUpdateItem();
         getLogger().info(String.format("Using \"%s\" as the Light update item.", lightUpdateItem.getKey().toString()));
-    }
-
-    private String toShortBlockString(Location location) {
-        return String.format("[%d, %d, %d]", location.getBlockX(), location.getBlockY(), location.getBlockZ());
     }
 
 //    private void exportResource(String path, File toFile) {
