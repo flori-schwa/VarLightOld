@@ -59,10 +59,6 @@ public interface INmsAdapter {
 
     String getDefaultLevelName();
 
-    CompletableFuture<Void> enableDatapack(Server server, String name);
-
-    void addVarLightDatapackSource(Server bukkitServer, VarLightPlugin plugin);
-
     default void onLoad() {
 
     }

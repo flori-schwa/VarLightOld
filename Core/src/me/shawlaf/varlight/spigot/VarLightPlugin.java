@@ -9,6 +9,7 @@ import me.shawlaf.varlight.spigot.persistence.migrate.LightDatabaseMigratorSpigo
 import me.shawlaf.varlight.spigot.persistence.migrate.data.JsonToNLSMigration;
 import me.shawlaf.varlight.spigot.persistence.migrate.data.VLDBToNLSMigration;
 import me.shawlaf.varlight.spigot.persistence.migrate.structure.MoveVarlightRootFolder;
+import me.shawlaf.varlight.spigot.util.IntPositionExtension;
 import me.shawlaf.varlight.spigot.prompt.ChatPromptManager;
 import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.NumericMajorMinorVersion;
@@ -80,7 +81,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         databaseMigrator = new LightDatabaseMigratorSpigot(this);
         chatPromptManager = new ChatPromptManager(this);
 
-        nmsAdapter.addVarLightDatapackSource(Bukkit.getServer(), this);
+//        nmsAdapter.addVarLightDatapackSource(Bukkit.getServer(), this);
 
         databaseMigrator.addDataMigrations(
                 new JsonToNLSMigration(this),
@@ -119,7 +120,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             throw e;
         }
 
-        nmsAdapter.enableDatapack(Bukkit.getServer(), INmsAdapter.DATAPACK_IDENT);
+//        nmsAdapter.enableDatapack(Bukkit.getServer(), INmsAdapter.DATAPACK_IDENT);
 
 //        configuration.getVarLightEnabledWorlds().forEach(this::enableInWorld);
 
@@ -465,6 +466,9 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             Bukkit.getScheduler().runTaskLater(this,
                     () -> {
                         LightUpdateResult lightUpdateResult = placeNewLightSource(this, e.getPlayer(), e.getBlock().getLocation(), emittingLight);
+
+                        debugManager.logDebugAction(e.getPlayer(), () ->
+                                "Place Lightsource @ " + IntPositionExtension.toIntPosition(e.getBlock()).toShortString() + " (" + emittingLight + "): " + lightUpdateResult.getDebugMessage().toString());
 
                         if (!lightUpdateResult.successful()) {
                             e.getBlock().setType(before);
