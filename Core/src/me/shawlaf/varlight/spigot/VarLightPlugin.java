@@ -2,13 +2,13 @@ package me.shawlaf.varlight.spigot;
 
 import me.shawlaf.varlight.spigot.command.VarLightCommand;
 import me.shawlaf.varlight.spigot.nms.INmsAdapter;
-import me.shawlaf.varlight.spigot.nms.NmsAdapter;
 import me.shawlaf.varlight.spigot.nms.VarLightInitializationException;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.spigot.persistence.migrate.LightDatabaseMigratorSpigot;
 import me.shawlaf.varlight.spigot.persistence.migrate.data.JsonToNLSMigration;
 import me.shawlaf.varlight.spigot.persistence.migrate.data.VLDBToNLSMigration;
 import me.shawlaf.varlight.spigot.persistence.migrate.structure.MoveVarlightRootFolder;
+import me.shawlaf.varlight.spigot.prompt.ChatPromptManager;
 import me.shawlaf.varlight.spigot.util.IntPositionExtension;
 import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.NumericMajorMinorVersion;
@@ -26,6 +26,7 @@ import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
@@ -40,28 +41,39 @@ import static me.shawlaf.varlight.spigot.util.LightSourceUtil.placeNewLightSourc
 
 public class VarLightPlugin extends JavaPlugin implements Listener {
 
+    private static final String SERVER_VERSION;
+
     public static final long TICK_RATE = 20L;
     private final Map<UUID, Integer> stepSizes = new HashMap<>();
     private final Map<UUID, WorldLightSourceManager> managers = new HashMap<>();
     private final INmsAdapter nmsAdapter;
-    private Tag<Material> allowedBlocks, experimentalBlocks;
     private VarLightCommand command;
     private VarLightConfiguration configuration;
     private AutosaveManager autosaveManager;
     private DebugManager debugManager;
     private LightDatabaseMigratorSpigot databaseMigrator;
+    private ChatPromptManager chatPromptManager;
 
     private Material lightUpdateItem;
 
     private boolean shouldDeflate;
     private boolean doLoad = true;
 
+    static {
+        String ver = Bukkit.getServer().getClass().getPackage().getName();
+        SERVER_VERSION = ver.substring(ver.lastIndexOf('.') + 1);
+    }
+
     {
         try {
-            this.nmsAdapter = new NmsAdapter(this);
-        } catch (Throwable e) { // Catch anything that goes wrong while initializing
-            startupError(String.format("Failed to initialize VarLight for Minecraft Version \"%s\": %s", Bukkit.getVersion(), e.getMessage()));
-            throw e;
+            Class<?> nmsAdapterClass = Class.forName(String.format("me.shawlaf.varlight.spigot.nms.%s.NmsAdapter", SERVER_VERSION));
+
+            this.nmsAdapter = (INmsAdapter) nmsAdapterClass.getConstructor(VarLightPlugin.class).newInstance(this);
+        } catch (Throwable e) { // Catch anything that goes wrong while initializing, including reflection stuff
+            String errMsg = String.format("Failed to initialize VarLight for Minecraft Version \"%s\": %s", Bukkit.getVersion(), e.getMessage());
+
+            startupError(errMsg);
+            throw new VarLightInitializationException(errMsg, e);
         }
     }
 
@@ -76,6 +88,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         debugManager = new DebugManager(this);
         configuration = new VarLightConfiguration(this);
         databaseMigrator = new LightDatabaseMigratorSpigot(this);
+        chatPromptManager = new ChatPromptManager(this);
 
 //        nmsAdapter.addVarLightDatapackSource(Bukkit.getServer(), this);
 
@@ -118,7 +131,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
 //        nmsAdapter.enableDatapack(Bukkit.getServer(), INmsAdapter.DATAPACK_IDENT);
 
-        configuration.getVarLightEnabledWorlds().forEach(this::enableInWorld);
+//        configuration.getVarLightEnabledWorlds().forEach(this::enableInWorld);
 
         loadLightUpdateItem();
 
@@ -143,8 +156,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         if (!doLoad) {
             return;
         }
-
-//        nmsAdapter.disableDatapack(Bukkit.getServer(), INmsAdapter.DATAPACK_IDENT); // Suppress the "Missing Datapack" message on next startup
 
         nmsAdapter.onDisable();
 
@@ -200,20 +211,8 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         return databaseMigrator;
     }
 
-    public Tag<Material> getAllowedBlocks() {
-        if (allowedBlocks == null) {
-            allowedBlocks = Bukkit.getTag(Tag.REGISTRY_BLOCKS, new NamespacedKey(this, "allowed_blocks"), Material.class);
-        }
-
-        return allowedBlocks;
-    }
-
-    public Tag<Material> getExperimentalBlocks() {
-        if (experimentalBlocks == null) {
-            experimentalBlocks = Bukkit.getTag(Tag.REGISTRY_BLOCKS, new NamespacedKey(this, "experimental_blocks"), Material.class);
-        }
-
-        return experimentalBlocks;
+    public ChatPromptManager getChatPromptManager() {
+        return chatPromptManager;
     }
 
     public void reload() {
@@ -252,6 +251,13 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     }
 
     // region Events
+
+    @EventHandler
+    public void worldLoad(WorldLoadEvent e) {
+        if (configuration.getVarLightEnabledWorldNames().contains(e.getWorld().getName())) {
+            enableInWorld(e.getWorld());
+        }
+    }
 
     @EventHandler
     public void playerModifyLightSource(PlayerInteractEvent e) {
@@ -342,7 +348,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         if (result.successful()) {
             e.setCancelled(creative && e.getAction() == Action.LEFT_CLICK_BLOCK);
 
-            if (!creative && e.getAction() == Action.RIGHT_CLICK_BLOCK) {
+            if (configuration.isConsumeLui() && !creative && e.getAction() == Action.RIGHT_CLICK_BLOCK) {
                 heldItem.setAmount(heldItem.getAmount() - Math.abs(mod));
             }
         }
@@ -350,7 +356,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         int finalMod = mod;
 
         debugManager.logDebugAction(player,
-                () -> "Edit Lightsource @ " + toShortBlockString(clickedBlock.getLocation()) + " " +
+                () -> "Edit Lightsource @ " + IntPositionExtension.toIntPosition(clickedBlock).toShortString() + " " +
                         (finalMod < 0 ? "LC" : "RC") + " " + result.getFromLight() + " -> " + result.getToLight() + " ==> " + result.getDebugMessage().toString()
         );
 
@@ -401,6 +407,10 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             e.setDropItems(false);
             world.dropItemNaturally(dropLocation, dropStack);
         } else {
+            if (!configuration.isConsumeLui()) {
+                return; // Check for consume lui to prevent ez duping of lui
+            }
+
             if (theBlock.getDrops(heldItem).size() == 0) {
                 return;
             }
@@ -455,7 +465,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
                         LightUpdateResult lightUpdateResult = placeNewLightSource(this, e.getPlayer(), e.getBlock().getLocation(), emittingLight);
 
                         debugManager.logDebugAction(e.getPlayer(), () ->
-                                "Place Lightsource @ " + IntPositionExtension.toIntPosition(e.getBlock()).toShortString() + " (" + emittingLight + "): " + lightUpdateResult.getDebugMessage().toString());
+                                "Place Lightsource (" + handCopy.getType().getKey().toString() + ") @ " + IntPositionExtension.toIntPosition(e.getBlock()).toShortString() + " (" + emittingLight + "): " + lightUpdateResult.getDebugMessage().toString());
 
                         if (!lightUpdateResult.successful()) {
                             e.getBlock().setType(before);
@@ -520,10 +530,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     private void loadLightUpdateItem() {
         this.lightUpdateItem = configuration.getLightUpdateItem();
         getLogger().info(String.format("Using \"%s\" as the Light update item.", lightUpdateItem.getKey().toString()));
-    }
-
-    private String toShortBlockString(Location location) {
-        return String.format("[%d, %d, %d]", location.getBlockX(), location.getBlockY(), location.getBlockZ());
     }
 
 //    private void exportResource(String path, File toFile) {

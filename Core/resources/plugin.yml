@@ -3,7 +3,7 @@ version: "plugin.version"
 author: shawlaf
 main: me.shawlaf.varlight.spigot.VarLightPlugin
 description: Turn Normal Blocks into Light Sources!
-api-version: "api.version"
+api-version: "1.15"
 load: STARTUP
 
 softdepend:
@@ -33,6 +33,9 @@ permissions:
   varlight.admin.give:
     description: "Provides access to /varlight give"
     default: op
+  varlight.admin.clear:
+    desciption: "Provides access to /varlight clear"
+    default: op
   varlight.stepsize:
     description: "Provides access to /varlight stepsize"
     default: op
@@ -47,4 +50,5 @@ permissions:
       varlight.admin.update: true
       varlight.admin.fill: true
       varlight.admin.give: true
+      varlight.admin.clear: true
       varlight.stepsize: true
