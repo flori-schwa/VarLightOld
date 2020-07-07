@@ -1,4 +1,4 @@
-package me.shawlaf.varlight.spigot.nms;
+package me.shawlaf.varlight.spigot.nms.v1_15_R1;
 import net.minecraft.server.v1_15_R1.MinecraftKey;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
