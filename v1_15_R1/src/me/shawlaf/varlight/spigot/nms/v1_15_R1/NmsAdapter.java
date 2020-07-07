@@ -275,7 +275,15 @@ public class NmsAdapter implements INmsAdapter {
 
     @Override
     public boolean isIllegalBlock(@NotNull Material material) {
-        return !(plugin.getAllowedBlocks().isTagged(material) || (plugin.getConfiguration().isAllowExperimentalBlocks() && plugin.getExperimentalBlocks().isTagged(material)));
+        if (HardcodedBlockList.ALLOWED_BLOCKS.contains(material)) {
+            return false;
+        }
+
+        if (plugin.getConfiguration().isAllowExperimentalBlocks()) {
+            return !HardcodedBlockList.EXPERIMENTAL_BLOCKS.contains(material);
+        }
+
+        return true;
     }
 
     @NotNull
