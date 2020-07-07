@@ -468,7 +468,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
                         LightUpdateResult lightUpdateResult = placeNewLightSource(this, e.getPlayer(), e.getBlock().getLocation(), emittingLight);
 
                         debugManager.logDebugAction(e.getPlayer(), () ->
-                                "Place Lightsource @ " + IntPositionExtension.toIntPosition(e.getBlock()).toShortString() + " (" + emittingLight + "): " + lightUpdateResult.getDebugMessage().toString());
+                                "Place Lightsource (" + handCopy.getType().getKey().toString() + ") @ " + IntPositionExtension.toIntPosition(e.getBlock()).toShortString() + " (" + emittingLight + "): " + lightUpdateResult.getDebugMessage().toString());
 
                         if (!lightUpdateResult.successful()) {
                             e.getBlock().setType(before);
