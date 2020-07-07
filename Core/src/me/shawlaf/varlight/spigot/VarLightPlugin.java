@@ -2,15 +2,14 @@ package me.shawlaf.varlight.spigot;
 
 import me.shawlaf.varlight.spigot.command.VarLightCommand;
 import me.shawlaf.varlight.spigot.nms.INmsAdapter;
-import me.shawlaf.varlight.spigot.nms.NmsAdapter;
 import me.shawlaf.varlight.spigot.nms.VarLightInitializationException;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.spigot.persistence.migrate.LightDatabaseMigratorSpigot;
 import me.shawlaf.varlight.spigot.persistence.migrate.data.JsonToNLSMigration;
 import me.shawlaf.varlight.spigot.persistence.migrate.data.VLDBToNLSMigration;
 import me.shawlaf.varlight.spigot.persistence.migrate.structure.MoveVarlightRootFolder;
-import me.shawlaf.varlight.spigot.util.IntPositionExtension;
 import me.shawlaf.varlight.spigot.prompt.ChatPromptManager;
+import me.shawlaf.varlight.spigot.util.IntPositionExtension;
 import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.NumericMajorMinorVersion;
 import org.bukkit.*;
@@ -42,6 +41,8 @@ import static me.shawlaf.varlight.spigot.util.LightSourceUtil.placeNewLightSourc
 
 public class VarLightPlugin extends JavaPlugin implements Listener {
 
+    private static final String SERVER_VERSION;
+
     public static final long TICK_RATE = 20L;
     private final Map<UUID, Integer> stepSizes = new HashMap<>();
     private final Map<UUID, WorldLightSourceManager> managers = new HashMap<>();
@@ -59,12 +60,21 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     private boolean shouldDeflate;
     private boolean doLoad = true;
 
+    static {
+        String ver = Bukkit.getServer().getClass().getPackage().getName();
+        SERVER_VERSION = ver.substring(ver.lastIndexOf('.') + 1);
+    }
+
     {
         try {
-            this.nmsAdapter = new NmsAdapter(this);
-        } catch (Throwable e) { // Catch anything that goes wrong while initializing
-            startupError(String.format("Failed to initialize VarLight for Minecraft Version \"%s\": %s", Bukkit.getVersion(), e.getMessage()));
-            throw e;
+            Class<?> nmsAdapterClass = Class.forName(String.format("me.shawlaf.varlight.spigot.nms.%s.NmsAdapter", SERVER_VERSION));
+
+            this.nmsAdapter = (INmsAdapter) nmsAdapterClass.getConstructor(VarLightPlugin.class).newInstance(this);
+        } catch (Throwable e) { // Catch anything that goes wrong while initializing, including reflection stuff
+            String errMsg = String.format("Failed to initialize VarLight for Minecraft Version \"%s\": %s", Bukkit.getVersion(), e.getMessage());
+
+            startupError(errMsg);
+            throw new VarLightInitializationException(errMsg, e);
         }
     }
 

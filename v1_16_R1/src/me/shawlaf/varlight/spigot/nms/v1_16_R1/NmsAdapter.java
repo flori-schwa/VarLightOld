@@ -1,17 +1,21 @@
-package me.shawlaf.varlight.spigot.nms;
+package me.shawlaf.varlight.spigot.nms.v1_16_R1;
 
 import me.shawlaf.varlight.spigot.VarLightPlugin;
-import me.shawlaf.varlight.spigot.nms.wrappers.WrappedILightAccess;
+import me.shawlaf.varlight.spigot.nms.ForMinecraft;
+import me.shawlaf.varlight.spigot.nms.INmsAdapter;
+import me.shawlaf.varlight.spigot.nms.LightUpdateFailedException;
+import me.shawlaf.varlight.spigot.nms.MaterialType;
+import me.shawlaf.varlight.spigot.nms.v1_16_R1.wrappers.WrappedILightAccess;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
-import net.minecraft.server.v1_15_R1.*;
+import net.minecraft.server.v1_16_R1.*;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.*;
-import org.bukkit.craftbukkit.v1_15_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_15_R1.inventory.CraftItemStack;
-import org.bukkit.craftbukkit.v1_15_R1.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.v1_16_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_16_R1.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.v1_16_R1.util.CraftMagicNumbers;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -27,7 +31,7 @@ import java.util.stream.StreamSupport;
 
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
 
-@ForMinecraft(version = "1.15.x")
+@ForMinecraft(version = "1.16.x")
 public class NmsAdapter implements INmsAdapter {
 
     private final VarLightPlugin plugin;
@@ -36,7 +40,7 @@ public class NmsAdapter implements INmsAdapter {
     public NmsAdapter(VarLightPlugin plugin) {
         this.plugin = plugin;
 
-        net.minecraft.server.v1_15_R1.ItemStack nmsStack = new net.minecraft.server.v1_15_R1.ItemStack(Items.STICK);
+        net.minecraft.server.v1_16_R1.ItemStack nmsStack = new net.minecraft.server.v1_16_R1.ItemStack(Items.STICK);
 
         nmsStack.addEnchantment(Enchantments.DURABILITY, 1);
         nmsStack.a("CustomType", NBTTagString.a("varlight:debug_stick"));
@@ -82,7 +86,7 @@ public class NmsAdapter implements INmsAdapter {
     @NotNull
     @Override
     public String getLocalizedBlockName(Material material) {
-        return LocaleLanguage.a().a(CraftMagicNumbers.getBlock(material).k());
+        return LocaleLanguage.a().a(CraftMagicNumbers.getBlock(material).i());
     }
 
     @NotNull
@@ -236,7 +240,7 @@ public class NmsAdapter implements INmsAdapter {
             Bukkit.getScheduler().runTask(plugin, () -> {
                 for (ChunkCoords toSendClientUpdate : collectChunkPositionsToUpdate(chunkCoords)) {
                     ChunkCoordIntPair chunkCoordIntPair = new ChunkCoordIntPair(toSendClientUpdate.x, toSendClientUpdate.z);
-                    PacketPlayOutLightUpdate ppolu = new PacketPlayOutLightUpdate(chunkCoordIntPair, let);
+                    PacketPlayOutLightUpdate ppolu = new PacketPlayOutLightUpdate(chunkCoordIntPair, let, true);
 
                     worldServer.getChunkProvider().playerChunkMap.a(chunkCoordIntPair, false)
                             .forEach(e -> e.playerConnection.sendPacket(ppolu));
@@ -271,13 +275,21 @@ public class NmsAdapter implements INmsAdapter {
 
     @Override
     public boolean isIllegalBlock(@NotNull Material material) {
-        return !(plugin.getAllowedBlocks().isTagged(material) || (plugin.getConfiguration().isAllowExperimentalBlocks() && plugin.getExperimentalBlocks().isTagged(material)));
+        if (HardcodedBlockList.ALLOWED_BLOCKS.contains(material)) {
+            return false;
+        }
+
+        if (plugin.getConfiguration().isAllowExperimentalBlocks()) {
+            return !HardcodedBlockList.EXPERIMENTAL_BLOCKS.contains(material);
+        }
+
+        return true;
     }
 
     @NotNull
     @Override
     public ItemStack getVarLightDebugStick() {
-        net.minecraft.server.v1_15_R1.ItemStack nmsStack = CraftItemStack.asNMSCopy(varlightDebugStick);
+        net.minecraft.server.v1_16_R1.ItemStack nmsStack = CraftItemStack.asNMSCopy(varlightDebugStick);
 
         UUID id = UUID.randomUUID();
 
@@ -289,7 +301,7 @@ public class NmsAdapter implements INmsAdapter {
 
     @Override
     public ItemStack makeGlowingStack(ItemStack base, int lightLevel) {
-        net.minecraft.server.v1_15_R1.ItemStack nmsStack = new net.minecraft.server.v1_15_R1.ItemStack(
+        net.minecraft.server.v1_16_R1.ItemStack nmsStack = new net.minecraft.server.v1_16_R1.ItemStack(
                 CraftMagicNumbers.getItem(base.getType()),
                 base.getAmount()
         );
@@ -312,7 +324,7 @@ public class NmsAdapter implements INmsAdapter {
 
     @Override
     public int getGlowingValue(ItemStack glowingStack) {
-        net.minecraft.server.v1_15_R1.ItemStack nmsStack = CraftItemStack.asNMSCopy(glowingStack);
+        net.minecraft.server.v1_16_R1.ItemStack nmsStack = CraftItemStack.asNMSCopy(glowingStack);
 
         NBTTagCompound tag = nmsStack.getTag();
 
@@ -329,7 +341,7 @@ public class NmsAdapter implements INmsAdapter {
             return false;
         }
 
-        net.minecraft.server.v1_15_R1.ItemStack nmsStack = CraftItemStack.asNMSCopy(itemStack);
+        net.minecraft.server.v1_16_R1.ItemStack nmsStack = CraftItemStack.asNMSCopy(itemStack);
 
         NBTTagCompound tag = nmsStack.getTag();
 
@@ -343,27 +355,12 @@ public class NmsAdapter implements INmsAdapter {
     @Override
     public @NotNull File getRegionRoot(World world) {
         WorldServer nmsWorld = ((CraftWorld) world).getHandle();
-
-        return nmsWorld.worldProvider.getDimensionManager().a(world.getWorldFolder());
+        return Reflect.on(nmsWorld.getChunkProvider().playerChunkMap).get("w");
     }
 
     @Override
     public String getDefaultLevelName() {
         return ((DedicatedServer) MinecraftServer.getServer()).propertyManager.getProperties().levelName;
-    }
-
-    private void reloadServer(MinecraftServer server, ResourcePackRepository<ResourcePackLoader> repo, ResourcePackLoader loader, List<ResourcePackLoader> resourcePacks) {
-        repo.a(resourcePacks); // Update the active Resource Pack List
-
-        WorldData worldData = server.getWorldServer(DimensionManager.OVERWORLD).getWorldData();
-
-        worldData.O().clear(); // Clear enabled Data packs
-        repo.d().forEach(rpToEnable -> {
-            worldData.O().add(rpToEnable.e()); // Enable all Resource packs
-        });
-
-        worldData.N().add(loader.e()); // Add the RP to the list of disabled RPs
-        server.reload(); // Reload the server
     }
 
     private WorldServer getNmsWorld(World world) {

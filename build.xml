@@ -7,16 +7,11 @@
     <property name="dist" location="dist"/>
 
     <property name="core-src" location="Core/src"/>
-    <property name="core-build" location="${build}/Core"/>
     <property name="core-res" location="Core/resources"/>
 
     <property name="v1_15_R1-src" location="v1_15_R1/src"/>
-    <property name="v1_15_R1-build" location="${build}/v1_15_R1"/>
-
     <property name="v1_16_R1-src" location="v1_16_R1/src"/>
-    <property name="v1_16_R1-build" location="${build}/v1_16_R1"/>
 
-    <!--    <property name="paper-version" value="226"/>-->
     <property name="use-compiler" value="modern"/>
 
     <property name="lib-dir" location="lib"/>
@@ -43,9 +38,6 @@
 
     <target name="init" depends="clean">
         <mkdir dir="${build}"/>
-        <mkdir dir="${core-build}"/>
-        <mkdir dir="${v1_16_R1-build}"/>
-        <mkdir dir="${v1_15_R1-build}"/>
         <mkdir dir="${dist}"/>
     </target>
 
@@ -74,16 +66,16 @@
 
         <fail message="plugin.version not set!" unless="plugin.version.set"/>
 
-        <copy todir="${core-build}">
+        <copy todir="${build}">
             <fileset dir="${core-res}"/>
         </copy>
 
-        <replace file="${core-build}/plugin.yml" token="plugin.version" value="${plugin.version}"/>
+        <replace file="${build}/plugin.yml" token="plugin.version" value="${plugin.version}"/>
 
         <echo message="Compiling with debug=${javac-debug} and debug-level=${javac-debug-level}"/>
 
         <javac srcdir="${core-src}"
-               destdir="${core-build}"
+               destdir="${build}"
                includeantruntime="false"
                compiler="${use-compiler}"
                debug="${javac-debug}"
@@ -104,35 +96,18 @@
                 </fileset>
             </classpath>
         </javac>
-        <delete file="${core-build}/me/shawlaf/varlight/spigot/nms/NmsAdapter.class"/>
     </target>
 
     <target name="master" depends="build-core">
         <macrodef name="build">
             <attribute name="version"/>
-            <attribute name="out-dir"/>
-            <attribute name="api-version"/>
             <attribute name="src-dir"/>
 
             <element name="libraries"/>
-            <element name="shaded" optional="true"/>
 
             <sequential>
-
-                <copy todir="@{out-dir}">
-                    <fileset dir="${core-build}"/>
-                </copy>
-
-<!--                <zip basedir="@{datapack-src}" destfile="@{out-dir}/VarLight.zip"/>-->
-
-                <!--                <copy todir="@{out-dir}">-->
-                <!--                    <fileset dir="@{res-dir}"/>-->
-                <!--                </copy>-->
-
-                <replace file="@{out-dir}/plugin.yml" token="api.version" value="@{api-version}"/>
-
                 <javac srcdir="@{src-dir}"
-                       destdir="@{out-dir}"
+                       destdir="${build}"
                        includeantruntime="false"
                        compiler="${use-compiler}"
                        debug="${javac-debug}"
@@ -140,7 +115,7 @@
                        source="${javac-src-lvl}"
                        target="${javac-src-lvl}">
                     <classpath>
-                        <fileset dir="${core-build}">
+                        <fileset dir="${build}">
                             <include name="**/*.class"/>
                         </fileset>
 
@@ -153,33 +128,28 @@
                         </fileset>
                     </classpath>
                 </javac>
-
-                <jar destfile="${dist}/VarLight-${plugin.version}-@{version}.jar" basedir="@{out-dir}">
-                    <zipgroupfileset dir="${lib-dir}">
-                        <include name="**/${lib-annotations}"/>
-                        <include name="**/${lib-command-api}"/>
-                        <include name="**/${lib-varlight-core}"/>
-                        <include name="**/${lib-joor}"/>
-                    </zipgroupfileset>
-                    <shaded/>
-                </jar>
             </sequential>
         </macrodef>
 
-        <build version="MC-1.15.x" src-dir="${v1_15_R1-src}"
-               out-dir="${v1_15_R1-build}"
-               api-version="1.15">
+        <build version="MC-1.15.x" src-dir="${v1_15_R1-src}">
             <libraries>
                 <include name="**/spigot-1.15.2.jar"/>
             </libraries>
         </build>
 
-        <build version="MC-1.16.x" src-dir="${v1_16_R1-src}"
-               out-dir="${v1_16_R1-build}"
-               api-version="1.15">
+        <build version="MC-1.16.x" src-dir="${v1_16_R1-src}">
             <libraries>
                 <include name="**/spigot-1.16.1.jar"/>
             </libraries>
         </build>
+
+        <jar destfile="${dist}/VarLight-${plugin.version}.jar" basedir="${build}">
+            <zipgroupfileset dir="${lib-dir}">
+                <include name="**/${lib-annotations}"/>
+                <include name="**/${lib-command-api}"/>
+                <include name="**/${lib-varlight-core}"/>
+                <include name="**/${lib-joor}"/>
+            </zipgroupfileset>
+        </jar>
     </target>
 </project>
