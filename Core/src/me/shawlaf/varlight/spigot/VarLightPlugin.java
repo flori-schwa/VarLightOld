@@ -47,7 +47,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     private final Map<UUID, Integer> stepSizes = new HashMap<>();
     private final Map<UUID, WorldLightSourceManager> managers = new HashMap<>();
     private final INmsAdapter nmsAdapter;
-    private Tag<Material> allowedBlocks, experimentalBlocks;
     private VarLightCommand command;
     private VarLightConfiguration configuration;
     private AutosaveManager autosaveManager;
@@ -214,22 +213,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     public ChatPromptManager getChatPromptManager() {
         return chatPromptManager;
-    }
-
-    public Tag<Material> getAllowedBlocks() {
-        if (allowedBlocks == null) {
-            allowedBlocks = Bukkit.getTag(Tag.REGISTRY_BLOCKS, new NamespacedKey(this, "allowed_blocks"), Material.class);
-        }
-
-        return allowedBlocks;
-    }
-
-    public Tag<Material> getExperimentalBlocks() {
-        if (experimentalBlocks == null) {
-            experimentalBlocks = Bukkit.getTag(Tag.REGISTRY_BLOCKS, new NamespacedKey(this, "experimental_blocks"), Material.class);
-        }
-
-        return experimentalBlocks;
     }
 
     public void reload() {
