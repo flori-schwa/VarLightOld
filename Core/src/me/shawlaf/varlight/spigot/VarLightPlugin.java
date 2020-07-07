@@ -355,7 +355,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         if (result.successful()) {
             e.setCancelled(creative && e.getAction() == Action.LEFT_CLICK_BLOCK);
 
-            if (!creative && e.getAction() == Action.RIGHT_CLICK_BLOCK) {
+            if (configuration.isConsumeLui() && !creative && e.getAction() == Action.RIGHT_CLICK_BLOCK) {
                 heldItem.setAmount(heldItem.getAmount() - Math.abs(mod));
             }
         }
@@ -414,6 +414,10 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             e.setDropItems(false);
             world.dropItemNaturally(dropLocation, dropStack);
         } else {
+            if (!configuration.isConsumeLui()) {
+                return; // Check for consume lui to prevent ez duping of lui
+            }
+
             if (theBlock.getDrops(heldItem).size() == 0) {
                 return;
             }
