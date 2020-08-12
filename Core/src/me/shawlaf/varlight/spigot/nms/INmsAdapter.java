@@ -37,9 +37,11 @@ public interface INmsAdapter {
 
     void updateBlocksAndChunk(@NotNull Location at);
 
-    void updateChunk(World world, ChunkCoords chunkCoords);
+    CompletableFuture<Void> updateChunk(World world, ChunkCoords chunkCoords);
 
     CompletableFuture<Void> updateBlocks(World world, ChunkCoords chunkCoords);
+
+    CompletableFuture<Void> resetBlocks(World world, ChunkCoords chunkCoords);
 
     CompletableFuture<Void> updateBlocks(World world, Collection<IntPosition> positions);
 

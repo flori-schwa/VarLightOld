@@ -27,6 +27,7 @@ public class VarLightCommandConfig extends VarLightSubCommand {
     private final ReclaimExecutor reclaimExecutor;
     private final LoggerExecutor loggerExecutor;
     private final UpdateCheckExecutor updateCheckExecutor;
+    private final LuiConsumeExecutor luiConsumeExecutor;
 
     public VarLightCommandConfig(VarLightCommand command) {
         super(command, "config");
@@ -40,6 +41,7 @@ public class VarLightCommandConfig extends VarLightSubCommand {
         this.reclaimExecutor = new ReclaimExecutor(this);
         this.loggerExecutor = new LoggerExecutor(this);
         this.updateCheckExecutor = new UpdateCheckExecutor(this);
+        this.luiConsumeExecutor = new LuiConsumeExecutor(this);
     }
 
     @Override
@@ -67,6 +69,18 @@ public class VarLightCommandConfig extends VarLightSubCommand {
                                         .then(
                                                 minecraftTypeArgument("item", MaterialType.ITEM)
                                                         .executes(itemExecutor::executeSet)
+                                        )
+                        )
+                        .then(
+                                literalArgument("consume")
+                                        .then(
+                                                literalArgument("get").executes(luiConsumeExecutor::executeGet)
+                                        )
+                                        .then(
+                                                literalArgument("enable").executes(luiConsumeExecutor::executeEnable)
+                                        )
+                                        .then(
+                                                literalArgument("disable").executes(luiConsumeExecutor::executeDisable)
                                         )
                         )
         );

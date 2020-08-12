@@ -55,18 +55,6 @@ public class VarLightCommandDebug extends VarLightSubCommand {
         return "List all custom Light sources in a region or chunk or get a debug stick.";
     }
 
-    private void suggestCoordinate(RequiredArgumentBuilder<CommandSender, Integer> coordinateArgument, ToIntFunction<Entity> coordinateSupplier) {
-        coordinateArgument.suggests(((context, builder) -> {
-            if (!(context.getSource() instanceof Entity)) {
-                return builder.buildFuture();
-            }
-
-            builder.suggest(coordinateSupplier.applyAsInt((Entity) context.getSource()));
-
-            return builder.buildFuture();
-        }));
-    }
-
     @NotNull
     @Override
     public LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> literalArgumentBuilder) {

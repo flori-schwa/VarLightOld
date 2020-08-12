@@ -202,74 +202,82 @@ public class VarLightCommandFill extends VarLightSubCommand {
 
         RegionIterator regionIterator = new RegionIterator(a, b);
 
-        if (!regionIterator.isRegionLoaded(world)) {
-            failure(this, source, "Not all chunks in the specified region are loaded!");
+        Set<ChunkCoords> affectedChunks = regionIterator.collectChunks();
+
+        if (affectedChunks.size() <= 1024) {
+            createTickets(world, affectedChunks).join();
+        } else if (!regionIterator.isRegionLoaded(world)) {
+            failure(this, source, "Not all chunks in the specified region are loaded and the region is too large to load!");
 
             return FAILURE;
         }
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            int totalSize = regionIterator.getSize();
-            ProgressReport progressReport = totalSize < 1_000_000 ? ProgressReport.EMPTY : new ProgressReport(plugin, source, String.format("Fill from %s to %s", a.toShortString(), b.toShortString()), totalSize);
+            try {
+                int totalSize = regionIterator.getSize();
+                ProgressReport progressReport = totalSize < 1_000_000 ? ProgressReport.EMPTY : new ProgressReport(plugin, source, String.format("Fill from %s to %s", a.toShortString(), b.toShortString()), totalSize);
 
-            int total = 0, illegal = 0, updated = 0, skipped = 0, failed = 0;
+                int total = 0, illegal = 0, updated = 0, skipped = 0, failed = 0;
 
-            IntPosition next;
+                IntPosition next;
 
-            Set<IntPosition> blockUpdates = new HashSet<>();
-            Set<ChunkCoords> chunksToUpdate = new HashSet<>();
+                Set<IntPosition> blockUpdates = new HashSet<>();
+                Set<ChunkCoords> chunksToUpdate = new HashSet<>();
 
-            while (regionIterator.hasNext()) {
-                next = regionIterator.next();
-                Block block = toBlock(next, world);
-                progressReport.reportProgress(++total);
+                while (regionIterator.hasNext()) {
+                    next = regionIterator.next();
+                    Block block = toBlock(next, world);
+                    progressReport.reportProgress(++total);
 
-                if (!filter.test(block.getType())) {
-                    ++skipped;
-                    continue;
+                    if (!filter.test(block.getType())) {
+                        ++skipped;
+                        continue;
+                    }
+
+                    if (plugin.getNmsAdapter().isIllegalBlock(block)) {
+                        ++illegal;
+                        continue;
+                    }
+
+                    LightUpdateResult result = LightSourceUtil.placeNewLightSource(plugin, source, block.getLocation(), lightLevel, false);
+
+                    if (!result.successful()) {
+                        ++failed;
+                        continue;
+                    } else {
+                        ++updated;
+                    }
+
+                    blockUpdates.add(next);
+                    chunksToUpdate.addAll(plugin.getNmsAdapter().collectChunkPositionsToUpdate(new ChunkCoords(block.getX() >> 4, block.getZ() >> 4)));
                 }
 
-                if (plugin.getNmsAdapter().isIllegalBlock(block)) {
-                    ++illegal;
-                    continue;
-                }
+                plugin.getNmsAdapter().updateBlocks(world, blockUpdates).join(); // Wait for all block updates to finish
 
-                LightUpdateResult result = LightSourceUtil.placeNewLightSource(plugin, source, block.getLocation(), lightLevel, false);
+//                Bukkit.getScheduler().runTask(plugin, () -> {
+                    for (ChunkCoords chunkCoords : chunksToUpdate) {
+                        plugin.getNmsAdapter().updateChunk(world, chunkCoords).join();
+                    }
+//                });
 
-                if (!result.successful()) {
-                    ++failed;
-                    continue;
-                } else {
-                    ++updated;
-                }
+                progressReport.finish();
 
-                blockUpdates.add(next);
-                chunksToUpdate.addAll(plugin.getNmsAdapter().collectChunkPositionsToUpdate(new ChunkCoords(block.getX() >> 4, block.getZ() >> 4)));
+                successBroadcast(this, source, String.format("Successfully updated %d Light sources in Region [%d, %d, %d] to [%d, %d, %d]. (Total blocks: %d, Invalid Blocks: %d, Skipped Blocks: %d, Failed Blocks: %d)",
+                        updated,
+                        regionIterator.pos1.x,
+                        regionIterator.pos1.y,
+                        regionIterator.pos1.z,
+                        regionIterator.pos2.x,
+                        regionIterator.pos2.y,
+                        regionIterator.pos2.z,
+                        total,
+                        illegal,
+                        skipped,
+                        failed
+                ));
+            } catch (Exception e) {
+                releaseTickets(world, affectedChunks);
             }
-
-            plugin.getNmsAdapter().updateBlocks(world, blockUpdates).join(); // Wait for all block updates to finish
-
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                for (ChunkCoords chunkCoords : chunksToUpdate) {
-                    plugin.getNmsAdapter().updateChunk(world, chunkCoords);
-                }
-            });
-
-            progressReport.finish();
-
-            successBroadcast(this, source, String.format("Successfully updated %d Light sources in Region [%d, %d, %d] to [%d, %d, %d]. (Total blocks: %d, Invalid Blocks: %d, Skipped Blocks: %d, Failed Blocks: %d)",
-                    updated,
-                    regionIterator.pos1.x,
-                    regionIterator.pos1.y,
-                    regionIterator.pos1.z,
-                    regionIterator.pos2.x,
-                    regionIterator.pos2.y,
-                    regionIterator.pos2.z,
-                    total,
-                    illegal,
-                    skipped,
-                    failed
-            ));
         });
 
         return SUCCESS;

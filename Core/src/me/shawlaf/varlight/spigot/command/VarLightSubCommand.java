@@ -16,14 +16,19 @@ import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.command.commands.arguments.CollectionArgumentType;
 import me.shawlaf.varlight.spigot.command.commands.arguments.MinecraftTypeArgumentType;
 import me.shawlaf.varlight.spigot.nms.MaterialType;
+import me.shawlaf.varlight.util.ChunkCoords;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.ToIntFunction;
 
 public abstract class VarLightSubCommand implements ICommandAccess<VarLightPlugin> {
 
@@ -71,6 +76,18 @@ public abstract class VarLightSubCommand implements ICommandAccess<VarLightPlugi
 
     protected static RequiredArgumentBuilder<CommandSender, Player> playerArgument(String name) {
         return RequiredArgumentBuilder.argument(name, PlayerArgumentType.player());
+    }
+
+    protected static void suggestCoordinate(RequiredArgumentBuilder<CommandSender, Integer> coordinateArgument, ToIntFunction<Entity> coordinateSupplier) {
+        coordinateArgument.suggests(((context, builder) -> {
+            if (!(context.getSource() instanceof Entity)) {
+                return builder.buildFuture();
+            }
+
+            builder.suggest(coordinateSupplier.applyAsInt((Entity) context.getSource()));
+
+            return builder.buildFuture();
+        }));
     }
 
     public abstract @NotNull LiteralArgumentBuilder<CommandSender> build(LiteralArgumentBuilder<CommandSender> node);
@@ -137,6 +154,50 @@ public abstract class VarLightSubCommand implements ICommandAccess<VarLightPlugi
 
     protected <E extends Enum<E>> RequiredArgumentBuilder<CommandSender, E> enumArgument(String name, Class<E> enumType) {
         return RequiredArgumentBuilder.argument(name, EnumArgumentType.enumArgument(enumType));
+    }
+
+    protected CompletableFuture<Void> createTickets(World world, Set<ChunkCoords> chunkCoords) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+
+        Runnable r = () -> {
+            for (ChunkCoords chunkCoord : chunkCoords) {
+                world.addPluginChunkTicket(chunkCoord.x, chunkCoord.z, plugin);
+            }
+        };
+
+        if (Bukkit.isPrimaryThread()) {
+            r.run();
+            future.complete(null);
+        } else {
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                r.run();
+                future.complete(null);
+            });
+        }
+
+        return future;
+    }
+
+    protected CompletableFuture<Void> releaseTickets(World world, Set<ChunkCoords> chunkCoords) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+
+        Runnable r = () -> {
+            for (ChunkCoords chunkCoord : chunkCoords) {
+                world.removePluginChunkTicket(chunkCoord.x, chunkCoord.z, plugin);
+            }
+        };
+
+        if (Bukkit.isPrimaryThread()) {
+            r.run();
+            future.complete(null);
+        } else {
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                r.run();
+                future.complete(null);
+            });
+        }
+
+        return future;
     }
 
     // endregion
