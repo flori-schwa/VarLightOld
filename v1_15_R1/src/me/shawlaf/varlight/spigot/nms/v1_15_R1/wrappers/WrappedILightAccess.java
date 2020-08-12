@@ -1,4 +1,4 @@
-package me.shawlaf.varlight.spigot.nms.wrappers;
+package me.shawlaf.varlight.spigot.nms.v1_15_R1.wrappers;
 
 import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;

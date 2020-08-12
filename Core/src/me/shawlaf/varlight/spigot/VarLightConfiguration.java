@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 public class VarLightConfiguration {
 
     public static final String CONFIG_KEY_VARLIGHT_ITEM = "lui";
+    public static final String CONFIG_KEY_CONSUME_LUI = "consume-lui";
     public static final String CONFIG_KEY_CHECK_PERMISSION = "check-permission";
     public static final String CONFIG_KEY_AUTOSAVE = "autosave";
     public static final String CONFIG_KEY_NLS_DEFLATED = "nls-deflated";
@@ -34,6 +35,7 @@ public class VarLightConfiguration {
         plugin.saveDefaultConfig();
 
         plugin.getConfig().addDefault(CONFIG_KEY_VARLIGHT_ITEM, Material.GLOWSTONE_DUST.getKey().toString());
+        plugin.getConfig().addDefault(CONFIG_KEY_CONSUME_LUI, true);
         plugin.getConfig().addDefault(CONFIG_KEY_AUTOSAVE, -1); // Persist Light sources on world save
         plugin.getConfig().addDefault(CONFIG_KEY_CHECK_PERMISSION, false);
         plugin.getConfig().addDefault(WorldListType.WHITELIST.configPath, new ArrayList<String>());
@@ -81,6 +83,10 @@ public class VarLightConfiguration {
         return material;
     }
 
+    public boolean isConsumeLui() {
+        return plugin.getConfig().getBoolean(CONFIG_KEY_CONSUME_LUI);
+    }
+
     public boolean isAllowedStepsizeGamemode(GameMode gameMode) {
         switch (gameMode) {
             case SURVIVAL: {
@@ -112,6 +118,11 @@ public class VarLightConfiguration {
 
     public boolean canAdventureUseStepsize() {
         return plugin.getConfig().getBoolean(CONFIG_KEY_STEPSIZE_ALLOW_ADVENTURE);
+    }
+
+    public void setConsumeLui(boolean value) {
+        plugin.getConfig().set(CONFIG_KEY_CONSUME_LUI, value);
+        save();
     }
 
     public void setCanUseStepsize(GameMode gameMode, boolean value) {

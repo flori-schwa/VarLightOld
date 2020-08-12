@@ -1,10 +1,10 @@
-package me.shawlaf.varlight.spigot.nms.wrappers;
+package me.shawlaf.varlight.spigot.nms.v1_16_R2.wrappers;
 
 import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
-import net.minecraft.server.v1_16_R1.*;
+import net.minecraft.server.v1_16_R2.*;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.World;
@@ -58,7 +58,7 @@ public class WrappedILightAccess implements ILightAccess, Listener {
                 new Class[]{IChunkAccess.class},
 
                 (proxy, method, args) -> {
-                    if (method.getName().equals("h")) {
+                    if (method.getName().equals("g")) {
                         return getCustomLuminance(toWrap, (BlockPosition) args[0]);
                     }
 
@@ -76,7 +76,7 @@ public class WrappedILightAccess implements ILightAccess, Listener {
             IChunkAccess res = createProxy(chunkCoords);
 
             if (res != null && !proxies.containsKey(chunkCoords)) {
-                proxies.put(chunkCoords, createProxy(chunkCoords));
+                proxies.put(chunkCoords, res);
             }
         }
 

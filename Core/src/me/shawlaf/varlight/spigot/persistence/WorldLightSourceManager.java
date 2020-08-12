@@ -61,6 +61,10 @@ public class WorldLightSourceManager {
         return custom;
     }
 
+    public boolean hasChunkCustomLightData(ChunkCoords chunkCoords) {
+        return getNLSFile(chunkCoords.toRegionCoords()).hasChunkData(chunkCoords);
+    }
+
     public void setCustomLuminance(Location location, int lightLevel) {
         setCustomLuminance(toIntPosition(location), lightLevel);
     }

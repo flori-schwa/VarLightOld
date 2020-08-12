@@ -29,13 +29,15 @@ public final class VarLightCommand extends BrigadierCommand<VarLightPlugin> {
     private static final Class[] SUB_COMMANDS = new Class[]{
             // Register sub commands here
             VarLightCommandConfig.class,
+            VarLightCommandClear.class,
             VarLightCommandDebug.class,
             VarLightCommandFill.class,
             VarLightCommandSave.class,
             VarLightCommandGive.class,
+            VarLightCommandPrompt.class,
             VarLightCommandSave.class,
             VarLightCommandStepSize.class,
-            VarLightCommandUpdate.class
+            VarLightCommandUpdate.class,
     };
 
     private VarLightSubCommand[] subCommands; // Will be used by help command

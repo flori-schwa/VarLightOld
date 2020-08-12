@@ -6,11 +6,16 @@ import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.event.LightUpdateEvent;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.util.ChunkCoords;
+import me.shawlaf.varlight.util.IntPosition;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 import static me.shawlaf.varlight.spigot.LightUpdateResult.*;
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
@@ -23,6 +28,10 @@ public class LightSourceUtil {
     }
 
     public static LightUpdateResult placeNewLightSource(VarLightPlugin plugin, CommandSender source, Location location, int lightLevel, boolean doUpdate) {
+
+        IntPosition position = IntPositionExtension.toIntPosition(location);
+        ChunkCoords center = position.toChunkCoords();
+
         int fromLight = location.getBlock().getLightFromBlocks();
 
         WorldLightSourceManager manager = plugin.getManager(Objects.requireNonNull(location.getWorld()));
@@ -31,7 +40,7 @@ public class LightSourceUtil {
             return varLightNotActive(plugin, location.getWorld(), fromLight, lightLevel);
         }
 
-        fromLight = manager.getCustomLuminance(toIntPosition(location), 0);
+        fromLight = manager.getCustomLuminance(position, 0);
 
         if (lightLevel < 0) {
             return zeroReached(plugin, fromLight, lightLevel);
@@ -60,9 +69,23 @@ public class LightSourceUtil {
             plugin.getNmsAdapter().updateBlock(location).thenRun(
                     () -> {
                         Bukkit.getScheduler().runTask(plugin, () -> {
-                            for (ChunkCoords chunkCoords : plugin.getNmsAdapter().collectChunkPositionsToUpdate(toIntPosition(location))) {
-                                plugin.getNmsAdapter().updateChunk(location.getWorld(), chunkCoords);
+                            Collection<ChunkCoords> neighbours = plugin.getNmsAdapter().collectChunkPositionsToUpdate(position);
+                            List<CompletableFuture<Void>> futures = new ArrayList<>(neighbours.size());
+
+                            for (ChunkCoords neighbour : neighbours) {
+                                futures.add(plugin.getNmsAdapter().updateChunk(location.getWorld(), neighbour));
                             }
+
+                            CompletableFuture<Void> future = new CompletableFuture<>();
+
+                            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                                futures.forEach(CompletableFuture::join);
+                                future.complete(null);
+                            });
+
+                            future.thenRun(() -> {
+                                plugin.getNmsAdapter().sendLightUpdates(location.getWorld(), center);
+                            });
                         });
                     }
             );
