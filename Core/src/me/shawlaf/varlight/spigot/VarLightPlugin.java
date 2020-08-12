@@ -517,6 +517,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
                     Bukkit.getScheduler().runTask(this, () -> {
                         nmsAdapter.updateChunk(e.getBlock().getWorld(), blockPos.toChunkCoords());
+                        nmsAdapter.sendLightUpdates(e.getBlock().getWorld(), blockPos.toChunkCoords());
                     });
                 }
             } else {
@@ -524,6 +525,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
                 Bukkit.getScheduler().runTask(this, () -> {
                     nmsAdapter.updateChunk(e.getBlock().getWorld(), blockPos.toChunkCoords());
+                    nmsAdapter.sendLightUpdates(e.getBlock().getWorld(), blockPos.toChunkCoords());
                 });
             }
         }

@@ -16,10 +16,13 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.LivingEntity;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import static me.shawlaf.command.result.CommandResult.failure;
@@ -182,25 +185,40 @@ public class VarLightCommandClear extends VarLightSubCommand {
             return;
         }
 
-        CompletableFuture<?>[] futures = new CompletableFuture[chunks.size()];
+        AtomicReference<List<CompletableFuture<Void>>> futures = new AtomicReference<>(new ArrayList<>(chunks.size()));
         int i = 0;
 
         for (ChunkCoords chunk : chunks) {
             manager.getNLSFile(chunk.toRegionCoords()).clearChunk(chunk);
-            futures[i++] = plugin.getNmsAdapter().resetBlocks(world, chunk);
+            futures.get().add(plugin.getNmsAdapter().resetBlocks(world, chunk));
         }
 
-        for (CompletableFuture<?> future : futures) {
-            future.join();
-        }
+        futures.get().forEach(CompletableFuture::join);
 
         Bukkit.getScheduler().runTask(plugin, () -> {
+            futures.set(new ArrayList<>(chunks.size()));
+
             for (ChunkCoords chunkCoords : chunks) {
-                plugin.getNmsAdapter().updateChunk(world, chunkCoords);
+                CompletableFuture<Void> future = new CompletableFuture<>();
+
+                plugin.getNmsAdapter().updateChunk(world, chunkCoords).thenRun(() -> {
+                    try {
+                        plugin.getNmsAdapter().sendLightUpdates(world, chunkCoords);
+                    } finally {
+                        future.complete(null);
+                    }
+                });
+
+                futures.get().add(future);
             }
 
-            releaseTickets(world, chunks).join();
-            CommandResult.successBroadcast(this, source, "Cleared Custom Light sources in " + chunks.size() + " chunks");
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                futures.get().forEach(CompletableFuture::join);
+                futures.set(null);
+
+                releaseTickets(world, chunks).join();
+                CommandResult.successBroadcast(this, source, "Cleared Custom Light sources in " + chunks.size() + " chunks");
+            });
         });
     }
 }
