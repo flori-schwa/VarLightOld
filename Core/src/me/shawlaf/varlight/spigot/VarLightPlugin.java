@@ -1,6 +1,8 @@
 package me.shawlaf.varlight.spigot;
 
 import me.shawlaf.varlight.spigot.command.VarLightCommand;
+import me.shawlaf.varlight.spigot.executor.BukkitAsyncExecutorService;
+import me.shawlaf.varlight.spigot.executor.BukkitSyncExecutorService;
 import me.shawlaf.varlight.spigot.nms.INmsAdapter;
 import me.shawlaf.varlight.spigot.nms.VarLightInitializationException;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
@@ -33,6 +35,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.concurrent.*;
 
 import static me.shawlaf.command.result.CommandResult.failure;
 import static me.shawlaf.command.result.CommandResult.info;
@@ -47,7 +50,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     private final Map<UUID, Integer> stepSizes = new HashMap<>();
     private final Map<UUID, WorldLightSourceManager> managers = new HashMap<>();
     private final INmsAdapter nmsAdapter;
-    private Tag<Material> allowedBlocks, experimentalBlocks;
+    private final ExecutorService bukkitAsyncExecutorService, bukkitSyncExecutorService;
     private VarLightCommand command;
     private VarLightConfiguration configuration;
     private AutosaveManager autosaveManager;
@@ -66,6 +69,9 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     }
 
     {
+        this.bukkitAsyncExecutorService = new BukkitAsyncExecutorService(this);
+        this.bukkitSyncExecutorService = new BukkitSyncExecutorService(this);
+
         try {
             Class<?> nmsAdapterClass = Class.forName(String.format("me.shawlaf.varlight.spigot.nms.%s.NmsAdapter", SERVER_VERSION));
 
@@ -196,6 +202,14 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         return nmsAdapter;
     }
 
+    public ExecutorService getBukkitAsyncExecutorService() {
+        return bukkitAsyncExecutorService;
+    }
+
+    public ExecutorService getBukkitSyncExecutorService() {
+        return bukkitSyncExecutorService;
+    }
+
     public VarLightCommand getCommand() {
         return command;
     }
@@ -214,22 +228,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     public ChatPromptManager getChatPromptManager() {
         return chatPromptManager;
-    }
-
-    public Tag<Material> getAllowedBlocks() {
-        if (allowedBlocks == null) {
-            allowedBlocks = Bukkit.getTag(Tag.REGISTRY_BLOCKS, new NamespacedKey(this, "allowed_blocks"), Material.class);
-        }
-
-        return allowedBlocks;
-    }
-
-    public Tag<Material> getExperimentalBlocks() {
-        if (experimentalBlocks == null) {
-            experimentalBlocks = Bukkit.getTag(Tag.REGISTRY_BLOCKS, new NamespacedKey(this, "experimental_blocks"), Material.class);
-        }
-
-        return experimentalBlocks;
     }
 
     public void reload() {
