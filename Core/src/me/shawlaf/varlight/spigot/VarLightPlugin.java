@@ -1,8 +1,10 @@
 package me.shawlaf.varlight.spigot;
 
 import me.shawlaf.varlight.spigot.command.VarLightCommand;
+import me.shawlaf.varlight.spigot.executor.AbstractBukkitExecutor;
 import me.shawlaf.varlight.spigot.executor.BukkitAsyncExecutorService;
 import me.shawlaf.varlight.spigot.executor.BukkitSyncExecutorService;
+import me.shawlaf.varlight.spigot.executor.Ticks;
 import me.shawlaf.varlight.spigot.nms.INmsAdapter;
 import me.shawlaf.varlight.spigot.nms.VarLightInitializationException;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
@@ -50,7 +52,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     private final Map<UUID, Integer> stepSizes = new HashMap<>();
     private final Map<UUID, WorldLightSourceManager> managers = new HashMap<>();
     private final INmsAdapter nmsAdapter;
-    private final ExecutorService bukkitAsyncExecutorService, bukkitSyncExecutorService;
+    private final AbstractBukkitExecutor bukkitAsyncExecutorService, bukkitSyncExecutorService;
     private VarLightCommand command;
     private VarLightConfiguration configuration;
     private AutosaveManager autosaveManager;
@@ -154,7 +156,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         NumericMajorMinorVersion current = NumericMajorMinorVersion.tryParse(getDescription().getVersion());
 
         if (current != null && configuration.isCheckUpdateEnabled()) { // Development versions are not numeric
-            Bukkit.getScheduler().runTaskAsynchronously(this, new UpdateCheck(getLogger(), current));
+            bukkitAsyncExecutorService.submit(new UpdateCheck(getLogger(), current));
         }
     }
 
@@ -202,11 +204,11 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         return nmsAdapter;
     }
 
-    public ExecutorService getBukkitAsyncExecutorService() {
+    public AbstractBukkitExecutor getBukkitAsyncExecutorService() {
         return bukkitAsyncExecutorService;
     }
 
-    public ExecutorService getBukkitSyncExecutorService() {
+    public AbstractBukkitExecutor getBukkitMainThreadExecutorService() {
         return bukkitSyncExecutorService;
     }
 
@@ -475,20 +477,19 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
                 return;
             }
 
-            Bukkit.getScheduler().runTaskLater(this,
-                    () -> {
-                        LightUpdateResult lightUpdateResult = placeNewLightSource(this, e.getPlayer(), e.getBlock().getLocation(), emittingLight);
+            bukkitSyncExecutorService.submitDelayed(() -> {
+                LightUpdateResult lightUpdateResult = placeNewLightSource(this, e.getPlayer(), e.getBlock().getLocation(), emittingLight);
 
-                        debugManager.logDebugAction(e.getPlayer(), () ->
-                                "Place Lightsource (" + handCopy.getType().getKey().toString() + ") @ " + IntPositionExtension.toIntPosition(e.getBlock()).toShortString() + " (" + emittingLight + "): " + lightUpdateResult.getDebugMessage().toString());
+                debugManager.logDebugAction(e.getPlayer(), () ->
+                        "Place Lightsource (" + handCopy.getType().getKey().toString() + ") @ " + IntPositionExtension.toIntPosition(e.getBlock()).toShortString() + " (" + emittingLight + "): " + lightUpdateResult.getDebugMessage().toString());
 
-                        if (!lightUpdateResult.successful()) {
-                            e.getBlock().setType(before);
+                if (!lightUpdateResult.successful()) {
+                    e.getBlock().setType(before);
 
-                            handCopy.setAmount(1);
-                            e.getBlock().getWorld().dropItemNaturally(e.getBlock().getLocation(), handCopy);
-                        }
-                    }, 1L);
+                    handCopy.setAmount(1);
+                    e.getBlock().getWorld().dropItemNaturally(e.getBlock().getLocation(), handCopy);
+                }
+            }, Ticks.of(1));
         }
     }
 
@@ -513,7 +514,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
                 } else {
                     // Probably not possible, but /shrug
 
-                    Bukkit.getScheduler().runTask(this, () -> {
+                    bukkitSyncExecutorService.submit(() -> {
                         nmsAdapter.updateChunk(e.getBlock().getWorld(), blockPos.toChunkCoords());
                         nmsAdapter.sendLightUpdates(e.getBlock().getWorld(), blockPos.toChunkCoords());
                     });
@@ -521,7 +522,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             } else {
                 // The Light source Block received an update from another Block
 
-                Bukkit.getScheduler().runTask(this, () -> {
+                bukkitSyncExecutorService.submit(() -> {
                     nmsAdapter.updateChunk(e.getBlock().getWorld(), blockPos.toChunkCoords());
                     nmsAdapter.sendLightUpdates(e.getBlock().getWorld(), blockPos.toChunkCoords());
                 });

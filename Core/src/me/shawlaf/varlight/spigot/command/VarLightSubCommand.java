@@ -27,6 +27,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.ToIntFunction;
 
@@ -156,9 +157,8 @@ public abstract class VarLightSubCommand implements ICommandAccess<VarLightPlugi
         return RequiredArgumentBuilder.argument(name, EnumArgumentType.enumArgument(enumType));
     }
 
+    @SuppressWarnings("unchecked")
     protected CompletableFuture<Void> createTickets(World world, Set<ChunkCoords> chunkCoords) {
-        CompletableFuture<Void> future = new CompletableFuture<>();
-
         Runnable r = () -> {
             for (ChunkCoords chunkCoord : chunkCoords) {
                 world.addPluginChunkTicket(chunkCoord.x, chunkCoord.z, plugin);
@@ -167,20 +167,13 @@ public abstract class VarLightSubCommand implements ICommandAccess<VarLightPlugi
 
         if (Bukkit.isPrimaryThread()) {
             r.run();
-            future.complete(null);
+            return CompletableFuture.completedFuture(null);
         } else {
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                r.run();
-                future.complete(null);
-            });
+            return plugin.getBukkitMainThreadExecutorService().submit(r, null);
         }
-
-        return future;
     }
 
     protected CompletableFuture<Void> releaseTickets(World world, Set<ChunkCoords> chunkCoords) {
-        CompletableFuture<Void> future = new CompletableFuture<>();
-
         Runnable r = () -> {
             for (ChunkCoords chunkCoord : chunkCoords) {
                 world.removePluginChunkTicket(chunkCoord.x, chunkCoord.z, plugin);
@@ -189,15 +182,10 @@ public abstract class VarLightSubCommand implements ICommandAccess<VarLightPlugi
 
         if (Bukkit.isPrimaryThread()) {
             r.run();
-            future.complete(null);
+            return CompletableFuture.completedFuture(null);
         } else {
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                r.run();
-                future.complete(null);
-            });
+            return plugin.getBukkitMainThreadExecutorService().submit(r, null);
         }
-
-        return future;
     }
 
     // endregion

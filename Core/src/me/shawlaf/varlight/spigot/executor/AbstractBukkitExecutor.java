@@ -1,5 +1,6 @@
 package me.shawlaf.varlight.spigot.executor;
 
+import me.shawlaf.varlight.util.Tuple;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
@@ -90,149 +91,110 @@ public abstract class AbstractBukkitExecutor implements ExecutorService {
 
     @NotNull
     @Override
-    public <T> List<Future<T>> invokeAll(@NotNull Collection<? extends Callable<T>> tasks) throws InterruptedException {
-        assertNotShutdown();
-
-        List<Future<T>> futures = new ArrayList<>(tasks.size());
-
-        for (Callable<T> task : tasks) {
-            CompletableFuture<T> future = new CompletableFuture<>();
-            futures.add(future);
-
-            submit(() -> {
-                try {
-                    future.complete(task.call());
-                } catch (Exception e) {
-                    future.completeExceptionally(e);
-                }
-            });
-        }
-
-        CompletableFuture<List<Future<T>>> waitFuture = new CompletableFuture<>();
-
-        submit(() -> {
-            for (Future<T> future : futures) {
-                try {
-                    ((CompletableFuture<T>) future).join();
-                } catch (Exception ignored) {
-
-                }
-            }
-
-            waitFuture.complete(futures);
-        });
-
-        return waitFuture.join();
+    public <T> List<Future<T>> invokeAll(@NotNull Collection<? extends Callable<T>> tasks) {
+        return invokeAll0(tasks).item2.join();
     }
 
-    @NotNull
     @Override
-    public <T> List<Future<T>> invokeAll(@NotNull Collection<? extends Callable<T>> tasks, long timeout, @NotNull TimeUnit unit) throws InterruptedException {
-        assertNotShutdown();
-
-        List<Future<T>> futures = new ArrayList<>(tasks.size());
-
-        for (Callable<T> task : tasks) {
-            CompletableFuture<T> future = new CompletableFuture<>();
-            futures.add(future);
-
-            submit(() -> {
-                try {
-                    future.complete(task.call());
-                } catch (Exception e) {
-                    future.completeExceptionally(e);
-                }
-            });
-        }
-
-        CompletableFuture<List<Future<T>>> waitFuture = new CompletableFuture<>();
-
-        submit(() -> {
-            for (Future<T> future : futures) {
-                try {
-                    ((CompletableFuture<T>) future).join();
-                } catch (Exception ignored) {
-
-                }
-            }
-
-            waitFuture.complete(futures);
-        });
+    public <T> @NotNull List<Future<T>> invokeAll(@NotNull Collection<? extends Callable<T>> tasks, long timeout, @NotNull TimeUnit unit) throws InterruptedException {
+        Tuple<List<Future<T>>, CompletableFuture<List<Future<T>>>> tuple = invokeAll0(tasks);
 
         try {
-            return waitFuture.get(timeout, unit);
+            return tuple.item2.get(timeout, unit);
         } catch (ExecutionException | TimeoutException e) {
-            return futures;
+            return tuple.item1;
         }
     }
 
     @NotNull
     @Override
     public <T> T invokeAny(@NotNull Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
-        assertNotShutdown();
-
-        CompletableFuture<T> future = new CompletableFuture<>();
-        AtomicInteger failCount = new AtomicInteger(0);
-
-        for (Callable<T> task : tasks) {
-            submit(() -> {
-
-                T result;
-
-                try {
-                    result = task.call();
-                } catch (Exception e) {
-
-                    if (failCount.incrementAndGet() == tasks.size()) {
-                        future.completeExceptionally(new ExecutionException(e)); // All futures have completed exceptionally
-                    }
-
-                    return; // Exception results are ignored
-                }
-
-                synchronized (future) {
-                    future.complete(result);
-                }
-            });
-        }
-
-        return future.get();
+        return invokeAny0(tasks).get();
     }
 
     @Override
     public <T> T invokeAny(@NotNull Collection<? extends Callable<T>> tasks, long timeout, @NotNull TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        assertNotShutdown();
-
-        CompletableFuture<T> future = new CompletableFuture<>();
-        AtomicInteger failCount = new AtomicInteger(0);
-
-        for (Callable<T> task : tasks) {
-            submit(() -> {
-
-                T result;
-
-                try {
-                    result = task.call();
-                } catch (Exception e) {
-
-                    if (failCount.incrementAndGet() == tasks.size()) {
-                        future.completeExceptionally(new ExecutionException(e)); // All futures have completed exceptionally
-                    }
-
-                    return; // Exception results are ignored
-                }
-
-                synchronized (future) {
-                    future.complete(result);
-                }
-            });
-        }
-
-        return future.get(timeout, unit);
+        return invokeAny0(tasks).get(timeout, unit);
     }
 
     @Override
     public void execute(@NotNull Runnable command) {
         submit(command);
+    }
+
+    @Override
+    public abstract <T> @NotNull CompletableFuture<T> submit(@NotNull Runnable task, T result);
+
+    @Override
+    public abstract <T> @NotNull CompletableFuture<T> submit(@NotNull Callable<T> task);
+
+    public abstract @NotNull CompletableFuture<?> submit(@NotNull Runnable task);
+
+    public abstract <T> @NotNull CompletableFuture<T> submitDelayed(@NotNull Callable<T> task, Ticks delay);
+
+    public abstract <T> @NotNull CompletableFuture<T> submitDelayed(@NotNull Runnable task, T result, Ticks delay);
+
+    public abstract @NotNull CompletableFuture<?> submitDelayed(@NotNull Runnable task, Ticks delay);
+
+    private <T> Tuple<List<Future<T>>, CompletableFuture<List<Future<T>>>> invokeAll0(Collection<? extends Callable<T>> tasks) {
+        assertNotShutdown();
+
+        List<Future<T>> futures = new ArrayList<>(tasks.size());
+
+        for (Callable<T> task : tasks) {
+            CompletableFuture<T> future = new CompletableFuture<>();
+            futures.add(future);
+
+            submit(() -> {
+                try {
+                    future.complete(task.call());
+                } catch (Exception e) {
+                    future.completeExceptionally(e);
+                }
+            });
+        }
+
+        return new Tuple<>(futures, submit(() -> {
+            for (Future<T> future : futures) {
+                try {
+                    ((CompletableFuture<T>) future).join();
+                } catch (Exception ignored) {
+
+                }
+            }
+
+            return futures;
+        }));
+    }
+
+    private <T> CompletableFuture<T> invokeAny0(Collection<? extends Callable<T>> tasks) {
+        assertNotShutdown();
+
+        CompletableFuture<T> future = new CompletableFuture<>();
+        AtomicInteger failCount = new AtomicInteger(0);
+
+        for (Callable<T> task : tasks) {
+            submit(() -> {
+
+                T result;
+
+                try {
+                    result = task.call();
+                } catch (Exception e) {
+
+                    if (failCount.incrementAndGet() == tasks.size()) {
+                        future.completeExceptionally(new ExecutionException(e)); // All futures have completed exceptionally
+                    }
+
+                    return; // Exception results are ignored
+                }
+
+                synchronized (future) {
+                    future.complete(result);
+                }
+            });
+        }
+
+        return future;
     }
 }
