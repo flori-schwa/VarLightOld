@@ -11,6 +11,7 @@
 
     <property name="v1_15_R1-src" location="v1_15_R1/src"/>
     <property name="v1_16_R1-src" location="v1_16_R1/src"/>
+    <property name="v1_16_R2-src" location="v1_16_R2/src"/>
 
     <property name="use-compiler" value="modern"/>
 
@@ -100,7 +101,6 @@
 
     <target name="master" depends="build-core">
         <macrodef name="build">
-            <attribute name="version"/>
             <attribute name="src-dir"/>
 
             <element name="libraries"/>
@@ -131,15 +131,21 @@
             </sequential>
         </macrodef>
 
-        <build version="MC-1.15.x" src-dir="${v1_15_R1-src}">
+        <build src-dir="${v1_15_R1-src}">
             <libraries>
                 <include name="**/spigot-1.15.2.jar"/>
             </libraries>
         </build>
 
-        <build version="MC-1.16.x" src-dir="${v1_16_R1-src}">
+        <build src-dir="${v1_16_R1-src}">
             <libraries>
                 <include name="**/spigot-1.16.1.jar"/>
+            </libraries>
+        </build>
+
+        <build src-dir="${v1_16_R2-src}">
+            <libraries>
+                <include name="**/spigot-1.16.2.jar"/>
             </libraries>
         </build>
 

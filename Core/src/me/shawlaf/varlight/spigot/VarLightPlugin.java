@@ -1,6 +1,8 @@
 package me.shawlaf.varlight.spigot;
 
 import me.shawlaf.varlight.spigot.command.VarLightCommand;
+import me.shawlaf.varlight.spigot.executor.BukkitAsyncExecutorService;
+import me.shawlaf.varlight.spigot.executor.BukkitSyncExecutorService;
 import me.shawlaf.varlight.spigot.nms.INmsAdapter;
 import me.shawlaf.varlight.spigot.nms.VarLightInitializationException;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
@@ -33,6 +35,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.concurrent.*;
 
 import static me.shawlaf.command.result.CommandResult.failure;
 import static me.shawlaf.command.result.CommandResult.info;
@@ -47,6 +50,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     private final Map<UUID, Integer> stepSizes = new HashMap<>();
     private final Map<UUID, WorldLightSourceManager> managers = new HashMap<>();
     private final INmsAdapter nmsAdapter;
+    private final ExecutorService bukkitAsyncExecutorService, bukkitSyncExecutorService;
     private VarLightCommand command;
     private VarLightConfiguration configuration;
     private AutosaveManager autosaveManager;
@@ -65,6 +69,9 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     }
 
     {
+        this.bukkitAsyncExecutorService = new BukkitAsyncExecutorService(this);
+        this.bukkitSyncExecutorService = new BukkitSyncExecutorService(this);
+
         try {
             Class<?> nmsAdapterClass = Class.forName(String.format("me.shawlaf.varlight.spigot.nms.%s.NmsAdapter", SERVER_VERSION));
 
@@ -193,6 +200,14 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     public INmsAdapter getNmsAdapter() {
         return nmsAdapter;
+    }
+
+    public ExecutorService getBukkitAsyncExecutorService() {
+        return bukkitAsyncExecutorService;
+    }
+
+    public ExecutorService getBukkitSyncExecutorService() {
+        return bukkitSyncExecutorService;
     }
 
     public VarLightCommand getCommand() {
@@ -500,6 +515,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
                     Bukkit.getScheduler().runTask(this, () -> {
                         nmsAdapter.updateChunk(e.getBlock().getWorld(), blockPos.toChunkCoords());
+                        nmsAdapter.sendLightUpdates(e.getBlock().getWorld(), blockPos.toChunkCoords());
                     });
                 }
             } else {
@@ -507,6 +523,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
                 Bukkit.getScheduler().runTask(this, () -> {
                     nmsAdapter.updateChunk(e.getBlock().getWorld(), blockPos.toChunkCoords());
+                    nmsAdapter.sendLightUpdates(e.getBlock().getWorld(), blockPos.toChunkCoords());
                 });
             }
         }

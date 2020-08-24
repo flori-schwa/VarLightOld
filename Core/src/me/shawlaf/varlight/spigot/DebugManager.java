@@ -1,5 +1,6 @@
 package me.shawlaf.varlight.spigot;
 
+import me.shawlaf.varlight.spigot.util.LogUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -20,7 +21,17 @@ public class DebugManager {
             return;
         }
 
-        String messageFormatted = ChatColor.GRAY + "" + ChatColor.ITALIC + String.format("[DEBUG] %s: %s", source.getName(), message.get());
+        if (source == null) {
+            source = Bukkit.getConsoleSender();
+        }
+
+        String messageFormatted = ChatColor.GRAY + "" + ChatColor.ITALIC + String.format("[%s:%d] %s: %s",
+                LogUtil.currentFileName(1),
+                LogUtil.currentLineNumber(1),
+                source.getName(),
+                message.get()
+        );
+
         String messagePlain = ChatColor.stripColor(messageFormatted);
 
         for (Player player : Bukkit.getOnlinePlayers()) {

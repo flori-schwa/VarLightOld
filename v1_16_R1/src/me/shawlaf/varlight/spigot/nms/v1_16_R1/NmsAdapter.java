@@ -26,12 +26,9 @@ import org.joor.Reflect;
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 import java.util.stream.StreamSupport;
 
-import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
-
-@ForMinecraft(version = "1.16.x")
+@ForMinecraft(version = "1.16.0 - 1.16.1")
 public class NmsAdapter implements INmsAdapter {
 
     private final VarLightPlugin plugin;
@@ -123,157 +120,6 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public CompletableFuture<Void> updateChunk(World world, ChunkCoords chunkCoords) {
-        return updateChunk(getNmsWorld(world), chunkCoords);
-    }
-
-    @Override
-    public CompletableFuture<Void> updateBlocks(World world, ChunkCoords chunkCoords) {
-        WorldServer nmsWorld = getNmsWorld(world);
-
-        WorldLightSourceManager manager = plugin.getManager(world);
-
-        if (manager == null) {
-            throw new LightUpdateFailedException("VarLight not enabled in world " + world.getName());
-        }
-
-        IChunkAccess chunkAccess = (IChunkAccess) nmsWorld.getChunkProvider().c(chunkCoords.x, chunkCoords.z);
-
-        if (chunkAccess == null) {
-            throw new LightUpdateFailedException("Could not fetch IChunkAccess at coords " + chunkCoords.toShortString());
-        }
-
-        Function<BlockPosition, Integer> h = bPos -> manager.getCustomLuminance(new IntPosition(bPos.getX(), bPos.getY(), bPos.getZ()), () -> chunkAccess.h(bPos));
-
-        LightEngineBlock leb = ((LightEngineBlock) nmsWorld.e().a(EnumSkyBlock.BLOCK));
-
-        return scheduleToLightMailbox(nmsWorld, () -> {
-            StreamSupport.stream(BlockPosition.b(
-                    chunkCoords.getCornerAX(),
-                    chunkCoords.getCornerAY(),
-                    chunkCoords.getCornerAZ(),
-                    chunkCoords.getCornerBX(),
-                    chunkCoords.getCornerBY(),
-                    chunkCoords.getCornerBZ()
-            ).spliterator(), false).filter(bPos -> h.apply(bPos) > 0).forEach(leb::a);
-        });
-    }
-
-    @Override
-    public CompletableFuture<Void> resetBlocks(World world, ChunkCoords chunkCoords) {
-        WorldServer nmsWorld = getNmsWorld(world);
-
-        WorldLightSourceManager manager = plugin.getManager(world);
-
-        if (manager == null) {
-            throw new LightUpdateFailedException("VarLight not enabled in world " + world.getName());
-        }
-
-        LightEngineBlock leb = ((LightEngineBlock) nmsWorld.e().a(EnumSkyBlock.BLOCK));
-
-        return scheduleToLightMailbox(nmsWorld, () -> {
-            StreamSupport.stream(BlockPosition.b(
-                    chunkCoords.getCornerAX(),
-                    chunkCoords.getCornerAY(),
-                    chunkCoords.getCornerAZ(),
-                    chunkCoords.getCornerBX(),
-                    chunkCoords.getCornerBY(),
-                    chunkCoords.getCornerBZ()
-            ).spliterator(), false).forEach(leb::a);
-        });
-    }
-
-    @Override
-    public CompletableFuture<Void> updateBlocks(World world, Collection<IntPosition> positions) {
-        WorldServer nmsWorld = getNmsWorld(world);
-
-        WorldLightSourceManager manager = plugin.getManager(world);
-
-        if (manager == null) {
-            throw new LightUpdateFailedException("VarLight not enabled in world " + world.getName());
-        }
-
-        LightEngineBlock leb = ((LightEngineBlock) nmsWorld.e().a(EnumSkyBlock.BLOCK));
-
-        return scheduleToLightMailbox(nmsWorld, () -> {
-            for (IntPosition position : positions) {
-                leb.a(new BlockPosition(position.x, position.y, position.z));
-            }
-        });
-    }
-
-    @Override
-    public CompletableFuture<Void> updateBlock(Location at) {
-        WorldServer nmsWorld = getNmsWorld(at.getWorld());
-
-        WorldLightSourceManager manager = plugin.getManager(at.getWorld());
-
-        if (manager == null) {
-            throw new LightUpdateFailedException("VarLight not enabled in world " + at.getWorld().getName());
-        }
-
-        LightEngineBlock leb = ((LightEngineBlock) nmsWorld.e().a(EnumSkyBlock.BLOCK));
-
-        return scheduleToLightMailbox(nmsWorld, () -> {
-            leb.a(new BlockPosition(at.getBlockX(), at.getBlockY(), at.getBlockZ()));
-        });
-    }
-
-    private CompletableFuture<Void> updateChunk(WorldServer worldServer, ChunkCoords chunkCoords) {
-        LightEngine let = worldServer.e();
-
-        WorldLightSourceManager manager = plugin.getManager(worldServer.getWorld());
-
-        if (manager == null) {
-            return CompletableFuture.completedFuture(null);
-        }
-
-        IChunkAccess iChunkAccess = worldServer.getChunkProvider().a(chunkCoords.x, chunkCoords.z);
-
-        if (iChunkAccess == null) {
-            throw new LightUpdateFailedException("Could not fetch IChunkAccess at coords " + chunkCoords.toShortString());
-        }
-
-        CompletableFuture<Void> future = new CompletableFuture<>();
-
-        ((LightEngineThreaded) let).a(iChunkAccess, false).thenRun(() -> {
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                for (ChunkCoords toSendClientUpdate : collectChunkPositionsToUpdate(chunkCoords)) {
-                    ChunkCoordIntPair chunkCoordIntPair = new ChunkCoordIntPair(toSendClientUpdate.x, toSendClientUpdate.z);
-                    PacketPlayOutLightUpdate ppolu = new PacketPlayOutLightUpdate(chunkCoordIntPair, let, true);
-
-                    worldServer.getChunkProvider().playerChunkMap.a(chunkCoordIntPair, false)
-                            .forEach(e -> e.playerConnection.sendPacket(ppolu));
-                }
-
-                future.complete(null);
-            });
-        });
-
-        return future;
-    }
-
-    @Override
-    public void updateBlocksAndChunk(@NotNull Location at) {
-        Objects.requireNonNull(at);
-        Objects.requireNonNull(at.getWorld());
-
-        WorldServer nmsWorld = getNmsWorld(at.getWorld());
-        IntPosition pos = toIntPosition(at);
-        BlockPosition blockPosition = new BlockPosition(pos.x, pos.y, pos.z);
-        LightEngineThreaded let = nmsWorld.getChunkProvider().getLightEngine();
-        LightEngineBlock leb = ((LightEngineBlock) let.a(EnumSkyBlock.BLOCK));
-
-        scheduleToLightMailbox(let, () -> {
-            leb.a(blockPosition);                       // Check Block
-        }).thenRun(() -> {
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                updateChunk(nmsWorld, pos.toChunkCoords()); // Update neighbouring Chunks and send updates to players
-            });
-        });
-    }
-
-    @Override
     public boolean isIllegalBlock(@NotNull Material material) {
         if (HardcodedBlockList.ALLOWED_BLOCKS.contains(material)) {
             return false;
@@ -358,13 +204,112 @@ public class NmsAdapter implements INmsAdapter {
         return Reflect.on(nmsWorld.getChunkProvider().playerChunkMap).get("w");
     }
 
-    @Override
-    public String getDefaultLevelName() {
-        return ((DedicatedServer) MinecraftServer.getServer()).propertyManager.getProperties().levelName;
-    }
-
     private WorldServer getNmsWorld(World world) {
         return ((CraftWorld) world).getHandle();
+    }
+
+    // region Light IO
+
+    @Override
+    public CompletableFuture<Void> updateChunk(World world, ChunkCoords chunkCoords) {
+        WorldServer worldServer = getNmsWorld(world);
+
+        LightEngine let = worldServer.e();
+
+        WorldLightSourceManager manager = plugin.getManager(worldServer.getWorld());
+
+        if (manager == null) {
+            return CompletableFuture.completedFuture(null);
+        }
+
+        IChunkAccess iChunkAccess = worldServer.getChunkProvider().a(chunkCoords.x, chunkCoords.z);
+
+        if (iChunkAccess == null) {
+            throw new LightUpdateFailedException("Could not fetch IChunkAccess at coords " + chunkCoords.toShortString());
+        }
+
+        CompletableFuture<Void> future = new CompletableFuture<>();
+
+        ((LightEngineThreaded) let).a(iChunkAccess, true).thenRun(() -> future.complete(null));
+
+        return future;
+    }
+
+    @Override
+    public CompletableFuture<Void> resetBlocks(World world, ChunkCoords chunkCoords) {
+        WorldServer nmsWorld = getNmsWorld(world);
+
+        WorldLightSourceManager manager = plugin.getManager(world);
+
+        if (manager == null) {
+            throw new LightUpdateFailedException("VarLight not enabled in world " + world.getName());
+        }
+
+        LightEngineBlock leb = ((LightEngineBlock) nmsWorld.e().a(EnumSkyBlock.BLOCK));
+
+        return scheduleToLightMailbox(nmsWorld, () -> {
+            StreamSupport.stream(BlockPosition.b(
+                    chunkCoords.getCornerAX(),
+                    chunkCoords.getCornerAY(),
+                    chunkCoords.getCornerAZ(),
+                    chunkCoords.getCornerBX(),
+                    chunkCoords.getCornerBY(),
+                    chunkCoords.getCornerBZ()
+            ).spliterator(), false).forEach(leb::a);
+        });
+    }
+
+    @Override
+    public CompletableFuture<Void> updateBlocks(World world, Collection<IntPosition> positions) {
+        WorldServer nmsWorld = getNmsWorld(world);
+
+        WorldLightSourceManager manager = plugin.getManager(world);
+
+        if (manager == null) {
+            throw new LightUpdateFailedException("VarLight not enabled in world " + world.getName());
+        }
+
+        LightEngineBlock leb = ((LightEngineBlock) nmsWorld.e().a(EnumSkyBlock.BLOCK));
+
+        return scheduleToLightMailbox(nmsWorld, () -> {
+            for (IntPosition position : positions) {
+                leb.a(new BlockPosition(position.x, position.y, position.z));
+            }
+        });
+    }
+
+    @Override
+    public CompletableFuture<Void> updateBlock(Location at) {
+        WorldServer nmsWorld = getNmsWorld(at.getWorld());
+
+        WorldLightSourceManager manager = plugin.getManager(at.getWorld());
+
+        if (manager == null) {
+            throw new LightUpdateFailedException("VarLight not enabled in world " + at.getWorld().getName());
+        }
+
+        LightEngineBlock leb = ((LightEngineBlock) nmsWorld.e().a(EnumSkyBlock.BLOCK));
+
+        return scheduleToLightMailbox(nmsWorld, () -> leb.a(new BlockPosition(at.getBlockX(), at.getBlockY(), at.getBlockZ())));
+    }
+
+    @Override
+    public void sendLightUpdates(World world, ChunkCoords center) {
+        WorldServer nmsWorld = getNmsWorld(world);
+        LightEngine let = nmsWorld.e();
+
+        WorldLightSourceManager manager = plugin.getManager(world);
+
+        if (manager == null) {
+            throw new LightUpdateFailedException("VarLight not enabled in world " + world.getName());
+        }
+
+        for (ChunkCoords toSendClientUpdate : collectChunkPositionsToUpdate(center)) {
+            ChunkCoordIntPair chunkCoordIntPair = new ChunkCoordIntPair(toSendClientUpdate.x, toSendClientUpdate.z);
+            PacketPlayOutLightUpdate ppolu = new PacketPlayOutLightUpdate(chunkCoordIntPair, let, true);
+
+            nmsWorld.getChunkProvider().playerChunkMap.a(chunkCoordIntPair, false).forEach(e -> e.playerConnection.sendPacket(ppolu));
+        }
     }
 
     private CompletableFuture<Void> scheduleToLightMailbox(WorldServer worldServer, Runnable task) {
@@ -383,4 +328,6 @@ public class NmsAdapter implements INmsAdapter {
 
         return future;
     }
+
+    // endregion
 }

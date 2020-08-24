@@ -8,6 +8,7 @@ import me.shawlaf.command.brigadier.datatypes.ICoordinates;
 import me.shawlaf.varlight.spigot.LightUpdateResult;
 import me.shawlaf.varlight.spigot.command.VarLightCommand;
 import me.shawlaf.varlight.spigot.command.VarLightSubCommand;
+import me.shawlaf.varlight.spigot.nms.LightUpdateFailedException;
 import me.shawlaf.varlight.spigot.nms.MaterialType;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.spigot.util.LightSourceUtil;
@@ -24,9 +25,10 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import java.util.function.Predicate;
 
 import static me.shawlaf.command.result.CommandResult.failure;
@@ -187,6 +189,7 @@ public class VarLightCommandFill extends VarLightSubCommand {
     }
 
     private int fill(Player source, Location pos1, Location pos2, int lightLevel, Predicate<Material> filter) {
+
         World world = source.getWorld();
 
         WorldLightSourceManager manager = plugin.getManager(world);
@@ -212,7 +215,7 @@ public class VarLightCommandFill extends VarLightSubCommand {
             return FAILURE;
         }
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getBukkitAsyncExecutorService().submit(() -> {
             try {
                 int totalSize = regionIterator.getSize();
                 ProgressReport progressReport = totalSize < 1_000_000 ? ProgressReport.EMPTY : new ProgressReport(plugin, source, String.format("Fill from %s to %s", a.toShortString(), b.toShortString()), totalSize);
@@ -254,11 +257,25 @@ public class VarLightCommandFill extends VarLightSubCommand {
 
                 plugin.getNmsAdapter().updateBlocks(world, blockUpdates).join(); // Wait for all block updates to finish
 
-//                Bukkit.getScheduler().runTask(plugin, () -> {
-                    for (ChunkCoords chunkCoords : chunksToUpdate) {
-                        plugin.getNmsAdapter().updateChunk(world, chunkCoords).join();
-                    }
-//                });
+                List<Callable<CompletableFuture<Void>>> chunkUpdateCallables = new ArrayList<>(chunksToUpdate.size());
+                List<Callable<Void>> lightUpdateCallables = new ArrayList<>(chunksToUpdate.size());
+
+                for (ChunkCoords chunkCoords : chunksToUpdate) {
+                    chunkUpdateCallables.add(() -> plugin.getNmsAdapter().updateChunk(world, chunkCoords));
+
+                    lightUpdateCallables.add(() -> {
+                        plugin.getNmsAdapter().sendLightUpdates(world, chunkCoords);
+                        return null;
+                    });
+                }
+
+                List<Future<CompletableFuture<Void>>> futures = plugin.getBukkitSyncExecutorService().invokeAll(chunkUpdateCallables);
+
+                for (Future<CompletableFuture<Void>> future : futures) {
+                    future.get().join();
+                }
+
+                plugin.getBukkitSyncExecutorService().invokeAll(lightUpdateCallables);
 
                 progressReport.finish();
 
@@ -276,7 +293,9 @@ public class VarLightCommandFill extends VarLightSubCommand {
                         failed
                 ));
             } catch (Exception e) {
-                releaseTickets(world, affectedChunks);
+                throw new LightUpdateFailedException("Failed to run fill command", e);
+            } finally {
+                releaseTickets(world, affectedChunks).join();
             }
         });
 

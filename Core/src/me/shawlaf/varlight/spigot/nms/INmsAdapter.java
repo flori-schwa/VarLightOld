@@ -24,8 +24,6 @@ import java.util.stream.Collectors;
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
 
 public interface INmsAdapter {
-    
-    String DATAPACK_IDENT = "VarLight/VarLight.jar";
 
     @Nullable Material keyToType(String namespacedKey, MaterialType type);
 
@@ -35,17 +33,48 @@ public interface INmsAdapter {
 
     boolean isIllegalLightUpdateItem(Material material);
 
-    void updateBlocksAndChunk(@NotNull Location at);
-
+    /**
+     * Runs lightChunk
+     *
+     * @param world The world containing the chunk
+     * @param chunkCoords The coordinates of the chunk
+     * @return
+     */
     CompletableFuture<Void> updateChunk(World world, ChunkCoords chunkCoords);
 
-    CompletableFuture<Void> updateBlocks(World world, ChunkCoords chunkCoords);
-
+    /**
+     * Runs checkBlock on all blocks in the specified Chunk
+     *
+     * @param world The world containing the chunk
+     * @param chunkCoords The coordinates of the chunk
+     * @return
+     */
     CompletableFuture<Void> resetBlocks(World world, ChunkCoords chunkCoords);
 
+    /**
+     * Runs checkBlock on all specified blocks
+     *
+     * @param world The world containing the blocks
+     * @param positions The Block Positions to run checkBlock on
+     * @return
+     */
     CompletableFuture<Void> updateBlocks(World world, Collection<IntPosition> positions);
 
+    /**
+     * Runs checkBlock on the Block at the specified Location
+     *
+     * @param at The location of the block
+     * @return
+     */
     CompletableFuture<Void> updateBlock(Location at);
+
+    /**
+     * Send light update packets in a 3x3 chunk radius around the center
+     *
+     * @param world The world containing the center chunk
+     * @param center The center location of the block
+     */
+    void sendLightUpdates(World world, ChunkCoords center);
 
     boolean isIllegalBlock(@NotNull Material material);
 
@@ -56,8 +85,6 @@ public interface INmsAdapter {
     int getGlowingValue(ItemStack glowingStack);
 
     @NotNull File getRegionRoot(World world);
-
-    String getDefaultLevelName();
 
     default void onLoad() {
 
