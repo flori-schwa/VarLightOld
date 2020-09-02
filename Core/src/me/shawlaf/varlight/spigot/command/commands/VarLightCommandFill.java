@@ -255,7 +255,7 @@ public class VarLightCommandFill extends VarLightSubCommand {
                     chunksToUpdate.addAll(plugin.getNmsAdapter().collectChunkPositionsToUpdate(new ChunkCoords(block.getX() >> 4, block.getZ() >> 4)));
                 }
 
-                plugin.getNmsAdapter().updateBlocks(world, blockUpdates).join(); // Wait for all block updates to finish
+                plugin.getNmsAdapter().updateLight(world, blockUpdates).join(); // Wait for all block updates to finish
 
                 List<Callable<CompletableFuture<Void>>> chunkUpdateCallables = new ArrayList<>(chunksToUpdate.size());
                 List<Callable<Void>> lightUpdateCallables = new ArrayList<>(chunksToUpdate.size());

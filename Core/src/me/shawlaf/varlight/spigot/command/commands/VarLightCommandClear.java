@@ -185,18 +185,19 @@ public class VarLightCommandClear extends VarLightSubCommand {
             return;
         }
 
-        AtomicReference<List<CompletableFuture<Void>>> futures = new AtomicReference<>(new ArrayList<>(chunks.size()));
+        List<CompletableFuture<Void>> futures = new ArrayList<>(chunks.size());
         int i = 0;
 
         for (ChunkCoords chunk : chunks) {
             manager.getNLSFile(chunk.toRegionCoords()).clearChunk(chunk);
-            futures.get().add(plugin.getNmsAdapter().resetBlocks(world, chunk));
+            futures.add(plugin.getNmsAdapter().recalculateChunk(world, chunk));
+//            futures.add(plugin.getNmsAdapter().resetBlocks(world, chunk));
         }
 
-        futures.get().forEach(CompletableFuture::join);
+        futures.forEach(CompletableFuture::join);
 
         plugin.getBukkitMainThreadExecutorService().submit(() -> {
-            futures.set(new ArrayList<>(chunks.size()));
+            futures.clear();
 
             for (ChunkCoords chunkCoords : chunks) {
                 CompletableFuture<Void> future = new CompletableFuture<>();
@@ -209,12 +210,11 @@ public class VarLightCommandClear extends VarLightSubCommand {
                     }
                 });
 
-                futures.get().add(future);
+                futures.add(future);
             }
 
             plugin.getBukkitAsyncExecutorService().submit(() -> {
-                futures.get().forEach(CompletableFuture::join);
-                futures.set(null);
+                futures.forEach(CompletableFuture::join);
 
                 releaseTickets(world, chunks).join();
                 CommandResult.successBroadcast(this, source, "Cleared Custom Light sources in " + chunks.size() + " chunks");

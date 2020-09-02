@@ -2,6 +2,7 @@ package me.shawlaf.varlight.spigot.nms;
 
 import me.shawlaf.varlight.persistence.LightPersistFailedException;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
+import me.shawlaf.varlight.spigot.updater.ILightUpdater;
 import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
 import org.bukkit.*;
@@ -23,7 +24,7 @@ import java.util.stream.Collectors;
 
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
 
-public interface INmsAdapter {
+public interface INmsAdapter extends ILightUpdater {
 
     @Nullable Material keyToType(String namespacedKey, MaterialType type);
 
@@ -33,48 +34,36 @@ public interface INmsAdapter {
 
     boolean isIllegalLightUpdateItem(Material material);
 
-    /**
-     * Runs lightChunk
-     *
-     * @param world The world containing the chunk
-     * @param chunkCoords The coordinates of the chunk
-     * @return
-     */
-    CompletableFuture<Void> updateChunk(World world, ChunkCoords chunkCoords);
 
-    /**
-     * Runs checkBlock on all blocks in the specified Chunk
-     *
-     * @param world The world containing the chunk
-     * @param chunkCoords The coordinates of the chunk
-     * @return
-     */
-    CompletableFuture<Void> resetBlocks(World world, ChunkCoords chunkCoords);
 
-    /**
-     * Runs checkBlock on all specified blocks
-     *
-     * @param world The world containing the blocks
-     * @param positions The Block Positions to run checkBlock on
-     * @return
-     */
-    CompletableFuture<Void> updateBlocks(World world, Collection<IntPosition> positions);
+//    /**
+//     * Runs checkBlock on all blocks in the specified Chunk
+//     *
+//     * @param world The world containing the chunk
+//     * @param chunkCoords The coordinates of the chunk
+//     * @return
+//     */
+//    @Deprecated
+//    CompletableFuture<Void> resetBlocks(World world, ChunkCoords chunkCoords);
 
-    /**
-     * Runs checkBlock on the Block at the specified Location
-     *
-     * @param at The location of the block
-     * @return
-     */
-    CompletableFuture<Void> updateBlock(Location at);
+//    /**
+//     * Runs checkBlock on all specified blocks
+//     *
+//     * @param world The world containing the blocks
+//     * @param positions The Block Positions to run checkBlock on
+//     * @return
+//     */
+//    @Deprecated
+//    CompletableFuture<Void> updateBlocks(World world, Collection<IntPosition> positions);
 
-    /**
-     * Send light update packets in a 3x3 chunk radius around the center
-     *
-     * @param world The world containing the center chunk
-     * @param center The center location of the block
-     */
-    void sendLightUpdates(World world, ChunkCoords center);
+//    /**
+//     * Runs checkBlock on the Block at the specified Location
+//     *
+//     * @param at The location of the block
+//     * @return
+//     */
+//    @Deprecated
+//    CompletableFuture<Void> updateBlock(Location at);
 
     boolean isIllegalBlock(@NotNull Material material);
 

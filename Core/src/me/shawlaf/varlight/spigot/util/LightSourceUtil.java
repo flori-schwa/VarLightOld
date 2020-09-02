@@ -62,24 +62,32 @@ public class LightSourceUtil {
 
         int lightTo = lightUpdateEvent.getToLight();
 
-        manager.setCustomLuminance(location, lightTo);
-
         if (doUpdate) {
-            plugin.getNmsAdapter().updateBlock(location).thenRunAsync(
-                    () -> {
-                        Collection<ChunkCoords> neighbours = plugin.getNmsAdapter().collectChunkPositionsToUpdate(position);
-                        List<CompletableFuture<Void>> futures = new ArrayList<>(neighbours.size());
-
-                        for (ChunkCoords neighbour : neighbours) {
-                            futures.add(plugin.getNmsAdapter().updateChunk(location.getWorld(), neighbour));
-                        }
-
-                        plugin.getBukkitAsyncExecutorService().submit(() -> {
-                            futures.forEach(CompletableFuture::join);
-                        }).thenRunAsync(() -> plugin.getNmsAdapter().sendLightUpdates(location.getWorld(), center), plugin.getBukkitMainThreadExecutorService());
-                    }, plugin.getBukkitMainThreadExecutorService()
-            );
+            plugin.getNmsAdapter().setAndUpdateLight(location, lightLevel);
+        } else {
+            plugin.getNmsAdapter().setLight(location, lightLevel);
         }
+
+//        manager.setCustomLuminance(location, lightTo);
+//
+//        if (doUpdate) {
+//            plugin.getNmsAdapter().getLightUpdater().setAndUpdateLight(location, lightLevel);
+//
+//            plugin.getNmsAdapter().updateBlock(location).thenRunAsync(
+//                    () -> {
+//                        Collection<ChunkCoords> neighbours = plugin.getNmsAdapter().collectChunkPositionsToUpdate(position);
+//                        List<CompletableFuture<Void>> futures = new ArrayList<>(neighbours.size());
+//
+//                        for (ChunkCoords neighbour : neighbours) {
+//                            futures.add(plugin.getNmsAdapter().updateChunk(location.getWorld(), neighbour));
+//                        }
+//
+//                        plugin.getBukkitAsyncExecutorService().submit(() -> {
+//                            futures.forEach(CompletableFuture::join);
+//                        }).thenRunAsync(() -> plugin.getNmsAdapter().sendLightUpdates(location.getWorld(), center), plugin.getBukkitMainThreadExecutorService());
+//                    }, plugin.getBukkitMainThreadExecutorService()
+//            );
+//        }
 
         return updated(plugin, fromLight, lightTo);
     }

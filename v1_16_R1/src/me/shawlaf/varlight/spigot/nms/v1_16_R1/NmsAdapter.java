@@ -10,6 +10,7 @@ import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
 import net.minecraft.server.v1_16_R1.*;
+import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.*;
@@ -27,6 +28,9 @@ import java.io.File;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.StreamSupport;
+
+import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
+import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toLocation;
 
 @ForMinecraft(version = "1.16.0 - 1.16.1")
 public class NmsAdapter implements INmsAdapter {
@@ -236,7 +240,92 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public CompletableFuture<Void> resetBlocks(World world, ChunkCoords chunkCoords) {
+    public void sendLightUpdates(World world, ChunkCoords center) {
+        WorldServer nmsWorld = getNmsWorld(world);
+        LightEngine let = nmsWorld.e();
+
+        WorldLightSourceManager manager = plugin.getManager(world);
+
+        if (manager == null) {
+            throw new LightUpdateFailedException("VarLight not enabled in world " + world.getName());
+        }
+
+        for (ChunkCoords toSendClientUpdate : collectChunkPositionsToUpdate(center)) {
+            ChunkCoordIntPair chunkCoordIntPair = new ChunkCoordIntPair(toSendClientUpdate.x, toSendClientUpdate.z);
+            PacketPlayOutLightUpdate ppolu = new PacketPlayOutLightUpdate(chunkCoordIntPair, let, true);
+
+            nmsWorld.getChunkProvider().playerChunkMap.a(chunkCoordIntPair, false).forEach(e -> e.playerConnection.sendPacket(ppolu));
+        }
+    }
+
+    @Override
+    public void setLight(Location location, int lightLevel) {
+        WorldLightSourceManager manager = plugin.getManager(location.getWorld());
+
+        if (manager == null) {
+            throw new LightUpdateFailedException("VarLight not enabled in World " + location.getWorld().getName());
+        }
+
+        manager.setCustomLuminance(location, lightLevel);
+    }
+
+    @Override
+    public void setLight(World world, IntPosition position, int lightLevel) {
+        WorldLightSourceManager manager = plugin.getManager(world);
+
+        if (manager == null) {
+            throw new LightUpdateFailedException("VarLight not enabled in World " + world.getName());
+        }
+
+        manager.setCustomLuminance(position, lightLevel);
+    }
+
+    @Override
+    public CompletableFuture<Void> setAndUpdateLight(World world, IntPosition position, int lightLevel) {
+        return setAndUpdateLight0(toLocation(position, world), position, lightLevel);
+    }
+
+    @Override
+    public CompletableFuture<Void> setAndUpdateLight(Location location, int lightLevel) {
+        return setAndUpdateLight0(location, toIntPosition(location), lightLevel);
+    }
+
+    @Override
+    public CompletableFuture<Void> updateLight(Location location) {
+        return updateLight0(location, toIntPosition(location));
+    }
+
+    @Override
+    public CompletableFuture<Void> updateLight(World world, Collection<IntPosition> positions) {
+        WorldServer nmsWorld = getNmsWorld(world);
+
+        WorldLightSourceManager manager = plugin.getManager(world);
+
+        if (manager == null) {
+            throw new LightUpdateFailedException("VarLight not enabled in world " + world.getName());
+        }
+
+        LightEngineBlock leb = ((LightEngineBlock) nmsWorld.e().a(EnumSkyBlock.BLOCK));
+
+        return scheduleToLightMailbox(nmsWorld, () -> {
+            for (IntPosition position : positions) {
+                leb.a(new BlockPosition(position.x, position.y, position.z));
+            }
+        });
+    }
+
+    @Override
+    public CompletableFuture<Void> updateLight(World world, IntPosition position) {
+        return updateLight0(toLocation(position, world), position);
+    }
+
+    @Override
+    public CompletableFuture<Void> recalculateChunk(Chunk chunk) {
+        return recalculateChunk(chunk.getWorld(), new ChunkCoords(chunk.getX(), chunk.getZ()));
+    }
+
+    @Override
+    public CompletableFuture<Void> recalculateChunk(World world, ChunkCoords chunkCoords) {
         WorldServer nmsWorld = getNmsWorld(world);
 
         WorldLightSourceManager manager = plugin.getManager(world);
@@ -259,57 +348,42 @@ public class NmsAdapter implements INmsAdapter {
         });
     }
 
-    @Override
-    public CompletableFuture<Void> updateBlocks(World world, Collection<IntPosition> positions) {
-        WorldServer nmsWorld = getNmsWorld(world);
+    private CompletableFuture<Void> setAndUpdateLight0(Location location, IntPosition position, int lightLevel) {
+        setLight(location, lightLevel);
 
-        WorldLightSourceManager manager = plugin.getManager(world);
+        return updateLight0(location, position);
+    }
+
+    private CompletableFuture<Void> updateLight0(Location location, IntPosition position) {
+
+        WorldServer nmsWorld = getNmsWorld(location.getWorld());
+
+        WorldLightSourceManager manager = plugin.getManager(location.getWorld());
 
         if (manager == null) {
-            throw new LightUpdateFailedException("VarLight not enabled in world " + world.getName());
+            throw new LightUpdateFailedException("VarLight not enabled in world " + location.getWorld().getName());
         }
 
         LightEngineBlock leb = ((LightEngineBlock) nmsWorld.e().a(EnumSkyBlock.BLOCK));
 
-        return scheduleToLightMailbox(nmsWorld, () -> {
-            for (IntPosition position : positions) {
-                leb.a(new BlockPosition(position.x, position.y, position.z));
-            }
-        });
-    }
+        ChunkCoords center = position.toChunkCoords();
 
-    @Override
-    public CompletableFuture<Void> updateBlock(Location at) {
-        WorldServer nmsWorld = getNmsWorld(at.getWorld());
+        return scheduleToLightMailbox(nmsWorld,
+                () -> leb.a(new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ())))
+                .thenRunAsync(
+                        () -> {
+                            Collection<ChunkCoords> neighbours = plugin.getNmsAdapter().collectChunkPositionsToUpdate(position);
+                            List<CompletableFuture<Void>> futures = new ArrayList<>(neighbours.size());
 
-        WorldLightSourceManager manager = plugin.getManager(at.getWorld());
+                            for (ChunkCoords neighbour : neighbours) {
+                                futures.add(plugin.getNmsAdapter().updateChunk(location.getWorld(), neighbour));
+                            }
 
-        if (manager == null) {
-            throw new LightUpdateFailedException("VarLight not enabled in world " + at.getWorld().getName());
-        }
-
-        LightEngineBlock leb = ((LightEngineBlock) nmsWorld.e().a(EnumSkyBlock.BLOCK));
-
-        return scheduleToLightMailbox(nmsWorld, () -> leb.a(new BlockPosition(at.getBlockX(), at.getBlockY(), at.getBlockZ())));
-    }
-
-    @Override
-    public void sendLightUpdates(World world, ChunkCoords center) {
-        WorldServer nmsWorld = getNmsWorld(world);
-        LightEngine let = nmsWorld.e();
-
-        WorldLightSourceManager manager = plugin.getManager(world);
-
-        if (manager == null) {
-            throw new LightUpdateFailedException("VarLight not enabled in world " + world.getName());
-        }
-
-        for (ChunkCoords toSendClientUpdate : collectChunkPositionsToUpdate(center)) {
-            ChunkCoordIntPair chunkCoordIntPair = new ChunkCoordIntPair(toSendClientUpdate.x, toSendClientUpdate.z);
-            PacketPlayOutLightUpdate ppolu = new PacketPlayOutLightUpdate(chunkCoordIntPair, let, true);
-
-            nmsWorld.getChunkProvider().playerChunkMap.a(chunkCoordIntPair, false).forEach(e -> e.playerConnection.sendPacket(ppolu));
-        }
+                            plugin.getBukkitAsyncExecutorService().submit(() -> {
+                                futures.forEach(CompletableFuture::join);
+                            }).thenRunAsync(() -> plugin.getNmsAdapter().sendLightUpdates(location.getWorld(), center), plugin.getBukkitMainThreadExecutorService());
+                        }, plugin.getBukkitMainThreadExecutorService()
+                );
     }
 
     private CompletableFuture<Void> scheduleToLightMailbox(WorldServer worldServer, Runnable task) {
@@ -331,3 +405,4 @@ public class NmsAdapter implements INmsAdapter {
 
     // endregion
 }
+
