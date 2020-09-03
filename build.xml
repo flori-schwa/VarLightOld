@@ -81,7 +81,23 @@
         </exec>
     </target>
 
-    <target name="pull-brigadier" if="brigadier.present" depends="clone-brigadier">
+    <target name="brigadier-checkout-master" if="brigadier.present" depends="clone-brigadier">
+        <exec executable="cmd" dir="brigadier">
+            <arg value="/c"/>
+            <arg value="git"/>
+            <arg value="reset"/>
+            <arg value="--hard"/>
+        </exec>
+
+        <exec executable="cmd" dir="brigadier">
+            <arg value="/c"/>
+            <arg value="git"/>
+            <arg value="checkout"/>
+            <arg value="master"/>
+        </exec>
+    </target>
+
+    <target name="pull-brigadier" if="brigadier.present" depends="brigadier-checkout-master">
         <exec executable="cmd" dir="brigadier">
             <arg value="/c"/>
             <arg value="git"/>
