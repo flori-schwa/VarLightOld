@@ -2,6 +2,9 @@
 <project name="VarLight" default="master">
 
     <available file=".git" type="dir" property="git.present"/>
+    <available file="brigadier" type="dir" property="brigadier.present"/>
+
+    <property name="brigadier-version" value="1.0.17"/>
 
     <property name="build" location="build"/>
     <property name="dist" location="dist"/>
@@ -61,7 +64,75 @@
         </condition>
     </target>
 
-    <target name="build-core" depends="init, git-rev">
+    <target name="check-brigadier">
+        <condition property="brigadier.missing">
+            <not>
+                <isset property="brigadier.present"/>
+            </not>
+        </condition>
+    </target>
+
+    <target name="clone-brigadier" if="brigadier.missing" depends="check-brigadier">
+        <exec executable="cmd">
+            <arg value="/c"/>
+            <arg value="git"/>
+            <arg value="clone"/>
+            <arg value="https://github.com/Mojang/brigadier.git"/> <!-- Use HTTPS URL because no auth required -->
+        </exec>
+    </target>
+
+    <target name="pull-brigadier" if="brigadier.present" depends="clone-brigadier">
+        <exec executable="cmd" dir="brigadier">
+            <arg value="/c"/>
+            <arg value="git"/>
+            <arg value="pull"/>
+        </exec>
+    </target>
+
+    <target name="checkout-brigadier" depends="pull-brigadier">
+        <exec executable="cmd" dir="brigadier">
+            <arg value="/c"/>
+            <arg value="git"/>
+            <arg value="checkout"/>
+            <arg value="${brigadier-version}"/>
+        </exec>
+    </target>
+
+    <target name="apply-brigadier-patch" depends="checkout-brigadier">
+        <exec executable="cmd" dir="brigadier">
+            <arg value="/c"/>
+            <arg value="git"/>
+            <arg value="apply"/>
+            <arg value="../patches/brigadier/build.gradle.patch"/>
+        </exec>
+    </target>
+
+    <target name="clean-brigadier" depends="apply-brigadier-patch">
+        <exec executable="cmd" dir="brigadier">
+               <arg value="/c"/>
+               <arg value="gradlew"/>
+               <arg value="clean"/>
+        </exec>
+    </target>
+
+    <target name="build-brigadier" depends="clean-brigadier">
+        <exec executable="cmd" dir="brigadier">
+            <arg value="/c"/>
+            <arg value="gradlew"/>
+            <arg value="classes"/>
+        </exec>
+    </target>
+
+    <target name="brigadier-full" depends="build-brigadier">
+        <exec executable="cmd" dir="brigadier">
+            <arg value="/c"/>
+            <arg value="git"/>
+            <arg value="reset"/>
+            <arg value="--hard"/>
+        </exec>
+    </target>
+
+    <target name="build-core" depends="brigadier-full, git-rev">
         <condition property="plugin.version.set">
             <isset property="plugin.version"/>
         </condition>
