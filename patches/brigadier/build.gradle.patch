@@ -1,0 +1,23 @@
+diff --git a/build.gradle b/build.gradle
+index 1b63485..412e630 100644
+--- a/build.gradle
++++ b/build.gradle
+@@ -2,12 +2,18 @@ import groovy.io.FileType
+ import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider
+ import com.amazonaws.services.s3.AmazonS3Client
+ 
++apply plugin: 'java'
+ apply plugin: 'java-library'
+ apply plugin: 'maven-publish'
+ 
+ group = 'com.mojang'
+ version = project.hasProperty('buildNumber') ? "${project.majorMinor}.${project.buildNumber}" : "${project.majorMinor}.0-SNAPSHOT"
+ 
++compileJava {
++    sourceCompatibility = 1.8
++    targetCompatibility = 1.8
++}
++
+ buildscript {
+     repositories {
+         mavenCentral()

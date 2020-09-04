@@ -125,9 +125,9 @@
 
     <target name="clean-brigadier" depends="apply-brigadier-patch">
         <exec executable="cmd" dir="brigadier">
-               <arg value="/c"/>
-               <arg value="gradlew"/>
-               <arg value="clean"/>
+            <arg value="/c"/>
+            <arg value="gradlew"/>
+            <arg value="clean"/>
         </exec>
     </target>
 
@@ -148,7 +148,7 @@
         </exec>
     </target>
 
-    <target name="build-core" depends="brigadier-full, git-rev">
+    <target name="build-core" depends="brigadier-full, init, git-rev">
         <condition property="plugin.version.set">
             <isset property="plugin.version"/>
         </condition>
@@ -242,6 +242,16 @@
                 <include name="**/spigot-1.16.2.jar"/>
             </libraries>
         </build>
+
+        <copy todir="${build}">
+            <fileset dir="brigadier/build/classes/java/main"/>
+        </copy>
+
+        <copy todir="${build}/com/mojang/brigadier">
+            <fileset dir="brigadier">
+                <include name="**/LICENSE"/>
+            </fileset>
+        </copy>
 
         <jar destfile="${dist}/VarLight-${plugin.version}.jar" basedir="${build}">
             <zipgroupfileset dir="${lib-dir}">

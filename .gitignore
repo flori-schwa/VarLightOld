@@ -110,8 +110,8 @@ hs_err_pid*
 
 # Custom Ignores
 
-build/
-dist/
-test-servers/
-VarLight.wiki/
-brigadier/
+/build
+/dist
+/test-servers
+/VarLight.wiki
+/brigadier
