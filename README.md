@@ -3,6 +3,7 @@ Turn any block into a light source
 
 | Minecraft Version | Compatibility Status                                                                                                          |
 |-------------------|-------------------------------------------------------------------------------------------------------------------------------|
+| 1.16.3            | :heavy_check_mark:                                                                                                            |
 | 1.16.2            | :heavy_check_mark:                                                                                                            |
 | 1.16.1            | :heavy_check_mark:                                                                                                            |
 | 1.16.0            | :heavy_check_mark:                                                                                                            |
