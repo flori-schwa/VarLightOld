@@ -18,7 +18,6 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 import static me.shawlaf.varlight.spigot.LightUpdateResult.*;
-import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
 
 @UtilityClass
 public class LightSourceUtil {
@@ -66,32 +65,22 @@ public class LightSourceUtil {
         manager.setCustomLuminance(location, lightTo);
 
         if (doUpdate) {
-            plugin.getNmsAdapter().updateBlock(location).thenRun(
+            plugin.getNmsAdapter().updateBlock(location).thenRunAsync(
                     () -> {
-                        Bukkit.getScheduler().runTask(plugin, () -> {
-                            Collection<ChunkCoords> neighbours = plugin.getNmsAdapter().collectChunkPositionsToUpdate(position);
-                            List<CompletableFuture<Void>> futures = new ArrayList<>(neighbours.size());
+                        Collection<ChunkCoords> neighbours = plugin.getNmsAdapter().collectChunkPositionsToUpdate(position);
+                        List<CompletableFuture<Void>> futures = new ArrayList<>(neighbours.size());
 
-                            for (ChunkCoords neighbour : neighbours) {
-                                futures.add(plugin.getNmsAdapter().updateChunk(location.getWorld(), neighbour));
-                            }
+                        for (ChunkCoords neighbour : neighbours) {
+                            futures.add(plugin.getNmsAdapter().updateChunk(location.getWorld(), neighbour));
+                        }
 
-                            CompletableFuture<Void> future = new CompletableFuture<>();
-
-                            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                                futures.forEach(CompletableFuture::join);
-                                future.complete(null);
-                            });
-
-                            future.thenRun(() -> {
-                                plugin.getNmsAdapter().sendLightUpdates(location.getWorld(), center);
-                            });
-                        });
-                    }
+                        plugin.getBukkitAsyncExecutorService().submit(() -> {
+                            futures.forEach(CompletableFuture::join);
+                        }).thenRunAsync(() -> plugin.getNmsAdapter().sendLightUpdates(location.getWorld(), center), plugin.getBukkitMainThreadExecutorService());
+                    }, plugin.getBukkitMainThreadExecutorService()
             );
         }
 
         return updated(plugin, fromLight, lightTo);
     }
-
 }

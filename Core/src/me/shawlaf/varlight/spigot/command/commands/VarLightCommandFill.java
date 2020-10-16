@@ -269,13 +269,13 @@ public class VarLightCommandFill extends VarLightSubCommand {
                     });
                 }
 
-                List<Future<CompletableFuture<Void>>> futures = plugin.getBukkitSyncExecutorService().invokeAll(chunkUpdateCallables);
+                List<Future<CompletableFuture<Void>>> futures = plugin.getBukkitMainThreadExecutorService().invokeAll(chunkUpdateCallables);
 
                 for (Future<CompletableFuture<Void>> future : futures) {
                     future.get().join();
                 }
 
-                plugin.getBukkitSyncExecutorService().invokeAll(lightUpdateCallables);
+                plugin.getBukkitMainThreadExecutorService().invokeAll(lightUpdateCallables);
 
                 progressReport.finish();
 

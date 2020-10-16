@@ -60,7 +60,13 @@ public class VarLightCommandClear extends VarLightSubCommand {
         suggestCoordinate(ARG_REGION_X, e -> (e.getLocation().getBlockX() >> 4) >> 5);
         suggestCoordinate(ARG_REGION_Z, e -> (e.getLocation().getBlockZ() >> 4) >> 5);
 
-        node.requires(cs -> cs instanceof LivingEntity);
+        if (node.getRequirement() != null) {
+            Predicate<CommandSender> requirement = node.getRequirement();
+            requirement = requirement.and(cs -> cs instanceof LivingEntity);
+            node.requires(requirement);
+        } else {
+            node.requires(cs -> cs instanceof LivingEntity);
+        }
 
         node.then(
                 literalArgument("chunk")
@@ -170,7 +176,7 @@ public class VarLightCommandClear extends VarLightSubCommand {
     private void clear(CommandSender source, World world, Set<ChunkCoords> chunks) {
         if (Bukkit.isPrimaryThread()) {
             // Ensure this is running on a different thread
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> clear(source, world, chunks));
+            plugin.getBukkitAsyncExecutorService().submit(() -> clear(source, world, chunks));
             return;
         }
 
@@ -195,7 +201,7 @@ public class VarLightCommandClear extends VarLightSubCommand {
 
         futures.get().forEach(CompletableFuture::join);
 
-        Bukkit.getScheduler().runTask(plugin, () -> {
+        plugin.getBukkitMainThreadExecutorService().submit(() -> {
             futures.set(new ArrayList<>(chunks.size()));
 
             for (ChunkCoords chunkCoords : chunks) {
@@ -212,7 +218,7 @@ public class VarLightCommandClear extends VarLightSubCommand {
                 futures.get().add(future);
             }
 
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            plugin.getBukkitAsyncExecutorService().submit(() -> {
                 futures.get().forEach(CompletableFuture::join);
                 futures.set(null);
 
