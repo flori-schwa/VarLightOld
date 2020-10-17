@@ -33,13 +33,13 @@ public class ItemExecutor extends SubCommandExecutor {
         Material item = context.getArgument("item", Material.class);
 
         if (plugin.getNmsAdapter().isIllegalLightUpdateItem(item)) {
-            failure(command, context.getSource(), String.format("%s cannot be used as the varlight update item", item.getKey().toString()));
+            failure(command, context.getSource(), String.format("%s cannot be used as the varlight update item", plugin.getNmsAdapter().getKey(item).toString()));
 
             return FAILURE;
         }
 
         plugin.setUpdateItem(item);
-        successBroadcast(command, context.getSource(), String.format("Updated the Light update item to %s", item.getKey().toString()));
+        successBroadcast(command, context.getSource(), String.format("Updated the Light update item to %s", plugin.getNmsAdapter().getKey(item).toString()));
 
         return SUCCESS;
     }

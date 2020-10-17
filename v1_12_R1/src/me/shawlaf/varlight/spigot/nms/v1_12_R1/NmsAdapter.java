@@ -1,6 +1,7 @@
 package me.shawlaf.varlight.spigot.nms.v1_12_R1;
 
 import me.shawlaf.varlight.spigot.VarLightPlugin;
+import me.shawlaf.varlight.spigot.nms.ForMinecraft;
 import me.shawlaf.varlight.spigot.nms.INmsAdapter;
 import me.shawlaf.varlight.spigot.nms.LightUpdateFailedException;
 import me.shawlaf.varlight.spigot.nms.MaterialType;
@@ -14,6 +15,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.*;
 import org.bukkit.block.BlockFace;
+import org.bukkit.craftbukkit.v1_12_R1.CraftArt;
 import org.bukkit.craftbukkit.v1_12_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_12_R1.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_12_R1.util.CraftMagicNumbers;
@@ -24,6 +26,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joor.Reflect;
 
+import javax.naming.Name;
+import javax.xml.stream.events.Namespace;
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -31,6 +35,7 @@ import java.util.stream.StreamSupport;
 
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
 
+@ForMinecraft(version = "1.12.2")
 public class NmsAdapter implements INmsAdapter {
 
     private static final BlockFace[] CHECK_FACES = new BlockFace[]{
@@ -59,6 +64,24 @@ public class NmsAdapter implements INmsAdapter {
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         meta.setDisplayName(ChatColor.RESET + "" + ChatColor.GOLD + "VarLight Debug Stick");
         varlightDebugStick.setItemMeta(meta);
+    }
+
+    @Override
+    public NamespacedKey getKey(Material material) {
+        MinecraftKey minecraftKey;
+
+        if (material.isBlock()) {
+            minecraftKey = Block.REGISTRY.b(CraftMagicNumbers.getBlock(material));
+        } else {
+            minecraftKey = Item.REGISTRY.b(CraftMagicNumbers.getItem(material));
+        }
+
+        return new NamespacedKey(minecraftKey.b(), minecraftKey.getKey());
+    }
+
+    @Override
+    public boolean isLegacy() {
+        return true;
     }
 
     @Override

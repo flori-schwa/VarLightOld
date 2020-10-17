@@ -245,7 +245,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     }
 
     public void setUpdateItem(Material item) {
-        getConfig().set(VarLightConfiguration.CONFIG_KEY_VARLIGHT_ITEM, item.getKey().toString());
+        getConfig().set(VarLightConfiguration.CONFIG_KEY_VARLIGHT_ITEM, nmsAdapter.getKey(item).toString());
         saveConfig();
 
         loadLightUpdateItem();
@@ -481,7 +481,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
                 LightUpdateResult lightUpdateResult = placeNewLightSource(this, e.getPlayer(), e.getBlock().getLocation(), emittingLight);
 
                 debugManager.logDebugAction(e.getPlayer(), () ->
-                        "Place Lightsource (" + handCopy.getType().getKey().toString() + ") @ " + IntPositionExtension.toIntPosition(e.getBlock()).toShortString() + " (" + emittingLight + "): " + lightUpdateResult.getDebugMessage().toString());
+                        "Place Lightsource (" + nmsAdapter.getKey(handCopy.getType()).toString() + ") @ " + IntPositionExtension.toIntPosition(e.getBlock()).toShortString() + " (" + emittingLight + "): " + lightUpdateResult.getDebugMessage().toString());
 
                 if (!lightUpdateResult.successful()) {
                     e.getBlock().setType(before);
@@ -495,6 +495,11 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void lightSourceReceiveUpdate(BlockPhysicsEvent e) {
+
+        if (nmsAdapter.isLegacy()) {
+            return;
+        }
+
         WorldLightSourceManager manager = getManager(e.getBlock().getWorld());
 
         if (manager == null) {
@@ -547,7 +552,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     private void loadLightUpdateItem() {
         this.lightUpdateItem = configuration.getLightUpdateItem();
-        getLogger().info(String.format("Using \"%s\" as the Light update item.", lightUpdateItem.getKey().toString()));
+        getLogger().info(String.format("Using \"%s\" as the Light update item.", nmsAdapter.getKey(lightUpdateItem).toString()));
     }
 
 //    private void exportResource(String path, File toFile) {

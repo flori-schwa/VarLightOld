@@ -12,7 +12,7 @@ public class HardcodedBlockList {
     }
 
     static {
-        ALLOWED_BLOCKS = null;
-        EXPERIMENTAL_BLOCKS = null;
+        ALLOWED_BLOCKS = new HardcodedBlockList();
+        EXPERIMENTAL_BLOCKS = new HardcodedBlockList();
     }
 }

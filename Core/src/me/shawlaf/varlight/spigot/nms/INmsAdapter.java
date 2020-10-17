@@ -91,6 +91,14 @@ public interface INmsAdapter extends ILightUpdater {
 
     }
 
+    default NamespacedKey getKey(Material material) {
+        return material.getKey();
+    }
+
+    default boolean isLegacy() {
+        return false;
+    }
+
     default String getForMinecraftVersion() {
         return this.getClass().getAnnotation(ForMinecraft.class).version();
     }

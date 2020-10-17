@@ -135,7 +135,7 @@
         <exec executable="cmd" dir="brigadier">
             <arg value="/c"/>
             <arg value="gradlew"/>
-            <arg value="classes"/>
+            <arg value="jar"/>
         </exec>
     </target>
 
@@ -173,7 +173,7 @@
                target="${javac-src-lvl}">
             <classpath>
                 <fileset dir="${lib-dir}">
-                    <include name="**/spigot-1.14.4.jar"/>
+                    <include name="**/spigot-1.15.2.jar"/>
                     <include name="**/${lib-light-api}"/>
                     <include name="**/${lib-annotations}"/>
                     <include name="**/${lib-command-api}"/>
