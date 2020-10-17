@@ -60,7 +60,13 @@ public class VarLightCommandClear extends VarLightSubCommand {
         suggestCoordinate(ARG_REGION_X, e -> (e.getLocation().getBlockX() >> 4) >> 5);
         suggestCoordinate(ARG_REGION_Z, e -> (e.getLocation().getBlockZ() >> 4) >> 5);
 
-        node.requires(cs -> cs instanceof LivingEntity);
+        if (node.getRequirement() != null) {
+            Predicate<CommandSender> requirement = node.getRequirement();
+            requirement = requirement.and(cs -> cs instanceof LivingEntity);
+            node.requires(requirement);
+        } else {
+            node.requires(cs -> cs instanceof LivingEntity);
+        }
 
         node.then(
                 literalArgument("chunk")
