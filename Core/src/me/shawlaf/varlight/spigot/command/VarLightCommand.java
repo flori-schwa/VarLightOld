@@ -37,7 +37,7 @@ public final class VarLightCommand extends BrigadierCommand<VarLightPlugin> {
             VarLightCommandPrompt.class,
             VarLightCommandSave.class,
             VarLightCommandStepSize.class,
-            VarLightCommandUpdate.class,
+            VarLightCommandUpdate.class
     };
 
     private VarLightSubCommand[] subCommands; // Will be used by help command

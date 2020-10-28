@@ -3,10 +3,12 @@ package me.shawlaf.varlight.spigot.persistence;
 import me.shawlaf.command.result.CommandResult;
 import me.shawlaf.varlight.persistence.LightPersistFailedException;
 import me.shawlaf.varlight.persistence.nls.NLSFile;
+import me.shawlaf.varlight.persistence.nls.exception.PositionOutOfBoundsException;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
 import me.shawlaf.varlight.util.RegionCoords;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
@@ -52,7 +54,15 @@ public class WorldLightSourceManager {
     }
 
     public int getCustomLuminance(IntPosition position, IntSupplier def) {
-        int custom = getNLSFile(position.toRegionCoords()).getCustomLuminance(position);
+
+        int custom;
+
+        try {
+            custom = getNLSFile(position.toRegionCoords()).getCustomLuminance(position);
+        } catch (PositionOutOfBoundsException e) {
+            plugin.getDebugManager().logDebugAction(Bukkit.getConsoleSender(), e::getMessage);
+            return def.getAsInt();
+        }
 
         if (custom == 0) {
             return def.getAsInt();
@@ -66,11 +76,19 @@ public class WorldLightSourceManager {
     }
 
     public void setCustomLuminance(Location location, int lightLevel) {
-        setCustomLuminance(toIntPosition(location), lightLevel);
+        try {
+            setCustomLuminance(toIntPosition(location), lightLevel);
+        } catch (PositionOutOfBoundsException e) {
+            plugin.getDebugManager().logDebugAction(Bukkit.getConsoleSender(), e::getMessage);
+        }
     }
 
     public void setCustomLuminance(IntPosition position, int lightLevel) {
-        getNLSFile(position.toRegionCoords()).setCustomLuminance(position, lightLevel);
+        try {
+            getNLSFile(position.toRegionCoords()).setCustomLuminance(position, lightLevel);
+        } catch (PositionOutOfBoundsException e) {
+            plugin.getDebugManager().logDebugAction(Bukkit.getConsoleSender(), e::getMessage);
+        }
     }
 
     public void save(CommandSender commandSender, boolean log) {
