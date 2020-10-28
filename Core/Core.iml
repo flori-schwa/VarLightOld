@@ -25,7 +25,7 @@
     <orderEntry type="library" name="worldedit-bukkit-7.1.0" level="project" />
     <orderEntry type="library" name="worldguard-bukkit-7.0.2" level="project" />
     <orderEntry type="library" name="org.jooq:joor-java-8:0.9.13" level="project" />
-    <orderEntry type="library" name="spigot-1.12.2" level="project" />
     <orderEntry type="library" name="brigadier" level="project" />
+    <orderEntry type="library" name="spigot-1.15.2" level="project" />
   </component>
 </module>

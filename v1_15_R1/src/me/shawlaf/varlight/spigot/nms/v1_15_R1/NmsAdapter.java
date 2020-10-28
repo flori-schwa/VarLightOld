@@ -1,5 +1,6 @@
 package me.shawlaf.varlight.spigot.nms.v1_15_R1;
 
+import com.google.common.collect.Lists;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.nms.ForMinecraft;
 import me.shawlaf.varlight.spigot.nms.INmsAdapter;
@@ -11,14 +12,17 @@ import me.shawlaf.varlight.spigot.updater.ILightUpdater;
 import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
 import net.minecraft.server.v1_15_R1.*;
-import org.bukkit.ChatColor;
+import org.bukkit.*;
 import org.bukkit.Chunk;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.v1_15_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_15_R1.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_15_R1.util.CraftMagicNumbers;
+import org.bukkit.entity.Item;
+import org.bukkit.entity.Player;
+import org.bukkit.event.block.BlockDropItemEvent;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -29,6 +33,7 @@ import org.joor.Reflect;
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
@@ -208,6 +213,38 @@ public class NmsAdapter implements INmsAdapter {
     public @NotNull File getRegionRoot(World world) {
         WorldServer nmsWorld = ((CraftWorld) world).getHandle();
         return Reflect.on(nmsWorld.getChunkProvider().playerChunkMap).get("w");
+    }
+
+    @Override
+    public void dropBlockItemNaturallyRespectGameruleAndEvents(World world, Location location, Player source, Block block, ItemStack... itemStacks) {
+        if (!Objects.requireNonNull(world.getGameRuleValue(GameRule.DO_TILE_DROPS))) {
+            return;
+        }
+
+        WorldServer nmsWorld = getNmsWorld(world);
+
+        List<EntityItem> drops = new ArrayList<>();
+
+        for (ItemStack itemStack : itemStacks) {
+            double dx = (double) (nmsWorld.random.nextFloat() * 0.5F) + 0.25D;
+            double dy = (double) (nmsWorld.random.nextFloat() * 0.5F) + 0.25D;
+            double dz = (double) (nmsWorld.random.nextFloat() * 0.5F) + 0.25D;
+
+            drops.add(new EntityItem(nmsWorld, location.getX() + dx, location.getY() + dy, location.getZ() + dz, CraftItemStack.asNMSCopy(itemStack)));
+        }
+
+        BlockDropItemEvent blockDropItemEvent = new BlockDropItemEvent(block, block.getState(), source,
+                drops.stream().map(nmsItem -> (Item) Objects.requireNonNull(nmsItem).getBukkitEntity()).collect(Collectors.toList()));
+
+        Bukkit.getPluginManager().callEvent(blockDropItemEvent);
+
+        if (blockDropItemEvent.isCancelled()) {
+            return;
+        }
+
+        for (EntityItem drop : drops) {
+            drop.world.addEntity(drop);
+        }
     }
 
     private WorldServer getNmsWorld(World world) {

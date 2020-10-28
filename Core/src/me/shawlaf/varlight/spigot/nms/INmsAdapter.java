@@ -7,6 +7,8 @@ import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Item;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -74,6 +76,8 @@ public interface INmsAdapter extends ILightUpdater {
     int getGlowingValue(ItemStack glowingStack);
 
     @NotNull File getRegionRoot(World world);
+
+    void dropBlockItemNaturallyRespectGameruleAndEvents(World world, Location location, Player source, Block block, ItemStack... itemStacks);
 
     default void onLoad() {
 

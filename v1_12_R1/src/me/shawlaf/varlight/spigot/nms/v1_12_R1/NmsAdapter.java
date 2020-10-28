@@ -6,7 +6,6 @@ import me.shawlaf.varlight.spigot.nms.INmsAdapter;
 import me.shawlaf.varlight.spigot.nms.LightUpdateFailedException;
 import me.shawlaf.varlight.spigot.nms.MaterialType;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
-import me.shawlaf.varlight.spigot.util.IntPositionExtension;
 import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
 import net.minecraft.server.v1_12_R1.*;
@@ -15,10 +14,11 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.*;
 import org.bukkit.block.BlockFace;
-import org.bukkit.craftbukkit.v1_12_R1.CraftArt;
 import org.bukkit.craftbukkit.v1_12_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_12_R1.entity.CraftItem;
 import org.bukkit.craftbukkit.v1_12_R1.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_12_R1.util.CraftMagicNumbers;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -26,13 +26,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joor.Reflect;
 
-import javax.naming.Name;
-import javax.xml.stream.events.Namespace;
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.StreamSupport;
 
+import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toBlock;
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
 
 @ForMinecraft(version = "1.12.2")
@@ -211,12 +210,31 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
+    public void dropBlockItemNaturallyRespectGameruleAndEvents(World world, Location location, Player source, org.bukkit.block.Block block, ItemStack... itemStacks) {
+        if ("false".equals(world.getGameRuleValue("doTileDrops"))) {
+            return;
+        }
+
+        for (ItemStack itemStack : itemStacks) {
+            Block.a(
+                    getNmsWorld(world),
+                    toBlockPosition(location),
+                    CraftItemStack.asNMSCopy(itemStack)
+            );
+        }
+    }
+
+    @Override
     public void setLight(World world, IntPosition position, int lightLevel) {
         WorldLightSourceManager manager = plugin.getManager(world);
 
         if (manager == null) {
             throw new LightUpdateFailedException("VarLight not enabled in World " + world.getName());
         }
+
+        plugin.getDebugManager().logDebugAction(null,
+                () -> "Set NLS Light of " + position.toShortString() + " = " + toBlock(position, world).getType().name() + " to " + lightLevel
+        );
 
         manager.setCustomLuminance(position, lightLevel);
     }
@@ -382,10 +400,10 @@ public class NmsAdapter implements INmsAdapter {
     private void updateBlock0(IntPosition position, int lightLevel, WorldServer nmsWorld) {
         BlockPosition blockPosition = toBlockPosition(position);
 
-        nmsWorld.c(EnumSkyBlock.BLOCK, blockPosition);
+        recalculateBlockLight(nmsWorld, blockPosition);
 
         if (lightLevel > 0) {
-            nmsWorld.a(EnumSkyBlock.BLOCK, blockPosition, lightLevel);
+            setBlockLightSourceRaw(nmsWorld, blockPosition, lightLevel);
 
             for (BlockFace blockFace : CHECK_FACES) {
                 IntPosition relative = position.getRelative(blockFace.getModX(), blockFace.getModY(), blockFace.getModZ());
@@ -394,8 +412,10 @@ public class NmsAdapter implements INmsAdapter {
                     continue;
                 }
 
-                if (!nmsWorld.getType(blockPosition).getMaterial().blocksLight()) {
-                    nmsWorld.c(EnumSkyBlock.BLOCK, blockPosition);
+                BlockPosition relativeBlockPos = toBlockPosition(relative);
+
+                if (!nmsWorld.getType(relativeBlockPos).getMaterial().blocksLight()) {
+                    recalculateBlockLight(nmsWorld, relativeBlockPos);
                 }
             }
         }
@@ -415,5 +435,21 @@ public class NmsAdapter implements INmsAdapter {
         return new BlockPosition(position.x, position.y, position.z);
     }
 
-    //
+    private void setBlockLightSourceRaw(WorldServer worldServer, IntPosition position, int lightLevel) {
+        setBlockLightSourceRaw(worldServer, toBlockPosition(position), lightLevel);
+    }
+
+    private void setBlockLightSourceRaw(WorldServer worldServer, BlockPosition blockPosition, int lightLevel) {
+        worldServer.a(EnumSkyBlock.BLOCK, blockPosition, lightLevel);
+    }
+
+    private boolean recalculateBlockLight(WorldServer worldServer, IntPosition position) {
+        return recalculateBlockLight(worldServer, toBlockPosition(position));
+    }
+
+    private boolean recalculateBlockLight(WorldServer worldServer, BlockPosition position) {
+        return worldServer.c(EnumSkyBlock.BLOCK, position);
+    }
+
+    // endregion
 }

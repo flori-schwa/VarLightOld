@@ -19,15 +19,13 @@ import me.shawlaf.varlight.util.NumericMajorMinorVersion;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockPhysicsEvent;
-import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.block.*;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.WorldLoadEvent;
@@ -38,6 +36,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.DoublePredicate;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
 
 import static me.shawlaf.command.result.CommandResult.failure;
 import static me.shawlaf.command.result.CommandResult.info;
@@ -382,10 +383,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void playerBreakLightSource(BlockBreakEvent e) {
-        if (!configuration.isReclaimEnabled()) {
-            return;
-        }
-
         Block theBlock = e.getBlock();
         World world = theBlock.getWorld();
 
@@ -398,6 +395,15 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         int emittingLight = manager.getCustomLuminance(toIntPosition(theBlock), -1);
 
         if (emittingLight <= 0) {
+            return;
+        }
+
+        if (nmsAdapter.isLegacy()) {
+            // 1.12 Breaking and deleting of custom light sources handled here, 1.13+ handled in lightSourceReceiveUpdate
+            nmsAdapter.setAndUpdateLight(e.getBlock().getLocation(), 0); // Delete the custom Light source from NLS
+        }
+
+        if (!configuration.isReclaimEnabled()) {
             return;
         }
 
@@ -422,7 +428,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             dropStack = nmsAdapter.makeGlowingStack(dropStack, emittingLight);
 
             e.setDropItems(false);
-            world.dropItemNaturally(dropLocation, dropStack);
+            nmsAdapter.dropBlockItemNaturallyRespectGameruleAndEvents(world, dropLocation, e.getPlayer(), theBlock, dropStack);
         } else {
             if (!configuration.isConsumeLui()) {
                 return; // Check for consume lui to prevent ez duping of lui
@@ -435,16 +441,22 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             ItemStack lui = new ItemStack(lightUpdateItem, 1);
 
             if (fortuneLvl == 0) {
-                world.dropItemNaturally(dropLocation, lui);
+                nmsAdapter.dropBlockItemNaturallyRespectGameruleAndEvents(world, dropLocation, e.getPlayer(), theBlock, lui);
             } else {
-                // f(x) = 1 - (1 - -0.5) * e^(-0.6 * x)
+                // f(x) = 1 - (1 - -0.5) * e^(-0.6 * x) where x = fortuneLvl
                 double chance = 1d - (1.5) * Math.exp(-0.6 * fortuneLvl);
+                int dropCount = 1;
 
-                for (int i = 0; i < emittingLight; i++) {
+                for (int i = 1; i < emittingLight; i++) {
                     if (Math.random() <= chance) {
-                        world.dropItemNaturally(dropLocation, lui);
+                        ++dropCount;
                     }
                 }
+
+                ItemStack[] drops = new ItemStack[dropCount];
+                Arrays.fill(drops, lui);
+
+                nmsAdapter.dropBlockItemNaturallyRespectGameruleAndEvents(world, dropLocation, e.getPlayer(), theBlock, drops);
             }
         }
     }
@@ -495,7 +507,6 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void lightSourceReceiveUpdate(BlockPhysicsEvent e) {
-
         if (nmsAdapter.isLegacy()) {
             return;
         }
@@ -510,7 +521,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         int lum = manager.getCustomLuminance(blockPos, 0);
 
         if (lum > 0) {
-            if (e.getBlock() == e.getSourceBlock()) {
+            if (e.getBlock() == e.getSourceBlock()) { // WARN getSourceBlock() is a 1.13+ API Method!
                 // The Light Source Block was changed
 
                 // See World.notifyAndUpdatePhysics(BlockPosition, Chunk, IBlockData, IBlockData, IBlockData, int)
