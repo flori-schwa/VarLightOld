@@ -160,7 +160,7 @@ public abstract class VarLightSubCommand implements ICommandAccess<VarLightPlugi
     @SuppressWarnings("unchecked")
     protected CompletableFuture<Void> createTickets(World world, Set<ChunkCoords> chunkCoords) {
 
-        if (plugin.getNmsAdapter().isLegacy()) {
+        if (!plugin.getNmsAdapter().hasPluginChunkTickets()) {
             return CompletableFuture.completedFuture(null);
         }
 
@@ -180,7 +180,7 @@ public abstract class VarLightSubCommand implements ICommandAccess<VarLightPlugi
 
     protected CompletableFuture<Void> releaseTickets(World world, Set<ChunkCoords> chunkCoords) {
 
-        if (plugin.getNmsAdapter().isLegacy()) {
+        if (!plugin.getNmsAdapter().hasPluginChunkTickets()) {
             return CompletableFuture.completedFuture(null);
         }
 

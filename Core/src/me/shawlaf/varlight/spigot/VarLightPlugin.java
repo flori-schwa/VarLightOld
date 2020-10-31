@@ -398,7 +398,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-        if (nmsAdapter.isLegacy()) {
+        if (nmsAdapter.needsManualBreakCheck()) {
             // 1.12 Breaking and deleting of custom light sources handled here, 1.13+ handled in lightSourceReceiveUpdate
             nmsAdapter.setAndUpdateLight(e.getBlock().getLocation(), 0); // Delete the custom Light source from NLS
         }
@@ -507,7 +507,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void lightSourceReceiveUpdate(BlockPhysicsEvent e) {
-        if (nmsAdapter.isLegacy()) {
+        if (!nmsAdapter.hasBlockPhysicsSourceBlock()) {
             return;
         }
 

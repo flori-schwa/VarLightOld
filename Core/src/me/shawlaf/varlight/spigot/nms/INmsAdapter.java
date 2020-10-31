@@ -99,7 +99,32 @@ public interface INmsAdapter extends ILightUpdater {
         return material.getKey();
     }
 
-    default boolean isLegacy() {
+
+    /**
+     * @return Whether or not Custom light sources need to be manually removed when a Block is broken.
+     */
+    default boolean needsManualBreakCheck() {
+        return false;
+    }
+
+    /**
+     * @return Whether or not the method getSourceBlock() is present within the {@link org.bukkit.event.block.BlockPhysicsEvent} class.
+     */
+    default boolean hasBlockPhysicsSourceBlock() {
+        return true;
+    }
+
+    /**
+     * @return Whether or not Plugin Chunk Tickets are supported.
+     */
+    default boolean hasPluginChunkTickets() {
+        return true;
+    }
+
+    /**
+     * @return Whether or not the legacy (non-multi threaded) light engine is used.
+     */
+    default boolean isLegacyLightEngine() {
         return false;
     }
 

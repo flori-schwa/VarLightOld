@@ -29,7 +29,6 @@ public class LightSourceUtil {
     public static LightUpdateResult placeNewLightSource(VarLightPlugin plugin, CommandSender source, Location location, int lightLevel, boolean doUpdate) {
 
         IntPosition position = IntPositionExtension.toIntPosition(location);
-        ChunkCoords center = position.toChunkCoords();
 
         int fromLight = location.getBlock().getLightFromBlocks();
 
@@ -67,27 +66,6 @@ public class LightSourceUtil {
         } else {
             plugin.getNmsAdapter().setLight(location, lightLevel);
         }
-
-//        manager.setCustomLuminance(location, lightTo);
-//
-//        if (doUpdate) {
-//            plugin.getNmsAdapter().getLightUpdater().setAndUpdateLight(location, lightLevel);
-//
-//            plugin.getNmsAdapter().updateBlock(location).thenRunAsync(
-//                    () -> {
-//                        Collection<ChunkCoords> neighbours = plugin.getNmsAdapter().collectChunkPositionsToUpdate(position);
-//                        List<CompletableFuture<Void>> futures = new ArrayList<>(neighbours.size());
-//
-//                        for (ChunkCoords neighbour : neighbours) {
-//                            futures.add(plugin.getNmsAdapter().updateChunk(location.getWorld(), neighbour));
-//                        }
-//
-//                        plugin.getBukkitAsyncExecutorService().submit(() -> {
-//                            futures.forEach(CompletableFuture::join);
-//                        }).thenRunAsync(() -> plugin.getNmsAdapter().sendLightUpdates(location.getWorld(), center), plugin.getBukkitMainThreadExecutorService());
-//                    }, plugin.getBukkitMainThreadExecutorService()
-//            );
-//        }
 
         return updated(plugin, fromLight, lightTo);
     }

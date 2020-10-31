@@ -15,7 +15,6 @@ import org.bukkit.World;
 import org.bukkit.*;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.v1_12_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_12_R1.entity.CraftItem;
 import org.bukkit.craftbukkit.v1_12_R1.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_12_R1.util.CraftMagicNumbers;
 import org.bukkit.entity.Player;
@@ -79,7 +78,22 @@ public class NmsAdapter implements INmsAdapter {
     }
 
     @Override
-    public boolean isLegacy() {
+    public boolean needsManualBreakCheck() {
+        return true;
+    }
+
+    @Override
+    public boolean hasBlockPhysicsSourceBlock() {
+        return false;
+    }
+
+    @Override
+    public boolean hasPluginChunkTickets() {
+        return false;
+    }
+
+    @Override
+    public boolean isLegacyLightEngine() {
         return true;
     }
 
@@ -416,6 +430,49 @@ public class NmsAdapter implements INmsAdapter {
 
                 if (!nmsWorld.getType(relativeBlockPos).getMaterial().blocksLight()) {
                     recalculateBlockLight(nmsWorld, relativeBlockPos);
+                }
+            }
+        }
+
+        PlayerChunkMap pcm = nmsWorld.getPlayerChunkMap();
+        int[] sectionsToUpdate;
+
+        int sectionY = position.y >> 4;
+
+        switch (sectionY) {
+            case 0: {
+                sectionsToUpdate = new int[] { 0, 1 };
+                break;
+            }
+
+            case 15: {
+                sectionsToUpdate = new int[] { 14, 15 };
+                break;
+            }
+
+            default: {
+                sectionsToUpdate = new int[3];
+
+                sectionsToUpdate[0] = sectionY - 1;
+                sectionsToUpdate[1] = sectionY;
+                sectionsToUpdate[2] = sectionY + 1;
+            }
+        }
+
+        for (ChunkCoords neighbour : collectChunkPositionsToUpdate(position.toChunkCoords())) {
+            PlayerChunk neighbourChunk = pcm.getChunk(neighbour.x, neighbour.z);
+
+            if (neighbourChunk == null) {
+                continue;
+            }
+
+            for (int cy : sectionsToUpdate) {
+                for (int z = 0; z < 16; z++) {
+                    for (int x = 0; x < 16; x++) {
+                        for (int y = 0; y < 16; y++) {
+                            neighbourChunk.a(x, (cy << 4) + y, z); // Mark all positions in Chunk section as dirty
+                        }
+                    }
                 }
             }
         }
