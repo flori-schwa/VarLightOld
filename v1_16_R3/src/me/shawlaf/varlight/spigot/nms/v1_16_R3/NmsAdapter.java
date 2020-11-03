@@ -1,22 +1,22 @@
-package me.shawlaf.varlight.spigot.nms.v1_16_R2;
+package me.shawlaf.varlight.spigot.nms.v1_16_R3;
 
 import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.nms.ForMinecraft;
 import me.shawlaf.varlight.spigot.nms.INmsAdapter;
 import me.shawlaf.varlight.spigot.nms.LightUpdateFailedException;
 import me.shawlaf.varlight.spigot.nms.MaterialType;
-import me.shawlaf.varlight.spigot.nms.v1_16_R2.wrappers.WrappedILightAccess;
+import me.shawlaf.varlight.spigot.nms.v1_16_R3.wrappers.WrappedILightAccess;
 import me.shawlaf.varlight.spigot.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.util.ChunkCoords;
 import me.shawlaf.varlight.util.IntPosition;
-import net.minecraft.server.v1_16_R2.*;
+import net.minecraft.server.v1_16_R3.*;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.craftbukkit.v1_16_R2.CraftWorld;
-import org.bukkit.craftbukkit.v1_16_R2.inventory.CraftItemStack;
-import org.bukkit.craftbukkit.v1_16_R2.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.v1_16_R3.CraftWorld;
+import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.v1_16_R3.util.CraftMagicNumbers;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -29,7 +29,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.StreamSupport;
 
-@ForMinecraft(version = "1.16.2 - 1.16.3")
+@ForMinecraft(version = "1.16.4")
 public class NmsAdapter implements INmsAdapter {
 
     private final VarLightPlugin plugin;
@@ -38,7 +38,7 @@ public class NmsAdapter implements INmsAdapter {
     public NmsAdapter(VarLightPlugin plugin) {
         this.plugin = plugin;
 
-        net.minecraft.server.v1_16_R2.ItemStack nmsStack = new net.minecraft.server.v1_16_R2.ItemStack(Items.STICK);
+        net.minecraft.server.v1_16_R3.ItemStack nmsStack = new net.minecraft.server.v1_16_R3.ItemStack(Items.STICK);
 
         nmsStack.addEnchantment(Enchantments.DURABILITY, 1);
         nmsStack.a("CustomType", NBTTagString.a("varlight:debug_stick"));
@@ -136,7 +136,7 @@ public class NmsAdapter implements INmsAdapter {
     @NotNull
     @Override
     public ItemStack getVarLightDebugStick() {
-        net.minecraft.server.v1_16_R2.ItemStack nmsStack = CraftItemStack.asNMSCopy(varlightDebugStick);
+        net.minecraft.server.v1_16_R3.ItemStack nmsStack = CraftItemStack.asNMSCopy(varlightDebugStick);
 
         UUID id = UUID.randomUUID();
 
@@ -148,7 +148,7 @@ public class NmsAdapter implements INmsAdapter {
 
     @Override
     public ItemStack makeGlowingStack(ItemStack base, int lightLevel) {
-        net.minecraft.server.v1_16_R2.ItemStack nmsStack = new net.minecraft.server.v1_16_R2.ItemStack(
+        net.minecraft.server.v1_16_R3.ItemStack nmsStack = new net.minecraft.server.v1_16_R3.ItemStack(
                 CraftMagicNumbers.getItem(base.getType()),
                 base.getAmount()
         );
@@ -171,7 +171,7 @@ public class NmsAdapter implements INmsAdapter {
 
     @Override
     public int getGlowingValue(ItemStack glowingStack) {
-        net.minecraft.server.v1_16_R2.ItemStack nmsStack = CraftItemStack.asNMSCopy(glowingStack);
+        net.minecraft.server.v1_16_R3.ItemStack nmsStack = CraftItemStack.asNMSCopy(glowingStack);
 
         NBTTagCompound tag = nmsStack.getTag();
 
@@ -188,7 +188,7 @@ public class NmsAdapter implements INmsAdapter {
             return false;
         }
 
-        net.minecraft.server.v1_16_R2.ItemStack nmsStack = CraftItemStack.asNMSCopy(itemStack);
+        net.minecraft.server.v1_16_R3.ItemStack nmsStack = CraftItemStack.asNMSCopy(itemStack);
 
         NBTTagCompound tag = nmsStack.getTag();
 
