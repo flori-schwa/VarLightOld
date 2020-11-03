@@ -12,6 +12,7 @@
     <property name="v1_15_R1-src" location="v1_15_R1/src"/>
     <property name="v1_16_R1-src" location="v1_16_R1/src"/>
     <property name="v1_16_R2-src" location="v1_16_R2/src"/>
+    <property name="v1_16_R3-src" location="v1_16_R3/src"/>
 
     <property name="use-compiler" value="modern"/>
 
@@ -146,6 +147,12 @@
         <build src-dir="${v1_16_R2-src}">
             <libraries>
                 <include name="**/spigot-1.16.2.jar"/>
+            </libraries>
+        </build>
+
+        <build src-dir="${v1_16_R3-src}">
+            <libraries>
+                <include name="**/spigot-1.16.4.jar"/>
             </libraries>
         </build>
 
