@@ -25,7 +25,7 @@ public class VarLightCommandStepSize extends VarLightSubCommand {
     @NotNull
     @Override
     public String getDescription() {
-        return "Edit the Step size when using " + plugin.getLightUpdateItem().getKey().toString() + ".";
+        return "Edit the Step size when using " + plugin.getKey(plugin.getLightUpdateItem()).toString() + ".";
     }
 
     @Override

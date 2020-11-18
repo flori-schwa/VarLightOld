@@ -34,7 +34,7 @@ public class VarLightConfiguration {
 
         plugin.saveDefaultConfig();
 
-        plugin.getConfig().addDefault(CONFIG_KEY_VARLIGHT_ITEM, plugin.getNmsAdapter().getKey(Material.GLOWSTONE_DUST).toString());
+        plugin.getConfig().addDefault(CONFIG_KEY_VARLIGHT_ITEM, plugin.getKey(Material.GLOWSTONE_DUST).toString());
         plugin.getConfig().addDefault(CONFIG_KEY_CONSUME_LUI, true);
         plugin.getConfig().addDefault(CONFIG_KEY_AUTOSAVE, -1); // Persist Light sources on world save
         plugin.getConfig().addDefault(CONFIG_KEY_CHECK_PERMISSION, false);
@@ -65,17 +65,17 @@ public class VarLightConfiguration {
 
     public Material getLightUpdateItem() {
         @SuppressWarnings("ConstantConditions") // Cannot be null, because getKey() is NotNull and NamespacedKey.toString() is also NotNull
-                String configMaterial = plugin.getConfig().getString(CONFIG_KEY_VARLIGHT_ITEM, plugin.getNmsAdapter().getKey(Material.GLOWSTONE_DUST).toString()).toLowerCase();
+                String configMaterial = plugin.getConfig().getString(CONFIG_KEY_VARLIGHT_ITEM, plugin.getKey(Material.GLOWSTONE_DUST).toString()).toLowerCase();
 
         Material material = plugin.getNmsAdapter().keyToType(configMaterial, MaterialType.ITEM);
 
         if (material == null) {
-            plugin.getLogger().warning(String.format("Could not find a Material with the given name \"%s\", defaulting to \"%s\"", configMaterial, plugin.getNmsAdapter().getKey(Material.GLOWSTONE_DUST).toString()));
+            plugin.getLogger().warning(String.format("Could not find a Material with the given name \"%s\", defaulting to \"%s\"", configMaterial, plugin.getKey(Material.GLOWSTONE_DUST).toString()));
             return Material.GLOWSTONE_DUST;
         }
 
         if (plugin.getNmsAdapter().isIllegalLightUpdateItem(material)) {
-            plugin.getLogger().warning(String.format("\"%s\" cannot be used as the Light update item. Defaulting to \"%s\"", plugin.getNmsAdapter().getKey(material).toString(), plugin.getNmsAdapter().getKey(Material.GLOWSTONE_DUST).toString()));
+            plugin.getLogger().warning(String.format("\"%s\" cannot be used as the Light update item. Defaulting to \"%s\"", plugin.getKey(material).toString(), plugin.getKey(Material.GLOWSTONE_DUST).toString()));
 
             return Material.GLOWSTONE_DUST;
         }

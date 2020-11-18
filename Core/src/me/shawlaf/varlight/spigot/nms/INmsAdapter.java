@@ -99,7 +99,6 @@ public interface INmsAdapter extends ILightUpdater {
         return material.getKey();
     }
 
-
     /**
      * @return Whether or not Custom light sources need to be manually removed when a Block is broken.
      */

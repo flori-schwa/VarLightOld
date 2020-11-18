@@ -20,7 +20,7 @@ public class PermissionExecutor extends SubCommandExecutor {
         boolean doCheckPermission = plugin.getConfiguration().isCheckingPermission();
 
         if (doCheckPermission) {
-            info(command, context.getSource(), String.format("Only players with the \"varlight.use\" permission node may %s to update Light sources", plugin.getLightUpdateItem().getKey().getKey()));
+            info(command, context.getSource(), String.format("Only players with the \"varlight.use\" permission node may %s to update Light sources", plugin.getKey(plugin.getLightUpdateItem()).getKey()));
         } else {
             info(command, context.getSource(), "There is currently no permisison requirement to use plugin features.");
         }
@@ -38,9 +38,9 @@ public class PermissionExecutor extends SubCommandExecutor {
             plugin.getConfiguration().setCheckPermission(newValue);
 
             if (newValue) {
-                successBroadcast(command, context.getSource(), String.format("Enabled permission checking, only players with the \"varlight.use\" permission node may use %s to update Light sources", plugin.getLightUpdateItem().getKey().getKey()));
+                successBroadcast(command, context.getSource(), String.format("Enabled permission checking, only players with the \"varlight.use\" permission node may use %s to update Light sources", plugin.getKey(plugin.getLightUpdateItem()).getKey()));
             } else {
-                successBroadcast(command, context.getSource(), String.format("Disabled permission checking, all players may use %s to update Light sources", plugin.getLightUpdateItem().getKey().getKey()));
+                successBroadcast(command, context.getSource(), String.format("Disabled permission checking, all players may use %s to update Light sources", plugin.getKey(plugin.getLightUpdateItem()).getKey()));
             }
         }
 

@@ -226,7 +226,7 @@ public class VarLightCommandDebug extends VarLightSubCommand {
                     "%s = %d (%s)",
                     lightSource.toShortString(),
                     manager.getCustomLuminance(lightSource, 0),
-                    player.getWorld().getBlockAt(lightSource.x, lightSource.y, lightSource.z).getType().getKey().toString())
+                    plugin.getKey(player.getWorld().getBlockAt(lightSource.x, lightSource.y, lightSource.z).getType()).toString())
             );
 
             textComponent.setColor(ChatColor.GREEN);

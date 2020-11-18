@@ -205,6 +205,10 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
         return nmsAdapter;
     }
 
+    public NamespacedKey getKey(Material material) {
+        return nmsAdapter.getKey(material);
+    }
+
     public AbstractBukkitExecutor getBukkitAsyncExecutorService() {
         return bukkitAsyncExecutorService;
     }
@@ -246,7 +250,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
     }
 
     public void setUpdateItem(Material item) {
-        getConfig().set(VarLightConfiguration.CONFIG_KEY_VARLIGHT_ITEM, nmsAdapter.getKey(item).toString());
+        getConfig().set(VarLightConfiguration.CONFIG_KEY_VARLIGHT_ITEM, getKey(item).toString());
         saveConfig();
 
         loadLightUpdateItem();
@@ -493,7 +497,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
                 LightUpdateResult lightUpdateResult = placeNewLightSource(this, e.getPlayer(), e.getBlock().getLocation(), emittingLight);
 
                 debugManager.logDebugAction(e.getPlayer(), () ->
-                        "Place Lightsource (" + nmsAdapter.getKey(handCopy.getType()).toString() + ") @ " + IntPositionExtension.toIntPosition(e.getBlock()).toShortString() + " (" + emittingLight + "): " + lightUpdateResult.getDebugMessage().toString());
+                        "Place Lightsource (" + getKey(handCopy.getType()).toString() + ") @ " + IntPositionExtension.toIntPosition(e.getBlock()).toShortString() + " (" + emittingLight + "): " + lightUpdateResult.getDebugMessage().toString());
 
                 if (!lightUpdateResult.successful()) {
                     e.getBlock().setType(before);
@@ -563,7 +567,7 @@ public class VarLightPlugin extends JavaPlugin implements Listener {
 
     private void loadLightUpdateItem() {
         this.lightUpdateItem = configuration.getLightUpdateItem();
-        getLogger().info(String.format("Using \"%s\" as the Light update item.", nmsAdapter.getKey(lightUpdateItem).toString()));
+        getLogger().info(String.format("Using \"%s\" as the Light update item.", getKey(lightUpdateItem).toString()));
     }
 
 //    private void exportResource(String path, File toFile) {

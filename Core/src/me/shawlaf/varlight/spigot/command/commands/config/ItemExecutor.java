@@ -22,7 +22,7 @@ public class ItemExecutor extends SubCommandExecutor {
                 context.getSource(),
                 String.format(
                         "The current Light update item is \"%s\"",
-                        plugin.getLightUpdateItem().getKey().toString()
+                        plugin.getKey(plugin.getLightUpdateItem()).toString()
                 )
         );
 
@@ -33,13 +33,13 @@ public class ItemExecutor extends SubCommandExecutor {
         Material item = context.getArgument("item", Material.class);
 
         if (plugin.getNmsAdapter().isIllegalLightUpdateItem(item)) {
-            failure(command, context.getSource(), String.format("%s cannot be used as the varlight update item", plugin.getNmsAdapter().getKey(item).toString()));
+            failure(command, context.getSource(), String.format("%s cannot be used as the varlight update item", plugin.getKey(item).toString()));
 
             return FAILURE;
         }
 
         plugin.setUpdateItem(item);
-        successBroadcast(command, context.getSource(), String.format("Updated the Light update item to %s", plugin.getNmsAdapter().getKey(item).toString()));
+        successBroadcast(command, context.getSource(), String.format("Updated the Light update item to %s", plugin.getKey(item).toString()));
 
         return SUCCESS;
     }
