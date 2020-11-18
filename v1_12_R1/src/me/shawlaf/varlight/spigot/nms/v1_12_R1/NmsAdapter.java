@@ -18,6 +18,13 @@ import org.bukkit.craftbukkit.v1_12_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_12_R1.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_12_R1.util.CraftMagicNumbers;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockExplodeEvent;
+import org.bukkit.event.block.BlockPistonExtendEvent;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -34,7 +41,7 @@ import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toBlock;
 import static me.shawlaf.varlight.spigot.util.IntPositionExtension.toIntPosition;
 
 @ForMinecraft(version = "1.12.2")
-public class NmsAdapter implements INmsAdapter {
+public class NmsAdapter implements INmsAdapter, Listener {
 
     private static final BlockFace[] CHECK_FACES = new BlockFace[]{
             BlockFace.NORTH,
@@ -62,6 +69,11 @@ public class NmsAdapter implements INmsAdapter {
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         meta.setDisplayName(ChatColor.RESET + "" + ChatColor.GOLD + "VarLight Debug Stick");
         varlightDebugStick.setItemMeta(meta);
+    }
+
+    @Override
+    public void onEnable() {
+        Bukkit.getPluginManager().registerEvents(this, this.plugin);
     }
 
     @Override
@@ -477,6 +489,64 @@ public class NmsAdapter implements INmsAdapter {
             }
         }
     }
+
+    // region Events
+
+    private void handleExplodeEvent(World world, List<org.bukkit.block.Block> blockList) {
+        WorldLightSourceManager manager = plugin.getManager(world);
+
+        if (manager == null) {
+            return;
+        }
+
+        for (org.bukkit.block.Block block : blockList) {
+            setAndUpdateLight(world, toIntPosition(block), 0);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onBlockExplode(BlockExplodeEvent blockExplodeEvent) {
+        handleExplodeEvent(blockExplodeEvent.getBlock().getWorld(), blockExplodeEvent.blockList());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onEntityExplode(EntityExplodeEvent entityExplodeEvent) {
+        handleExplodeEvent(entityExplodeEvent.getEntity().getWorld(), entityExplodeEvent.blockList());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onEntityChangeBlock(EntityChangeBlockEvent e) {
+        WorldLightSourceManager manager = plugin.getManager(e.getBlock().getWorld());
+
+        if (manager == null) {
+            return;
+        }
+
+        IntPosition position = toIntPosition(e.getBlock());
+
+        if (manager.getCustomLuminance(position, -1) <= 0) {
+            return;
+        }
+
+        if (HardcodedBlockList.ALLOWED_BLOCKS.contains(e.getBlock().getType()) && !HardcodedBlockList.ALLOWED_BLOCKS.contains(e.getTo())) {
+            setAndUpdateLight(manager.getWorld(), position, 0);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPistonEventExtends(BlockPistonExtendEvent e) {
+        WorldLightSourceManager manager = plugin.getManager(e.getBlock().getWorld());
+
+        if (manager == null) {
+            return;
+        }
+
+        for (org.bukkit.block.Block block : e.getBlocks()) {
+            setAndUpdateLight(manager.getWorld(), toIntPosition(block), 0);
+        }
+    }
+
+    // endregion
 
     // region Util
 

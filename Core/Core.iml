@@ -20,12 +20,12 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="library" name="annotations-17.0.0" level="project" />
     <orderEntry type="library" name="SpigotCommandApi-1.9" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="org.projectlombok:lombok:1.18.10" level="project" />
     <orderEntry type="library" name="VarLightCore" level="project" />
     <orderEntry type="library" name="worldedit-bukkit-7.1.0" level="project" />
     <orderEntry type="library" name="worldguard-bukkit-7.0.2" level="project" />
     <orderEntry type="library" name="org.jooq:joor-java-8:0.9.13" level="project" />
     <orderEntry type="library" name="brigadier" level="project" />
     <orderEntry type="library" name="spigot-1.15.2" level="project" />
+    <orderEntry type="library" name="lombok-1.18.16" level="project" />
   </component>
 </module>
