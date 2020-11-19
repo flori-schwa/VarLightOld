@@ -14,6 +14,7 @@ import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.command.commands.*;
 import me.shawlaf.varlight.spigot.command.commands.config.VarLightCommandConfig;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.InvocationTargetException;
@@ -97,6 +98,19 @@ public final class VarLightCommand extends BrigadierCommand<VarLightPlugin> {
         helpCommand.build(subCommandRoot);
 
         builder.then(subCommandRoot);
+
+        builder.then(
+                LiteralArgumentBuilder.<CommandSender>literal("gettype").executes(c -> {
+                    if (c.getSource() instanceof Player) {
+                        Player p = (Player) c.getSource();
+
+                        p.sendMessage("Main: " + p.getInventory().getItemInMainHand().getType().name());
+                        p.sendMessage("Off: " + p.getInventory().getItemInOffHand().getType().name());
+                    }
+
+                    return 0;
+                })
+        );
 
         return builder;
     }

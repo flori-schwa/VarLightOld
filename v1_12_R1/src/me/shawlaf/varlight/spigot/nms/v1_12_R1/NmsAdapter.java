@@ -22,6 +22,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockExplodeEvent;
+import org.bukkit.event.block.BlockFadeEvent;
+import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.block.BlockPistonExtendEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
@@ -165,15 +167,15 @@ public class NmsAdapter implements INmsAdapter, Listener {
 
     @Override
     public boolean isIllegalBlock(@NotNull Material material) {
-        if (HardcodedBlockList.ALLOWED_BLOCKS.contains(material)) {
-            return false;
+        if (HardcodedBlockList.ILLEGAL_BLOCKS.contains(material)) {
+            return true;
         }
 
         if (plugin.getConfiguration().isAllowExperimentalBlocks()) {
             return !HardcodedBlockList.EXPERIMENTAL_BLOCKS.contains(material);
         }
 
-        return true;
+        return false;
     }
 
     @Override
@@ -528,7 +530,7 @@ public class NmsAdapter implements INmsAdapter, Listener {
             return;
         }
 
-        if (HardcodedBlockList.ALLOWED_BLOCKS.contains(e.getBlock().getType()) && !HardcodedBlockList.ALLOWED_BLOCKS.contains(e.getTo())) {
+        if (!isIllegalBlock(e.getBlock().getType()) && isIllegalBlock(e.getTo())) {
             setAndUpdateLight(manager.getWorld(), position, 0);
         }
     }
@@ -543,6 +545,44 @@ public class NmsAdapter implements INmsAdapter, Listener {
 
         for (org.bukkit.block.Block block : e.getBlocks()) {
             setAndUpdateLight(manager.getWorld(), toIntPosition(block), 0);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onBlockFade(BlockFadeEvent e) {
+        WorldLightSourceManager manager = plugin.getManager(e.getBlock().getWorld());
+
+        if (manager == null) {
+            return;
+        }
+
+        IntPosition position = toIntPosition(e.getBlock());
+
+        if (manager.getCustomLuminance(position, 0) > 0) {
+            if (isIllegalBlock(e.getNewState().getType())) {
+                setAndUpdateLight(manager.getWorld(), position, 0);
+            } else {
+                updateLight(manager.getWorld(), position); // TODO maybe delay?
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onBlockFromTo(BlockFromToEvent e) {
+        WorldLightSourceManager manager = plugin.getManager(e.getBlock().getWorld());
+
+        if (manager == null) {
+            return;
+        }
+
+        IntPosition position = toIntPosition(e.getBlock());
+
+        if (manager.getCustomLuminance(position, 0) > 0) {
+            if (isIllegalBlock(e.getToBlock().getType())) {
+                setAndUpdateLight(manager.getWorld(), position, 0);
+            } else {
+                updateLight(manager.getWorld(), position); // TODO maybe delay?
+            }
         }
     }
 
