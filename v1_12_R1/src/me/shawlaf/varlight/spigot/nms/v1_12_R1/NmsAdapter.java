@@ -79,6 +79,11 @@ public class NmsAdapter implements INmsAdapter, Listener {
     }
 
     @Override
+    public Material __tmpMcTypeToMaterial(String mcType) {
+        return CraftMagicNumbers.getMaterial(Block.REGISTRY.get(new MinecraftKey(mcType)));
+    }
+
+    @Override
     public NamespacedKey getKey(Material material) {
         MinecraftKey minecraftKey;
 
@@ -167,7 +172,7 @@ public class NmsAdapter implements INmsAdapter, Listener {
 
     @Override
     public boolean isIllegalBlock(@NotNull Material material) {
-        if (HardcodedBlockList.ILLEGAL_BLOCKS.contains(material)) {
+        if (HardcodedBlockList.ILLEGAL_BLOCKS.contains(material) || CraftMagicNumbers.getBlock(material).getBlockData().d() > 0) {
             return true;
         }
 

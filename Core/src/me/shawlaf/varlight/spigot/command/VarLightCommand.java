@@ -2,7 +2,9 @@ package me.shawlaf.varlight.spigot.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.ParseResults;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.suggestion.Suggestion;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.tree.CommandNode;
@@ -13,12 +15,14 @@ import me.shawlaf.command.exception.CommandException;
 import me.shawlaf.varlight.spigot.VarLightPlugin;
 import me.shawlaf.varlight.spigot.command.commands.*;
 import me.shawlaf.varlight.spigot.command.commands.config.VarLightCommandConfig;
+import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 @SuppressWarnings("rawtypes")
@@ -110,6 +114,18 @@ public final class VarLightCommand extends BrigadierCommand<VarLightPlugin> {
 
                     return 0;
                 })
+        );
+
+        builder.then(
+                LiteralArgumentBuilder.<CommandSender>literal("totype")
+                .then(
+                        RequiredArgumentBuilder.<CommandSender, String>argument("type", StringArgumentType.string())
+                        .executes(c -> {
+                            String mcType = c.getArgument("type", String.class);
+                            c.getSource().sendMessage(Optional.ofNullable(plugin.getNmsAdapter().__tmpMcTypeToMaterial(mcType)).map(Material::name).orElse("NULL"));
+                            return 0;
+                        })
+                )
         );
 
         return builder;

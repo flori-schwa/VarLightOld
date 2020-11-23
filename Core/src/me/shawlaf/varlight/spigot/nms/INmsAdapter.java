@@ -95,6 +95,10 @@ public interface INmsAdapter extends ILightUpdater {
 
     }
 
+    default Material __tmpMcTypeToMaterial(String mcType) {
+        return null;
+    }
+
     default NamespacedKey getKey(Material material) {
         return material.getKey();
     }
