@@ -1,7 +1,7 @@
 # VarLight #
 Turn any block into a light source
 
-Rewrite currently [In Progress](https://github.com/flori-schwa/VarLightRewrite)
+**Rewrite currently [In Progress](https://github.com/flori-schwa/VarLightRewrite)**
 
 | Minecraft Version | Compatibility Status                                                                                                          |
 |-------------------|-------------------------------------------------------------------------------------------------------------------------------|
